@@ -1,0 +1,27 @@
+{
+  "name": "@identity-access/client",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Foundation diagnostics client for the Identity & Access API. Authentication is not implemented.",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "npm run build && node --test test/client.test.mjs",
+    "prepack": "npm run build",
+    "smoke": "npm run build && node test/smoke-api.mjs"
+  },
+  "devDependencies": {
+    "typescript": "5.8.3"
+  }
+}

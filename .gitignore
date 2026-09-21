@@ -1,0 +1,14 @@
+**/bin/
+**/obj/
+**/node_modules/
+**/dist/
+**/.next/
+.vs/
+TestResults/
+artifacts/
+.env
+.env.*
+!.env.example
+*.user
+*.suo
+*.tgz

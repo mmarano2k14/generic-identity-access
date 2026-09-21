@@ -1,0 +1,16 @@
+@baseUrl = http://127.0.0.1:5080
+
+### Expected: 200, process liveness only
+GET {{baseUrl}}/health/live
+Accept: application/json
+
+### Expected: 503 until storage and security are implemented
+GET {{baseUrl}}/health/ready
+Accept: application/json
+
+### Expected: foundation metadata, all configured flags false
+GET {{baseUrl}}/api/v1/system/info
+Accept: application/json
+
+### Expected: 404; account management is not exposed
+GET {{baseUrl}}/api/v1/users

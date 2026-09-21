@@ -1,0 +1,6 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <ItemGroup>
+    <ProjectReference Include="../IdentityAccess.Application/IdentityAccess.Application.csproj" />
+    <ProjectReference Include="../IdentityAccess.Contracts/IdentityAccess.Contracts.csproj" />
+  </ItemGroup>
+</Project>
