@@ -2,19 +2,18 @@ using IdentityAccess.Contracts;
 
 namespace IdentityAccess.Application;
 
-/// <summary>Explicit bootstrap status. No configured value can falsely mark unfinished security as ready.</summary>
-public sealed class FoundationStatus
+/// <summary>Routing activation does not imply live storage or finished authentication and authorization.</summary>
+public sealed class FoundationStatus(bool databaseRoutingConfigured = false)
 {
     public ServiceInfoResponse Describe() => new(
-        "identity-access", "v1", "0.1.0", "foundation", "postgresql",
+        "identity-access", "v1", "0.2.0", "foundation", "postgresql",
         StorageConfigured: false, AuthenticationConfigured: false, AuthorizationConfigured: false);
 
-    public ReadinessResponse Readiness() => new(false, "foundation",
-        Array.AsReadOnly(new[]
-        {
-            "database-routing",
-            "postgresql-persistence",
-            "authentication",
-            "rbac-integration"
-        }));
+    public ReadinessResponse Readiness()
+    {
+        var blockers = new List<string>();
+        if (!databaseRoutingConfigured) blockers.Add("database-routing");
+        blockers.AddRange(["postgresql-persistence", "authentication", "rbac-integration"]);
+        return new ReadinessResponse(false, "foundation", blockers.AsReadOnly());
+    }
 }

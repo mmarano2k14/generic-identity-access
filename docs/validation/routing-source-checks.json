@@ -1,0 +1,44 @@
+{
+  "server_source_version": "0.2.0",
+  "date": "2026-09-21",
+  "base_archive_sha256": "4e2d6e9a9902c47839f63b0c2c33acbd6f29b86f2e2946ca8a8517a2ce318149",
+  "checks": {
+    "xml_parsing": "passed",
+    "xml_file_count": 9,
+    "json_parsing": "passed",
+    "json_file_count": 9,
+    "project_references": "passed",
+    "solution_project_count": 6,
+    "cycles": "none",
+    "csharp_delimiter_scan": "passed",
+    "csharp_file_count": 46,
+    "csharp_scan_limit": "Lexical delimiters only; not compilation or semantic analysis.",
+    "protected_source_comparison": "passed",
+    "protected_source_count": 36,
+    "example_cross_references": "passed",
+    "bash_syntax": "passed"
+  },
+  "validation": {
+    "typescript_compilation": "passed",
+    "typescript_typecheck": "passed",
+    "typescript_tests_passed": 26,
+    "typescript_tests_failed": 0,
+    "typescript_tests_skipped": 0,
+    "dotnet_restore": "not executed",
+    "dotnet_build": "not executed",
+    "dotnet_test": "not executed",
+    "dotnet_sdk": "unavailable; download attempts unsuccessful",
+    "dotnet_api_smoke": "not executed",
+    "postgresql_integration": "not implemented / not executed",
+    "nextjs_application_build": "not executed",
+    "powershell_script_execution": "not executed"
+  },
+  "dotnet_static_inventory": {
+    "fact_methods": 65,
+    "theory_methods": 18,
+    "inline_data_rows": 77,
+    "declared_cases": 142,
+    "added_declared_cases": 87,
+    "executed_cases": null
+  }
+}

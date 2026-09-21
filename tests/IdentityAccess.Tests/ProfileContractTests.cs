@@ -30,11 +30,11 @@ public sealed class ProfileContractTests
     [Fact]
     public void Group_projection_preserves_application_and_tenant()
     {
-        var reference = new GroupReference(new(Guid.NewGuid(), Guid.NewGuid()), new("runtime-console"), Guid.NewGuid());
+        var reference = new GroupReference(new(Guid.NewGuid(), Guid.NewGuid()), new("app-b"), Guid.NewGuid());
         var profile = DirectoryProfileMapper.ToProfile(new UserGroup(reference, "Observers"));
         Assert.Equal(reference.Tenant.IdentityScopeId, profile.IdentityScopeId);
         Assert.Equal(reference.Tenant.TenantId, profile.TenantId);
-        Assert.Equal("runtime-console", profile.ApplicationKey);
+        Assert.Equal("app-b", profile.ApplicationKey);
         Assert.Equal(reference.GroupId, profile.GroupId);
     }
 

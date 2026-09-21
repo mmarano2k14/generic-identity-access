@@ -12,12 +12,18 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IdentityAccess.Api", "src\I
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IdentityAccess.Tests", "tests\IdentityAccess.Tests\IdentityAccess.Tests.csproj", "{68E7E100-E3AB-5B6F-B306-182CD97DCBB1}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IdentityAccess.Infrastructure.ConfigurationRouting", "src\IdentityAccess.Infrastructure.ConfigurationRouting\IdentityAccess.Infrastructure.ConfigurationRouting.csproj", "{72EA5C31-67F2-466E-ABBA-7211981C46A3}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{72EA5C31-67F2-466E-ABBA-7211981C46A3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{72EA5C31-67F2-466E-ABBA-7211981C46A3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{72EA5C31-67F2-466E-ABBA-7211981C46A3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{72EA5C31-67F2-466E-ABBA-7211981C46A3}.Release|Any CPU.Build.0 = Release|Any CPU
 		{8BB2AA15-0B9E-582C-9973-C2DE7FA6552C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{8BB2AA15-0B9E-582C-9973-C2DE7FA6552C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{8BB2AA15-0B9E-582C-9973-C2DE7FA6552C}.Release|Any CPU.ActiveCfg = Release|Any CPU

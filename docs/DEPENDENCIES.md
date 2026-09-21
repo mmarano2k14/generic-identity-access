@@ -52,3 +52,19 @@ VSTest adapter:
 
 Next.js server/client boundary:
 `https://nextjs.org/docs/app/getting-started/server-and-client-components`
+
+
+## Routing provider addition (0.2.0)
+
+The configuration routing project uses the shared .NET target and only standard-library
+APIs. No dependency versions from the validated foundation were changed. No Npgsql,
+EF Core, OIDC or secrets-store implementation is introduced by this increment.
+
+`System.Text.Json` is configured with `JsonUnmappedMemberHandling.Disallow`.
+Duplicate properties are rejected explicitly while walking the parsed document rather
+than relying on a runtime-version-specific duplicate-property option. JSON errors are
+translated to sanitized configuration failure codes before leaving the reader.
+
+Primary reference consulted on 2026-09-21:
+Microsoft Learn, "Handle unmapped members during deserialization":
+https://learn.microsoft.com/en-us/dotnet/standard/serialization/system-text-json/missing-members

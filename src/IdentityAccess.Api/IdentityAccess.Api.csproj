@@ -2,5 +2,6 @@
   <ItemGroup>
     <ProjectReference Include="../IdentityAccess.Application/IdentityAccess.Application.csproj" />
     <ProjectReference Include="../IdentityAccess.Contracts/IdentityAccess.Contracts.csproj" />
+    <ProjectReference Include="../IdentityAccess.Infrastructure.ConfigurationRouting/IdentityAccess.Infrastructure.ConfigurationRouting.csproj" />
   </ItemGroup>
 </Project>

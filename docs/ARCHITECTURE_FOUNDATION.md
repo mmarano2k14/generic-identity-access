@@ -1,131 +1,163 @@
-# Fondations du sous-projet Identity & Access
+# Identity & Access Subproject Foundations
 
-**Date : 21 septembre 2026. Version des sources : 0.1.0.**
+**Date: September 21, 2026. Source version described below: 0.1.0.**
 
-## Décisions reprises
+> Historical document for the initial foundation. Version 0.2.0 adds file-based routing and
+> clarifies its granularity in `ROUTING_CONFIGURATION.md`. The current validation status
+> is documented in `VALIDATION.md`. References to “next contract” and “not executed”
+> below describe the initial delivery, not the complete current version.
 
-Le serveur est une API logique commune ASP.NET Core. Le stockage cible est PostgreSQL,
-avec plusieurs bases possibles et un placement résolu côté serveur. Une application
-peut utiliser plusieurs destinations ; une destination peut héberger plusieurs tenants
-lorsque les contraintes d'isolation le permettent. Ni une base globale unique ni une
-base imposée par application ne sont retenues.
+## Confirmed Decisions
 
-MAGELLAN et Console Runtime embarquent chacune leur module UI et leur client. Le contexte
-applicatif vient de l'intégration ; il ne constitue pas une permission. Aucun écran ne
-demande de choisir entre ces deux projets. Choisir un tenant autorisé est un autre besoin.
+The server is a shared logical ASP.NET Core API. The target storage is PostgreSQL,
+with multiple databases possible and placement resolved server-side. An application
+may use multiple destinations; a destination may host multiple tenants when isolation
+constraints allow it. Neither a single global database nor one database per application
+is required.
 
-Le nom MAGELLAN remplace l'ancienne appellation AXENTRA dans les nouveaux éléments.
-Les fichiers d'architecture source fournis ne sont pas modifiés par cette livraison.
+Each consuming application embeds its own UI module and client. The application context
+comes from the integration and does not constitute a permission. No screen asks the user
+to choose between projects. Selecting an authorized tenant is a separate concern.
 
-## Code effectivement créé
+The source architecture files provided for reference are not modified by this delivery.
 
-| Projet | Responsabilité actuelle |
+## Code Actually Created
+
+| Project | Current responsibility |
 |---|---|
-| `IdentityAccess.Domain` | Références d'identité immuables, états User/Tenant/Group, appartenances et contrôles structurels |
-| `IdentityAccess.Contracts` | DTO publics de profils et diagnostics, sans secret ni destination physique |
-| `IdentityAccess.Application` | Projection explicite des profils et description du statut de fondation |
-| `IdentityAccess.Api` | Composition de l'hôte, diagnostics locaux, refus de démarrage en Production |
-| `IdentityAccess.Tests` | Tests de modèles, projections, contrats et hôte ; non exécutés ici |
+| `IdentityAccess.Domain` | Immutable identity references, User/Tenant/Group states, memberships, and structural checks |
+| `IdentityAccess.Contracts` | Public profile and diagnostic DTOs, with no secrets or physical destination details |
+| `IdentityAccess.Application` | Explicit profile projections and foundation-status description |
+| `IdentityAccess.Api` | Host composition, local diagnostics, and refusal to start in Production |
+| `IdentityAccess.Tests` | Tests for models, projections, contracts, and host behavior; not executed here |
 
-La dépendance va de l'API vers Application/Contracts et d'Application vers Domain/Contracts.
-Le domaine et les contrats n'ont aucun package externe. Aucune référence au moteur runtime,
-à Redis, à Npgsql ou à EF Core n'est introduite dans ce premier incrément.
+Dependencies flow from the API to Application/Contracts and from Application to
+Domain/Contracts.
 
-Le client TypeScript appelle les diagnostics HTTP. L'exemple Next.js importe `server-only`.
-Il n'expose ni sessions, ni tokens, ni évaluateur RBAC, ni rotation de contexte.
+The domain and contract projects have no external package dependency. No reference to
+the runtime engine, Redis, Npgsql, or EF Core is introduced in this first increment.
 
-## Périmètre logique d'identité
+The TypeScript client calls diagnostic HTTP endpoints. The Next.js example imports
+`server-only`.
 
-`IdentityScopeId` matérialise le périmètre d'identité déjà requis par la roadmap.
-La référence d'un utilisateur est `(IdentityScopeId, UserId)` et celle d'un tenant
-`(IdentityScopeId, TenantId)`. Un groupe ajoute l'application et son `GroupId`.
+It exposes no sessions, tokens, RBAC evaluator, or access-context rotation.
 
-Cela permet de représenter deux comptes distincts portant le même identifiant local
-sans les fusionner. Une référence reste stable quand le placement physique change.
-L'e-mail n'est pas utilisé comme identifiant technique.
+## Logical Identity Scope
 
-**Cette forme de référence est une proposition de contrat de fondation, pas la
-sélection silencieuse d'un annuaire global ni d'une politique de SSO.** La façon
-opérationnelle d'attribuer les scopes, de partager un annuaire et de produire le
-subject OIDC reste à figer. Aucun token ni table SQL ne matérialise encore ces choix.
+`IdentityScopeId` represents the identity scope already required by the roadmap.
 
-Les clés d'application du code sont sensibles à la casse, sans normalisation implicite :
-1 à 64 caractères, première lettre minuscule, puis lettres minuscules, chiffres ou tirets.
-Cette contrainte est explicite et testable ; ce n'est pas la grammaire TRN.
+A user reference is `(IdentityScopeId, UserId)` and a tenant reference is
+`(IdentityScopeId, TenantId)`. A group additionally includes the application context and
+its `GroupId`.
 
-## Appartenances et groupes
+This makes it possible to represent two distinct accounts carrying the same local
+identifier without merging them. A reference remains stable when physical placement
+changes.
 
-Un utilisateur peut appartenir à plusieurs tenants dans un même périmètre d'identité.
-Le constructeur d'une appartenance rejette les scopes divergents. L'ajout structurel
-à un groupe rejette un tenant différent, y compris lorsque deux scopes réutilisent
-le même `TenantId` local. Il exige un groupe et une appartenance au tenant actifs.
+Email is not used as the immutable technical identifier.
 
-Le statut du compte est séparé du statut de son appartenance à un tenant. Les objets
-sont immuables ; aucun endpoint ne permet de modifier ces états.
+**This reference shape is a foundation-contract proposal, not the silent selection of a
+global directory or an SSO policy.** The operational rules for assigning scopes, sharing
+a directory, and producing the OIDC subject remain to be defined. No token or SQL table
+materializes those decisions yet.
 
-L'appartenance de groupe porte son contexte applicatif. Elle ne crée pas de droits
-sur une autre application. Un `UserGroup` n'est jamais le `TenantGroupId` du moteur.
-Les permissions, leurs bindings et les ressources exactes ne sont pas encore implémentés.
+Application keys in the code are case-sensitive and are not implicitly normalized:
+1 to 64 characters, starting with a lowercase letter, followed by lowercase letters,
+digits, or hyphens.
 
-Les contrôles de construction sont nécessaires mais insuffisants pour l'exploitation :
-il faut encore autoriser l'administrateur, vérifier l'état actuel du compte et du tenant,
-appliquer les contraintes SQL, gérer les mutations concurrentes, auditer et révoquer.
-Une instance de domaine construite par un appelant n'est jamais un contexte de confiance.
+This constraint is explicit and testable; it is not the TRN grammar.
 
-## Profils publics
+## Memberships and Groups
 
-Les projections n'exposent que les références, le nom affiché et le statut approprié.
-Elles n'exposent pas de credential, facteur MFA, refresh token ou information de connexion.
-Le mapper ne constitue pas une autorisation : le futur service de lecture devra autoriser
-chaque scope et chaque sujet avant de retourner une projection, y compris par lots.
+A user may belong to multiple tenants within the same identity scope.
 
-Aucun e-mail de connexion, secret ou mécanisme de récupération n'est ajouté avant d'avoir
-figé l'unicité et le stockage des comptes. Ce sont des fonctions manquantes explicites,
-pas un stockage de démonstration présenté comme une authentification.
+The membership constructor rejects mismatched scopes.
 
-## PostgreSQL et routage : prochaine frontière
+Structural addition to a group rejects a different tenant, including when two scopes
+reuse the same local `TenantId`. It requires both the group and the tenant membership
+to be active.
 
-Aucun schéma n'est figé dans cet incrément. Le prochain contrat devra représenter la
-route demandée par l'opération serveur, une destination enregistrée, une révision et
-son état administratif. Le fournisseur initial sera un fichier, le catalogue SQL étant
-optionnel derrière le même contrat. Les références de secrets resteront côté serveur.
+The account status is separate from the tenant-membership status.
 
-Une route absente, ambiguë ou désactivée doit bloquer l'opération. Aucun fallback vers
-une base par défaut. Une opération devra conserver sa destination et sa version de route.
-La co-localisation nécessaire aux opérations atomiques sera définie avant de séparer
-les familles de tables. Les clés étrangères et transactions locales ne seront pas
-présentées comme des garanties inter-bases.
+Domain objects are immutable; no endpoint allows these states to be modified yet.
 
-Les choix bloquants restent visibles : partage ou séparation des annuaires, placement
-des utilisateurs multi-tenants, localisation de l'annuaire avant authentification,
-relation entre compte et subject OIDC, et unité routée initiale. Ce dépôt ne choisit
-pas une réponse en cachant une base globale dans sa configuration.
+Group membership carries its application context. It does not grant rights in another
+application.
 
-## Sécurité et compatibilité existante
+A `UserGroup` is never the runtime engine `TenantGroupId`.
 
-Il n'y a pas de mock `Allow`, d'administrateur prédéfini, de mot de passe partagé,
-de création de compte anonyme ou de mécanisme cryptographique maison.
-`RequireCapability`, `IAuthorizationEngine` et `X-Access-Context` ne sont pas réimplémentés
-à partir des seuls noms cités dans la roadmap.
+Permissions, their bindings, and exact resource scopes are not yet implemented.
 
-Le futur adaptateur préservera les garanties effectivement trouvées dans le code .NET :
-réhydratation, isolation des traitements concurrents, rotation activée ou désactivée,
-expiration, révocation et protection des traitements en cours. La compatibilité n'est
-pas acquise par le simple ajout d'un endpoint Allow/Deny.
+Construction checks are necessary but insufficient for production operation:
+the administrator must still be authorized, current account and tenant state must be
+checked, SQL constraints must be enforced, concurrent mutations must be handled,
+administrative operations must be audited, and revocation must be supported.
 
-## Limite de livraison
+A domain instance created by a caller is never a trusted context.
 
-Cette livraison amorce le pack de modèles et frontières ; elle ne ferme pas le gate de
-compatibilité RBAC, ne fournit pas une base migrée et ne constitue pas un service d'identité
-prêt pour la production. L'exécution du build et des tests .NET demeure à obtenir.
+## Public Profiles
 
-## Référence de travail
+Projections expose only references, display name, and the relevant status.
 
-`IDENTITY_ACCESS_MULTIDATABASE_ARCHITECTURE_ROADMAP_v1 (2).md`, version 1.0 du
-21 septembre 2026, sections 1, 4, 5, 9, 11, 12, 18, 20 et 21.
+They do not expose credentials, MFA factors, refresh tokens, or connection information.
 
-SHA-256 de la copie source fournie :
-`39d8f298ca1f4a39318004018b0c23606556f7aa6d08e00e7795b3db23f05420`.
+The mapper is not an authorization layer: the future read service must authorize every
+scope and subject before returning a projection, including batch reads.
 
-Les propositions et code de ce dépôt ne modifient pas rétroactivement le statut de
-la roadmap, qui restait un cadrage avant implémentation.
+No login email, secret, or recovery mechanism is added before account uniqueness and
+storage rules are defined.
+
+These are explicit missing features, not demonstration storage presented as real
+authentication.
+
+## PostgreSQL and Routing: Next Boundary
+
+No database schema is finalized in this increment.
+
+The next contract must represent the route requested by a server-side operation,
+a registered destination, a revision, and its administrative status.
+
+The initial provider will be file-based, with an optional SQL catalog behind the same
+contract.
+
+Secret references remain server-side.
+
+A missing, ambiguous, or disabled route must block the operation. There is no fallback
+to a default database.
+
+An operation must preserve its destination and route version for its lifetime.
+
+Co-location requirements for atomic operations will be defined before table families
+are split.
+
+Foreign keys and local transactions will not be presented as cross-database guarantees.
+
+The blocking choices remain visible:
+shared or separate directories, placement of multi-tenant users, directory localization
+before authentication, the relationship between an account and the OIDC subject,
+and the initial routing unit.
+
+This repository does not hide a global-database decision inside configuration defaults.
+
+## Security and Existing Compatibility
+
+There is no mock `Allow`, predefined administrator, shared password, anonymous account
+creation, or custom cryptographic mechanism.
+
+`RequireCapability`, `IAuthorizationEngine`, and `X-Access-Context` are not reimplemented
+from names alone.
+
+The future adapter must preserve the guarantees actually present in the existing .NET
+code: rehydration, isolation of concurrent processing, rotation enabled or disabled,
+expiration, revocation, and in-flight protection.
+
+Compatibility is not achieved simply by adding an Allow/Deny endpoint.
+
+## Delivery Limitation
+
+This delivery starts the model-and-boundary pack. It does not close the RBAC
+compatibility gate, does not provide a migrated database, and does not constitute an
+identity service ready for production.
+
+Execution of the .NET build and tests still remains to be obtained.
+

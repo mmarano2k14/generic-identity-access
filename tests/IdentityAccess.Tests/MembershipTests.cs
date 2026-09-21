@@ -33,7 +33,7 @@ public sealed class MembershipTests
     {
         var tenant = new TenantReference(Guid.NewGuid(), Guid.NewGuid());
         var membership = new TenantMembership(Guid.NewGuid(), tenant, new(tenant.IdentityScopeId, Guid.NewGuid()));
-        var group = new UserGroup(new(tenant, new("magellan"), Guid.NewGuid()), "Support");
+        var group = new UserGroup(new(tenant, new("app-a"), Guid.NewGuid()), "Support");
         var result = GroupMembership.Create(group, membership);
         Assert.Equal(group.Reference, result.Group);
         Assert.Equal(membership.MembershipId, result.TenantMembershipId);
@@ -45,7 +45,7 @@ public sealed class MembershipTests
     {
         var scopeId = Guid.NewGuid();
         var membership = new TenantMembership(Guid.NewGuid(), new(scopeId, Guid.NewGuid()), new(scopeId, Guid.NewGuid()));
-        var group = new UserGroup(new(new(scopeId, Guid.NewGuid()), new("magellan"), Guid.NewGuid()), "Support");
+        var group = new UserGroup(new(new(scopeId, Guid.NewGuid()), new("app-a"), Guid.NewGuid()), "Support");
         Assert.Throws<ArgumentException>(() => GroupMembership.Create(group, membership));
     }
 
@@ -55,7 +55,7 @@ public sealed class MembershipTests
         var tenantId = Guid.NewGuid();
         var firstScope = Guid.NewGuid();
         var membership = new TenantMembership(Guid.NewGuid(), new(firstScope, tenantId), new(firstScope, Guid.NewGuid()));
-        var group = new UserGroup(new(new(Guid.NewGuid(), tenantId), new("magellan"), Guid.NewGuid()), "Support");
+        var group = new UserGroup(new(new(Guid.NewGuid(), tenantId), new("app-a"), Guid.NewGuid()), "Support");
         Assert.Throws<ArgumentException>(() => GroupMembership.Create(group, membership));
     }
 
@@ -64,7 +64,7 @@ public sealed class MembershipTests
     {
         var tenant = new TenantReference(Guid.NewGuid(), Guid.NewGuid());
         var membership = new TenantMembership(Guid.NewGuid(), tenant, new(tenant.IdentityScopeId, Guid.NewGuid()), MembershipStatus.Suspended);
-        var group = new UserGroup(new(tenant, new("magellan"), Guid.NewGuid()), "Support");
+        var group = new UserGroup(new(tenant, new("app-a"), Guid.NewGuid()), "Support");
         Assert.Throws<InvalidOperationException>(() => GroupMembership.Create(group, membership));
     }
 
@@ -73,7 +73,7 @@ public sealed class MembershipTests
     {
         var tenant = new TenantReference(Guid.NewGuid(), Guid.NewGuid());
         var membership = new TenantMembership(Guid.NewGuid(), tenant, new(tenant.IdentityScopeId, Guid.NewGuid()));
-        var group = new UserGroup(new(tenant, new("magellan"), Guid.NewGuid()), "Support", GroupStatus.Suspended);
+        var group = new UserGroup(new(tenant, new("app-a"), Guid.NewGuid()), "Support", GroupStatus.Suspended);
         Assert.Throws<InvalidOperationException>(() => GroupMembership.Create(group, membership));
     }
 

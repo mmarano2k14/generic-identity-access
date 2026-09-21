@@ -1,6 +1,6 @@
 # Intégration Next.js côté serveur
 
-Cet exemple est destiné à être intégré dans MAGELLAN et dans Console Runtime. Il ne
+Cet exemple est destiné à être intégré dans APP-A et dans Application B. Il ne
 crée pas une nouvelle application Next.js et n'ajoute pas de sélecteur de projet.
 Le serveur Next.js appelle l'API .NET ; ce connecteur n'est pas un accès PostgreSQL.
 

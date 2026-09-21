@@ -1,6 +1,6 @@
 # Identity & Access
 
-Independent and reusable .NET identity and access foundation with no dependency on runtime engine assemblies.
+Independent and reusable .NET identity and access foundation with no dependency on consuming application assemblies.
 
 This repository provides a reusable architecture for identity, multi-tenant access control, RBAC, TRN-based authorization, configurable PostgreSQL multi-database routing, and TypeScript / Next.js integration.
 

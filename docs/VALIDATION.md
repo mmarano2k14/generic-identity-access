@@ -1,83 +1,151 @@
-# Validation de la livraison
+# Delivery Validation
 
-**Date : 21 septembre 2026. Version des sources : 0.1.0.**
+**Server version: 0.2.0. Date: September 21, 2026.**
 
-## Résultats réellement obtenus
+## Previous Foundation
 
-| Vérification | Résultat | Portée exacte |
+The build and tests for foundation version 0.1.0 were reported as green in the consuming
+environment.
+
+No log, TRX file, or SDK version accompanied that feedback in this chat.
+
+It therefore represents external confirmation of the foundation, not execution evidence
+for the new routing provider.
+
+## Checks Actually Executed for This Increment
+
+| Check | Result | Scope |
 |---|---|---|
-| Compilation TypeScript | Réussie | `npm test` exécute `tsc -p tsconfig.json` |
-| Vérification des types TypeScript | Réussie | `npm run typecheck`, mode strict |
-| Tests TypeScript | **26/26 réussis**, aucun ignoré | Validation du transport et de réponses sur fixtures |
-| Transport HTTP natif | Réussi | Un des 26 tests utilise un serveur HTTP Node local |
-| Structure de la solution | Réussie | Références locales, absence de cycles, présence des projets |
-| Formats JSON et XML | Réussis | Parsing des configurations, projets et propriétés |
-| Noms des champs publics .NET / TS | Alignés | Vérification statique des DTO ; pas d'exécution JSON .NET |
-| Script Bash | Syntaxe valide | `bash -n`, sans exécution des commandes .NET |
-| Préparation du package npm | Dry-run réussi | Construction du package local, aucune publication |
+| `npm test` | 26 tests passed, with no failures or skipped tests | Unchanged diagnostic client; TypeScript build included |
+| `npm run typecheck` | Passed | Strict TypeScript typing |
+| Local Node HTTP test | Passed within the 26-test suite | HTTP fixture server, not the .NET API |
+| XML / JSON formats | Passed | Projects, props, configuration files, and routing example |
+| Project graph and solution | Passed | Existing references, no cycles, routing provider included |
+| Public contracts and client source | Unchanged | Exact comparison with the foundation archive |
+| NuGet dependencies | Unchanged | Exact comparison of `Directory.Packages.props` |
+| C# delimiters | Lexical check passed | Strings/comments excluded; this does not compile C# |
+| Bash script | Syntax valid | `bash -n`; no .NET execution |
 
-Environnement réellement utilisé : Debian 13 x64, Node.js **22.16.0**, npm **10.9.2**,
-TypeScript **5.8.3**. Le build TypeScript a utilisé le compilateur déjà installé ;
-`npm install` et la création d'un lockfile npm n'ont pas été exécutés.
+TypeScript execution environment:
 
-## Vérifications non exécutées
-
-| Vérification | État | Motif ou limite |
-|---|---|---|
-| NuGet restore | Non exécuté | SDK .NET absent de l'environnement |
-| Compilation C# | Non exécutée | Aucun `dotnet` disponible ; récupération du SDK impossible |
-| Tests .NET | Non exécutés | Même limite ; aucun test C# déclaré réussi |
-| Hôte ASP.NET Core réel | Non lancé | Aucun runtime/SDK .NET disponible |
-| Client TypeScript vers API .NET | Non exécuté | Hôte .NET non lancé ; script de smoke test fourni |
-| Build Next.js | Non exécuté | Exemple d'intégration, sans application Next.js complète |
-| Vérification PowerShell | Non exécutée | Script fourni ; pas de validation par un interpréteur PowerShell local |
-| PostgreSQL / migration / multi-bases | Non implémenté, donc non testé | Étape de raccordement suivante |
-| RBAC / rotation / auth / MFA | Non implémenté, donc non testé | Audit de l'existant et intégration encore nécessaires |
-
-Le fichier de tests C# contient **34 méthodes Fact**, **4 méthodes Theory** et
-**21 jeux InlineData**, soit **55 cas déclarés par inventaire statique**.
-Cela ne représente pas un résultat de découverte ou d'exécution xUnit.
-Les tests API utilisent `WebApplicationFactory` ; même après succès, ils ne remplacent
-pas les futurs tests contre PostgreSQL, le RBAC et les pannes réelles.
-
-## Reproduire sous Windows
-
-Depuis le répertoire contenant `IdentityAccess.sln`, avec un SDK .NET 10 à jour :
-
-```powershell
-dotnet restore IdentityAccess.sln
-dotnet build IdentityAccess.sln -c Release --no-restore
-dotnet test IdentityAccess.sln -c Release --no-build --no-restore
+```text
+Node.js 22.16.0
+npm 10.9.2
+TypeScript 5.8.3
 ```
 
-Le script `scripts/verify.ps1` regroupe ces commandes, vérifie les codes de sortie et
-écrit le TRX dans `artifacts/test-results/identity-access.trx`.
-Les avertissements C# sont traités comme des erreurs. Les dépendances de test sont
-versionnées explicitement ; le graphe NuGet complet reste à restaurer et valider.
+The compiler already present in the environment was used.
 
-Ensuite, lancer l'API dans un autre terminal :
+No npm restore or newly generated lockfile is presented as executed.
 
-```powershell
-dotnet run --project src/IdentityAccess.Api --launch-profile http
+## Not Executed and Not Claimed
+
+The .NET SDK is not installed in the generation environment.
+
+An attempt to retrieve it did not succeed because DNS resolution from the container to
+the installation endpoint failed.
+
+No .NET restore, C# build, C# test run, API startup, or client smoke test against the
+.NET server was executed here.
+
+Source review and lexical validation do not replace those checks.
+
+The file:
+
+```text
+docs/validation/routing-source-checks.json
 ```
 
-Depuis `clients/typescript`, après installation des dépendances de développement :
+records the structural checks.
 
-```powershell
-npm test
-npm run smoke -- http://127.0.0.1:5080
+The files:
+
+```text
+typescript-tests-routing.txt
+typescript-typecheck-routing.txt
 ```
 
-Le smoke test vérifie les diagnostics contre cet hôte. La readiness `503` / `ready: false`
-est l'état attendu de cet incrément, pas un échec à contourner ni une validation de sécurité.
+contain outputs from commands actually executed for this increment.
 
-## Éléments de preuve inclus
+The pre-existing files:
 
-`docs/validation/typescript-tests.txt` contient la sortie des 26 tests exécutés.
-`docs/validation/typescript-typecheck.txt` contient la vérification des types.
-`docs/validation/source-checks.json` détaille les vérifications structurelles et
-la distinction entre tests passés et vérifications non exécutées.
+```text
+source-checks.json
+typescript-tests.txt
+typescript-typecheck.txt
+```
 
-**Statut du pack : sources disponibles ; gate .NET en attente d'exécution.
-Aucun statut de production prête, de compatibilité RBAC acquise ou de persistance
-multi-bases opérationnelle n'est annoncé.**
+are historical evidence from version 0.1.0.
+
+They are not replaced by any claimed new .NET result.
+
+## .NET Test Inventory Without Execution Result
+
+The test suite contains:
+
+- **65 `Fact` methods**
+- **18 `Theory` methods**
+- **77 `InlineData` datasets**
+- **142 statically declared test cases in total**
+
+Of those, **87 cases were added** for the routing provider.
+
+The foundation previously declared 55 cases.
+
+None of these numbers represents xUnit discovery output or a number of passed tests.
+
+| Added test set | Behavior to verify under .NET |
+|---|---|
+| `RoutingContractTests` | Required inputs, positive versions, separation from public contracts, masked secret references |
+| `RoutingConfigurationTests` | Strict JSON, duplicate properties, lists, limits, references, scopes, UTF-8 files, and masked errors |
+| `DatabaseRouteResolverTests` | One application using multiple destinations, distinct scopes sharing a database, no fallback, concurrency, and immutable snapshots |
+| `AuthenticationDirectoryLocatorTests` | Registered context, expected application, administrative states, and cancellation |
+| `RoutingApiTests` | Server-side registration, invalid-configuration rejection, honest readiness, and absence of HTTP leakage |
+
+These tests exercise in-memory route selection and configuration-file loading.
+
+Even if all of them pass, they do not prove:
+
+- SQL isolation;
+- correct pool sizing;
+- PostgreSQL connectivity;
+- production revocation behavior;
+- authentication-protocol correctness.
+
+## Reproduction
+
+From the solution root:
+
+```powershell
+.\scripts\verify.ps1
+```
+
+The script performs restore, Release build, and test execution, checks exit codes, and
+writes the TRX result.
+
+Preserve the complete output if a failure occurs.
+
+Manual activation of the file-based provider is described in:
+
+```text
+ROUTING_CONFIGURATION.md
+```
+
+## Gates Still Open
+
+The new .NET build and test suite still require a real execution.
+
+Multi-database PostgreSQL is not connected yet.
+
+The following areas remain absent:
+
+- authentication;
+- OIDC;
+- MFA;
+- persistent identity directory;
+- integration with the existing RBAC engine.
+
+The delivered bootstrap component is an internal directory locator, not OIDC client
+validation or HTTP identity validation.
+
+No production-readiness or production-security guarantee is claimed.

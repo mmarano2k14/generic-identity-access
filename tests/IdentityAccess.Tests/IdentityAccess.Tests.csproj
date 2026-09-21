@@ -19,5 +19,6 @@
     <ProjectReference Include="../../src/IdentityAccess.Application/IdentityAccess.Application.csproj" />
     <ProjectReference Include="../../src/IdentityAccess.Contracts/IdentityAccess.Contracts.csproj" />
     <ProjectReference Include="../../src/IdentityAccess.Api/IdentityAccess.Api.csproj" />
+    <ProjectReference Include="../../src/IdentityAccess.Infrastructure.ConfigurationRouting/IdentityAccess.Infrastructure.ConfigurationRouting.csproj" />
   </ItemGroup>
 </Project>

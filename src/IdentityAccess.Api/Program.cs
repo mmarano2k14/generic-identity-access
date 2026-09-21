@@ -1,3 +1,4 @@
+using IdentityAccess.Api;
 using IdentityAccess.Application;
 using IdentityAccess.Contracts;
 
@@ -12,7 +13,7 @@ if (!builder.Environment.IsDevelopment() && !builder.Environment.IsEnvironment("
 }
 
 builder.Services.AddProblemDetails();
-builder.Services.AddSingleton<FoundationStatus>();
+builder.AddIdentityRouting();
 
 var app = builder.Build();
 app.UseExceptionHandler();

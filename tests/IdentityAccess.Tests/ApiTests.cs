@@ -3,12 +3,22 @@ using System.Net.Http.Json;
 using IdentityAccess.Contracts;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.Extensions.Configuration;
 
 namespace IdentityAccess.Tests;
 
 public sealed class ApiFactory : WebApplicationFactory<Program>
 {
-    protected override void ConfigureWebHost(IWebHostBuilder builder) => builder.UseEnvironment("Testing");
+    protected override void ConfigureWebHost(IWebHostBuilder builder)
+    {
+        builder.UseEnvironment("Testing");
+        builder.ConfigureAppConfiguration((_, configuration) => configuration.AddInMemoryCollection(
+            new Dictionary<string, string?>
+            {
+                ["IdentityAccess:Routing:Provider"] = "none",
+                ["IdentityAccess:Routing:FilePath"] = null
+            }));
+    }
 }
 
 public sealed class ApiTests(ApiFactory factory) : IClassFixture<ApiFactory>

@@ -37,8 +37,8 @@ public sealed class IdentityTests
         Assert.Throws<ArgumentException>(() => new TenantReference(Guid.NewGuid(), Guid.Empty));
 
     [Theory]
-    [InlineData("magellan")]
-    [InlineData("runtime-console")]
+    [InlineData("app-a")]
+    [InlineData("app-b")]
     [InlineData("a")]
     [InlineData("application-2")]
     public void Application_keys_preserve_their_exact_value(string value) =>
@@ -48,12 +48,12 @@ public sealed class IdentityTests
     [InlineData(null)]
     [InlineData("")]
     [InlineData(" ")]
-    [InlineData("MAGELLAN")]
-    [InlineData(" magellan")]
-    [InlineData("magellan ")]
-    [InlineData("1magellan")]
-    [InlineData("../magellan")]
-    [InlineData("magellan\n")]
+    [InlineData("APP-A")]
+    [InlineData(" app-a")]
+    [InlineData("app-a ")]
+    [InlineData("1app-a")]
+    [InlineData("../app-a")]
+    [InlineData("app-a\n")]
     public void Invalid_application_keys_are_rejected(string? value) =>
         Assert.ThrowsAny<ArgumentException>(() => new ApplicationKey(value!));
 
@@ -66,8 +66,8 @@ public sealed class IdentityTests
     {
         var tenant = new TenantReference(Guid.NewGuid(), Guid.NewGuid());
         var groupId = Guid.NewGuid();
-        Assert.NotEqual(new GroupReference(tenant, new("magellan"), groupId),
-            new GroupReference(tenant, new("runtime-console"), groupId));
+        Assert.NotEqual(new GroupReference(tenant, new("app-a"), groupId),
+            new GroupReference(tenant, new("app-b"), groupId));
     }
 
     [Fact]
@@ -75,7 +75,7 @@ public sealed class IdentityTests
     {
         var scopeId = Guid.NewGuid();
         var groupId = Guid.NewGuid();
-        var app = new ApplicationKey("magellan");
+        var app = new ApplicationKey("app-a");
         Assert.NotEqual(new GroupReference(new(scopeId, Guid.NewGuid()), app, groupId),
             new GroupReference(new(scopeId, Guid.NewGuid()), app, groupId));
     }
@@ -83,7 +83,7 @@ public sealed class IdentityTests
     [Fact]
     public void Group_identifier_cannot_be_empty() =>
         Assert.Throws<ArgumentException>(() => new GroupReference(
-            new(Guid.NewGuid(), Guid.NewGuid()), new("magellan"), Guid.Empty));
+            new(Guid.NewGuid(), Guid.NewGuid()), new("app-a"), Guid.Empty));
 
     [Fact]
     public void Display_name_does_not_define_user_identity()
