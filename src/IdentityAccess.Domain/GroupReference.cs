@@ -1,18 +1,26 @@
-namespace IdentityAccess.Domain;
 
-/// <summary>A user group scoped to an application and tenant; not a runtime TenantGroupId.</summary>
-public sealed record GroupReference
+
+namespace IdentityAccess.Domain
 {
-    public TenantReference Tenant { get; }
-    public ApplicationKey Application { get; }
-    public Guid GroupId { get; }
 
-    public GroupReference(TenantReference tenant, ApplicationKey application, Guid groupId)
+    /// <summary>A user group scoped to an application and tenant; it is not an external application group identifier.</summary>
+    public sealed record GroupReference
     {
-        ArgumentNullException.ThrowIfNull(tenant);
-        ArgumentNullException.ThrowIfNull(application);
-        Tenant = tenant;
-        Application = application;
-        GroupId = ModelGuard.Identifier(groupId, nameof(groupId));
+        /// <summary>Gets the tenant.</summary>
+        public TenantReference Tenant { get; }
+        /// <summary>Gets the application.</summary>
+        public ApplicationKey Application { get; }
+        /// <summary>Gets the group identifier.</summary>
+        public Guid GroupId { get; }
+
+        /// <summary>Initializes a new instance of <see cref="GroupReference"/>.</summary>
+        public GroupReference(TenantReference tenant, ApplicationKey application, Guid groupId)
+        {
+            ArgumentNullException.ThrowIfNull(tenant);
+            ArgumentNullException.ThrowIfNull(application);
+            Tenant = tenant;
+            Application = application;
+            GroupId = ModelGuard.Identifier(groupId, nameof(groupId));
+        }
     }
 }

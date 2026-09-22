@@ -1,70 +1,81 @@
-# Dependencies and toolchain
+# Dependencies and Toolchain
 
-Reference date: 2026-09-21. Public package metadata was inspected; the NuGet dependency
-graph could not be restored in the generation environment. Listed versions are not a
-claim that a full dependency security audit or build has passed.
+## .NET
 
-| Component | Selection | Scope |
-|---|---|---|
-| .NET / ASP.NET Core | `net10.0` | Stable LTS target, no .NET 11 preview dependency |
-| SDK selection | 10.0.100 minimum, `latestFeature`, prereleases disabled | Accepts newer installed stable 10.0 SDKs; not an instruction to install the old minimum |
-| Microsoft.AspNetCore.Mvc.Testing | 10.0.12 | API test host only |
-| Microsoft.NET.Test.Sdk | 18.10.0 | Test execution |
-| xunit.v3 | 3.2.2 | Test framework; executable test project |
-| xunit.runner.visualstudio | 3.1.5 | VSTest adapter |
-| TypeScript | 5.8.3 | Exact development compiler version; available and executed locally |
-| Node.js | Capabilities required; no upper version restriction | Test execution and optional server-side client |
-| PostgreSQL / Npgsql / EF Core | Not installed or version-locked in this increment | Real persistence implementation pending |
-| OpenIddict / Identity / MFA | Not installed in this increment | Authentication integration pending |
+The repository targets:
 
-The client uses standard `fetch`, `URL` and `AbortController` capabilities and does not
-load `.ts` files through an experimental Node loader. TypeScript is compiled to JavaScript
-before tests. No Node downgrade is required by package metadata. Only Node 22.16.0 was
-actually exercised here; other versions are not claimed as tested.
+```text
+net10.0
+```
 
-The Next.js example requires `server-only` in the consuming application. No React or
-Next.js dependency is embedded in the reusable core client.
+`global.json` defines a stable .NET 10 baseline with feature-band roll-forward enabled.
 
-No license is assigned to the new project by this increment. Third-party packages retain
-their own licensing; no third-party binaries are redistributed in the source archive.
-Direct package versions are pinned. NuGet/npm lockfiles are not fabricated; restoration
-and dependency locking can be completed on the development machine with registry access.
+Centrally managed package versions:
 
-## Primary sources consulted
+| Package | Version | Purpose |
+|---|---:|---|
+| `Npgsql` | 10.0.3 | PostgreSQL connectivity and pooling |
+| `Swashbuckle.AspNetCore` | 10.2.3 | Swagger / OpenAPI UI and document generation |
+| `Microsoft.AspNetCore.Mvc.Testing` | 10.0.12 | ASP.NET Core integration testing |
+| `Microsoft.NET.Test.Sdk` | 18.10.0 | .NET test host |
+| `xunit.v3` | 3.2.2 | Unit and integration tests |
+| `xunit.runner.visualstudio` | 3.1.5 | Visual Studio test runner integration |
 
-.NET 10 target and support:
-`https://dotnet.microsoft.com/en-us/download/dotnet/10.0`
+Package versions are maintained in `Directory.Packages.props`.
 
-SDK selection:
-`https://learn.microsoft.com/en-us/dotnet/core/tools/global-json`
+## TypeScript
 
-API test package:
-`https://www.nuget.org/packages/Microsoft.AspNetCore.Mvc.Testing/10.0.12`
+The diagnostic TypeScript client uses:
 
-Test SDK:
-`https://www.nuget.org/packages/Microsoft.NET.Test.Sdk/18.10.0`
+```text
+TypeScript 5.8.3
+```
 
-xUnit v3:
-`https://www.nuget.org/packages/xunit.v3/3.2.2`
+Runtime client code has no third-party npm runtime dependency.
 
-VSTest adapter:
-`https://www.nuget.org/packages/xunit.runner.visualstudio/3.1.5`
+## PostgreSQL
 
-Next.js server/client boundary:
-`https://nextjs.org/docs/app/getting-started/server-and-client-components`
+Local development currently uses PostgreSQL 18. Database access is implemented through Npgsql.
+
+The default local database is:
+
+```text
+generic_identity_access_default
+```
+
+The owned schema is:
+
+```text
+identity_access
+```
+
+## External RBAC
+
+External RBAC assemblies are not part of the generic core dependency graph.
+
+`IdentityAccess.Rbac.MultiplexedAdapter` provides the integration boundary.
+
+The external binaries remain runtime-only dependencies. The adapter validates and
+process-pins their assembly identities, SHA-256 fingerprints, required reflection types,
+constructors, properties, and methods before administration authorization is enabled.
+
+The dedicated compatibility suite loads a separately built external RBAC distribution for
+conformance testing.
+
+## Dependency Policy
+
+- dependency versions are explicit and centrally managed where applicable;
+- secrets and connection strings are configuration, not package metadata;
+- infrastructure implementation details are not exposed through public domain contracts;
+- package upgrades require the normal build, test, PostgreSQL, and RBAC compatibility gates appropriate to the affected component.
 
 
-## Routing provider addition (0.2.0)
+## OIDC Protocol Dependencies
 
-The configuration routing project uses the shared .NET target and only standard-library
-APIs. No dependency versions from the validated foundation were changed. No Npgsql,
-EF Core, OIDC or secrets-store implementation is introduced by this increment.
+The Authorization Code + PKCE implementation uses .NET framework cryptography and JSON
+APIs directly.
 
-`System.Text.Json` is configured with `JsonUnmappedMemberHandling.Disallow`.
-Duplicate properties are rejected explicitly while walking the parsed document rather
-than relying on a runtime-version-specific duplicate-property option. JSON errors are
-translated to sanitized configuration failure codes before leaving the reader.
+There is no IdentityServer or equivalent external OIDC server dependency.
 
-Primary reference consulted on 2026-09-21:
-Microsoft Learn, "Handle unmapped members during deserialization":
-https://learn.microsoft.com/en-us/dotnet/standard/serialization/system-text-json/missing-members
+The active RSA private key is loaded from a trusted server-side PEM path at startup and
+never committed to the repository. The public key is exposed through JWKS.

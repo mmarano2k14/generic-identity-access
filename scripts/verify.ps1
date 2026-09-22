@@ -8,6 +8,12 @@ if (-not (Get-Command dotnet -ErrorAction SilentlyContinue)) {
 }
 Push-Location $root
 try {
+    & (Join-Path $root "scripts/verify-authorization-source-consistency.ps1")
+    if ($LASTEXITCODE -ne 0) { throw "Authorization source consistency validation failed." }
+
+    & (Join-Path $root "scripts/verify-oidc-source-consistency.ps1")
+    if ($LASTEXITCODE -ne 0) { throw "OIDC source consistency validation failed." }
+
     & dotnet --info
     if ($LASTEXITCODE -ne 0) { throw "SDK check failed." }
     & dotnet restore IdentityAccess.sln

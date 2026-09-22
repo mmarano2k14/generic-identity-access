@@ -1,0 +1,94 @@
+{
+  "schemaVersion": 1,
+  "trnShape": "trn:{project}:{namespace}:{resource}:{feature}:{action}",
+  "context": {
+    "project": "generic-app",
+    "namespace": "tenant-scope"
+  },
+  "cases": [
+    {
+      "name": "exact-match",
+      "grant": "trn:generic-app:tenant-scope:billing:invoice:read",
+      "request": ["billing", "invoice", "read"],
+      "allowed": true
+    },
+    {
+      "name": "exact-action-miss",
+      "grant": "trn:generic-app:tenant-scope:billing:invoice:read",
+      "request": ["billing", "invoice", "update"],
+      "allowed": false
+    },
+    {
+      "name": "feature-admin",
+      "grant": "trn:generic-app:tenant-scope:billing:invoice:*",
+      "request": ["billing", "invoice", "refund"],
+      "allowed": true
+    },
+    {
+      "name": "feature-admin-does-not-cross-feature",
+      "grant": "trn:generic-app:tenant-scope:billing:invoice:*",
+      "request": ["billing", "order", "read"],
+      "allowed": false
+    },
+    {
+      "name": "resource-action",
+      "grant": "trn:generic-app:tenant-scope:billing:*:read",
+      "request": ["billing", "order", "read"],
+      "allowed": true
+    },
+    {
+      "name": "resource-action-does-not-cross-action",
+      "grant": "trn:generic-app:tenant-scope:billing:*:read",
+      "request": ["billing", "order", "write"],
+      "allowed": false
+    },
+    {
+      "name": "resource-admin",
+      "grant": "trn:generic-app:tenant-scope:billing:*:*",
+      "request": ["billing", "order", "write"],
+      "allowed": true
+    },
+    {
+      "name": "namespace-action",
+      "grant": "trn:generic-app:tenant-scope:*:*:read",
+      "request": ["accounting", "ledger", "read"],
+      "allowed": true
+    },
+    {
+      "name": "namespace-action-does-not-cross-action",
+      "grant": "trn:generic-app:tenant-scope:*:*:read",
+      "request": ["accounting", "ledger", "write"],
+      "allowed": false
+    },
+    {
+      "name": "namespace-admin",
+      "grant": "trn:generic-app:tenant-scope:*:*:*",
+      "request": ["accounting", "ledger", "write"],
+      "allowed": true
+    },
+    {
+      "name": "wrong-project-fails-closed",
+      "grant": "trn:other-app:tenant-scope:*:*:*",
+      "request": ["billing", "invoice", "read"],
+      "allowed": false
+    },
+    {
+      "name": "wrong-namespace-fails-closed",
+      "grant": "trn:generic-app:other-scope:*:*:*",
+      "request": ["billing", "invoice", "read"],
+      "allowed": false
+    },
+    {
+      "name": "partial-wildcard-fails-closed",
+      "grant": "trn:generic-app:tenant-scope:bill*:invoice:read",
+      "request": ["billing", "invoice", "read"],
+      "allowed": false
+    },
+    {
+      "name": "unsupported-wildcard-shape-fails-closed",
+      "grant": "trn:generic-app:tenant-scope:*:invoice:read",
+      "request": ["billing", "invoice", "read"],
+      "allowed": false
+    }
+  ]
+}

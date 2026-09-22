@@ -1,9 +1,9 @@
 {
   "name": "@identity-access/client",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "type": "module",
-  "description": "Foundation diagnostics client for the Identity & Access API. Authentication is not implemented.",
+  "description": "Diagnostics-only TypeScript client for the Identity & Access API.",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",

@@ -1,7 +1,14 @@
-namespace IdentityAccess.Domain;
 
-public enum TenantStatus
+
+namespace IdentityAccess.Domain
 {
-    Active = 1,
-    Suspended = 2
+
+    /// <summary>Defines lifecycle states for tenant.</summary>
+    public enum TenantStatus
+    {
+        /// <summary>Indicates that the entity is active.</summary>
+        Active = 1,
+        /// <summary>Indicates that the entity is suspended.</summary>
+        Suspended = 2
+    }
 }

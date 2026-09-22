@@ -1,10 +1,12 @@
-# Intégration Next.js côté serveur
+# Next.js Server Integration Example
 
-Cet exemple est destiné à être intégré dans APP-A et dans Application B. Il ne
-crée pas une nouvelle application Next.js et n'ajoute pas de sélecteur de projet.
-Le serveur Next.js appelle l'API .NET ; ce connecteur n'est pas un accès PostgreSQL.
+This example demonstrates server-side use of the TypeScript client from a consuming Next.js application.
 
-Depuis `identity-access/clients/typescript`, construire l'archive locale :
+The Next.js server calls the Identity & Access HTTP API. It does not connect directly to PostgreSQL and does not receive database routing secrets.
+
+## Build the Local Client Package
+
+From `clients/typescript`:
 
 ```powershell
 npm install
@@ -12,27 +14,26 @@ npm test
 npm pack
 ```
 
-Depuis l'application Next.js consommatrice, installer **le chemin réel** de l'archive
-`identity-access-client-0.1.0.tgz` et `server-only` :
+Install the generated package into the consuming Next.js application together with `server-only`:
 
 ```powershell
-npm install "C:\chemin\identity-access\clients\typescript\identity-access-client-0.1.0.tgz" server-only
+npm install "<path-to>/identity-access-client-0.1.0.tgz" server-only
 ```
 
-Le chemin est un exemple à remplacer. Le package n'est pas publié sur npm.
-Copier `identity-access.ts` dans le dossier d'intégration serveur de l'application.
-Configurer `IDENTITY_ACCESS_API_BASE_URL` côté serveur avec l'exemple `.env.example`.
-Ne pas utiliser le préfixe `NEXT_PUBLIC_` pour cette configuration.
+Configure the API base URL only in server-side configuration:
+
+```text
+IDENTITY_ACCESS_API_BASE_URL=http://127.0.0.1:5080
+```
+
+Do not expose this setting through a `NEXT_PUBLIC_` variable.
+
+Example:
 
 ```typescript
-// Dans un module serveur de l'application, avec le chemin local approprié.
 const info = await identityAccessDiagnostics().info();
 ```
 
-L'import `server-only` doit empêcher l'import accidentel de ce module depuis un composant
-client dans l'application Next.js. Ce comportement n'a pas été testé ici avec un build
-Next.js : aucune application Next.js ni dépendance Next.js n'est incluse.
+The `server-only` import protects the integration module from accidental use in client components.
 
-L'exemple n'établit aucune session et ne protège aucune route métier. Il ne doit pas être
-utilisé comme preuve d'autorisation. Le futur adaptateur de sécurité devra préserver les
-contrats du serveur et du moteur RBAC audité ; il ne réécrira pas la rotation en TypeScript.
+This example currently demonstrates diagnostics only. It does not implement Next.js login state, route guards, OIDC, MFA, or access-context management.

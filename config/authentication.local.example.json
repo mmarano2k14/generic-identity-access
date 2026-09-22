@@ -1,0 +1,23 @@
+{
+  "IdentityAccess": {
+    "Authentication": {
+      "Enabled": "true",
+      "SessionLifetimeMinutes": "60",
+      "LockoutAttempts": "5",
+      "LockoutMinutes": "15",
+      "Clients": [
+        {
+          "ClientId": "web-client",
+          "ApplicationKey": "app-a",
+          "AuthenticationContextKey": "app-a-primary",
+          "RedirectUris": [
+            "http://127.0.0.1:3000/auth/callback"
+          ],
+          "PostLogoutRedirectUris": [
+            "http://127.0.0.1:3000/"
+          ]
+        }
+      ]
+    }
+  }
+}

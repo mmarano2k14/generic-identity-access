@@ -1,27 +1,4 @@
-/** Public JSON contracts. IDs are UUID strings; none of these values proves authorization. */
-export interface UserProfileResponse {
-  readonly identityScopeId: string;
-  readonly userId: string;
-  readonly displayName: string;
-  readonly status: "active" | "suspended";
-}
-
-export interface TenantProfileResponse {
-  readonly identityScopeId: string;
-  readonly tenantId: string;
-  readonly displayName: string;
-  readonly status: "active" | "suspended";
-}
-
-export interface GroupProfileResponse {
-  readonly identityScopeId: string;
-  readonly tenantId: string;
-  readonly applicationKey: string;
-  readonly groupId: string;
-  readonly displayName: string;
-  readonly status: "active" | "suspended";
-}
-
+/** Public JSON contracts exposed by the diagnostic client. */
 export interface LivenessResponse {
   readonly status: "alive";
 }
@@ -38,6 +15,7 @@ export interface ServiceInfoResponse {
   readonly moduleVersion: string;
   readonly stage: string;
   readonly storageProvider: "postgresql";
+  readonly databaseRoutingConfigured: boolean;
   readonly storageConfigured: boolean;
   readonly authenticationConfigured: boolean;
   readonly authorizationConfigured: boolean;

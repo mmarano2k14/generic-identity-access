@@ -1,20 +1,26 @@
 using IdentityAccess.Domain;
 
-namespace IdentityAccess.Application.Routing;
-
-/// <summary>Server-side directory location; not an authentication result and not a client DTO.</summary>
-public sealed class AuthenticationDirectoryLocation
+namespace IdentityAccess.Application.Routing
 {
-    public string AuthenticationContextKey { get; }
-    public ResolvedDatabaseRoute Route { get; }
 
-    public AuthenticationDirectoryLocation(string authenticationContextKey, ResolvedDatabaseRoute route)
+    /// <summary>Server-side directory location; not an authentication result and not a client DTO.</summary>
+    public sealed class AuthenticationDirectoryLocation
     {
-        _ = new ApplicationKey(authenticationContextKey);
-        ArgumentNullException.ThrowIfNull(route);
-        AuthenticationContextKey = authenticationContextKey;
-        Route = route;
-    }
+        /// <summary>Gets the authentication context key.</summary>
+        public string AuthenticationContextKey { get; }
+        /// <summary>Gets the route.</summary>
+        public ResolvedDatabaseRoute Route { get; }
 
-    public override string ToString() => "AuthenticationDirectoryLocation [not authenticated]";
+        /// <summary>Initializes a new instance of <see cref="AuthenticationDirectoryLocation"/>.</summary>
+        public AuthenticationDirectoryLocation(string authenticationContextKey, ResolvedDatabaseRoute route)
+        {
+            _ = new ApplicationKey(authenticationContextKey);
+            ArgumentNullException.ThrowIfNull(route);
+            AuthenticationContextKey = authenticationContextKey;
+            Route = route;
+        }
+
+        /// <inheritdoc />
+        public override string ToString() => "AuthenticationDirectoryLocation [not authenticated]";
+    }
 }

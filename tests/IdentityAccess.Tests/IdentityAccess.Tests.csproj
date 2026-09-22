@@ -19,6 +19,11 @@
     <ProjectReference Include="../../src/IdentityAccess.Application/IdentityAccess.Application.csproj" />
     <ProjectReference Include="../../src/IdentityAccess.Contracts/IdentityAccess.Contracts.csproj" />
     <ProjectReference Include="../../src/IdentityAccess.Api/IdentityAccess.Api.csproj" />
+    <ProjectReference Include="../../src/IdentityAccess.Infrastructure.Authentication/IdentityAccess.Infrastructure.Authentication.csproj" />
     <ProjectReference Include="../../src/IdentityAccess.Infrastructure.ConfigurationRouting/IdentityAccess.Infrastructure.ConfigurationRouting.csproj" />
+    <ProjectReference Include="../../src/IdentityAccess.Infrastructure.PostgreSql/IdentityAccess.Infrastructure.PostgreSql.csproj" />
+    <ProjectReference Include="../../src/IdentityAccess.Rbac/IdentityAccess.Rbac.csproj" />
+    <ProjectReference Include="../../src/IdentityAccess.Authorization/IdentityAccess.Authorization.csproj" />
+    <ProjectReference Include="../../src/IdentityAccess.Rbac.MultiplexedAdapter/IdentityAccess.Rbac.MultiplexedAdapter.csproj" />
   </ItemGroup>
 </Project>

@@ -1,16 +1,26 @@
 @baseUrl = http://127.0.0.1:5080
 
-### Expected: 200, process liveness only
 GET {{baseUrl}}/health/live
 Accept: application/json
 
-### Expected: 503 until storage and security are implemented
+###
 GET {{baseUrl}}/health/ready
 Accept: application/json
 
-### Expected: foundation metadata, all configured flags false
+###
 GET {{baseUrl}}/api/v1/system/info
 Accept: application/json
 
-### Expected: 404; account management is not exposed
-GET {{baseUrl}}/api/v1/users
+###
+GET {{baseUrl}}/swagger/v1/swagger.json
+Accept: application/json
+
+### Password login (requires Authentication.Enabled=true and a registered client)
+POST {{IdentityAccess_ApiHostAddress}}/api/v1/authentication/clients/web-client/password-login
+Content-Type: application/json
+
+{
+  "loginIdentifier": "user@example.test",
+  "password": "replace-with-a-test-password",
+  "redirectUri": "http://127.0.0.1:3000/auth/callback"
+}

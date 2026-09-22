@@ -49,6 +49,7 @@ function serviceInfo(value: unknown): ServiceInfoResponse {
     storageProvider: "postgresql",
     moduleVersion: text(data.moduleVersion),
     stage: text(data.stage),
+    databaseRoutingConfigured: flag(data.databaseRoutingConfigured),
     storageConfigured: flag(data.storageConfigured),
     authenticationConfigured: flag(data.authenticationConfigured),
     authorizationConfigured: flag(data.authorizationConfigured),

@@ -1,25 +1,21 @@
-namespace IdentityAccess.Application.Routing;
 
-public enum DatabaseRouteFailure
+
+namespace IdentityAccess.Application.Routing
 {
-    RouteNotFound = 1,
-    RouteDisabled,
-    DestinationDisabled,
-    AuthenticationContextNotFound,
-    AuthenticationContextDisabled,
-    ApplicationContextMismatch
-}
 
-/// <summary>Controlled placement failure, separate from an authorization denial.</summary>
-public sealed class DatabaseRouteException : Exception
-{
-    public DatabaseRouteFailure Code { get; }
-
-    public DatabaseRouteException(DatabaseRouteFailure code)
-        : base($"Database routing failed ({code}).")
+    /// <summary>Represents a failure raised by database route.</summary>
+    public sealed class DatabaseRouteException : Exception
     {
-        if (!Enum.IsDefined(code))
-            throw new ArgumentOutOfRangeException(nameof(code));
-        Code = code;
+        /// <summary>Gets the code.</summary>
+        public DatabaseRouteFailure Code { get; }
+
+        /// <summary>Initializes a new instance of <see cref="DatabaseRouteException"/>.</summary>
+        public DatabaseRouteException(DatabaseRouteFailure code)
+            : base($"Database routing failed ({code}).")
+        {
+            if (!Enum.IsDefined(code))
+                throw new ArgumentOutOfRangeException(nameof(code));
+            Code = code;
+        }
     }
 }

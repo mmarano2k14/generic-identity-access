@@ -1,17 +1,25 @@
-namespace IdentityAccess.Domain;
 
-/// <summary>Immutable domain state. Status changes require a future authorized application operation.</summary>
-public sealed class UserGroup
+
+namespace IdentityAccess.Domain
 {
-    public GroupReference Reference { get; }
-    public string DisplayName { get; }
-    public GroupStatus Status { get; }
 
-    public UserGroup(GroupReference reference, string displayName, GroupStatus status = GroupStatus.Active)
+    /// <summary>Immutable domain state. Status changes require a future authorized application operation.</summary>
+    public sealed class UserGroup
     {
-        ArgumentNullException.ThrowIfNull(reference);
-        Reference = reference;
-        DisplayName = ModelGuard.DisplayName(displayName, nameof(displayName));
-        Status = ModelGuard.DefinedEnum(status, nameof(status));
+        /// <summary>Gets the reference.</summary>
+        public GroupReference Reference { get; }
+        /// <summary>Gets the display name.</summary>
+        public string DisplayName { get; }
+        /// <summary>Gets the status.</summary>
+        public GroupStatus Status { get; }
+
+        /// <summary>Initializes a new instance of <see cref="UserGroup"/>.</summary>
+        public UserGroup(GroupReference reference, string displayName, GroupStatus status = GroupStatus.Active)
+        {
+            ArgumentNullException.ThrowIfNull(reference);
+            Reference = reference;
+            DisplayName = ModelGuard.DisplayName(displayName, nameof(displayName));
+            Status = ModelGuard.DefinedEnum(status, nameof(status));
+        }
     }
 }

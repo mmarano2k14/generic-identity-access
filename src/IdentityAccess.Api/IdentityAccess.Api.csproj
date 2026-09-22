@@ -1,7 +1,22 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
   <ItemGroup>
+    <PackageReference Include="Swashbuckle.AspNetCore" />
+  </ItemGroup>
+
+  <ItemGroup Label="Core">
     <ProjectReference Include="../IdentityAccess.Application/IdentityAccess.Application.csproj" />
     <ProjectReference Include="../IdentityAccess.Contracts/IdentityAccess.Contracts.csproj" />
+  </ItemGroup>
+
+  <ItemGroup Label="Authorization">
+    <ProjectReference Include="../IdentityAccess.Authorization/IdentityAccess.Authorization.csproj" ReferenceOutputAssembly="true" />
+    <ProjectReference Include="../IdentityAccess.Rbac/IdentityAccess.Rbac.csproj" ReferenceOutputAssembly="true" />
+    <ProjectReference Include="../IdentityAccess.Rbac.MultiplexedAdapter/IdentityAccess.Rbac.MultiplexedAdapter.csproj" ReferenceOutputAssembly="true" />
+  </ItemGroup>
+
+  <ItemGroup Label="Infrastructure">
+    <ProjectReference Include="../IdentityAccess.Infrastructure.Authentication/IdentityAccess.Infrastructure.Authentication.csproj" />
     <ProjectReference Include="../IdentityAccess.Infrastructure.ConfigurationRouting/IdentityAccess.Infrastructure.ConfigurationRouting.csproj" />
+    <ProjectReference Include="../IdentityAccess.Infrastructure.PostgreSql/IdentityAccess.Infrastructure.PostgreSql.csproj" />
   </ItemGroup>
 </Project>

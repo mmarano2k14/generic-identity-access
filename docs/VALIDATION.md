@@ -1,151 +1,225 @@
-# Delivery Validation
+# Validation
 
-**Server version: 0.2.0. Date: September 21, 2026.**
+## Standard .NET Verification
 
-## Previous Foundation
-
-The build and tests for foundation version 0.1.0 were reported as green in the consuming
-environment.
-
-No log, TRX file, or SDK version accompanied that feedback in this chat.
-
-It therefore represents external confirmation of the foundation, not execution evidence
-for the new routing provider.
-
-## Checks Actually Executed for This Increment
-
-| Check | Result | Scope |
-|---|---|---|
-| `npm test` | 26 tests passed, with no failures or skipped tests | Unchanged diagnostic client; TypeScript build included |
-| `npm run typecheck` | Passed | Strict TypeScript typing |
-| Local Node HTTP test | Passed within the 26-test suite | HTTP fixture server, not the .NET API |
-| XML / JSON formats | Passed | Projects, props, configuration files, and routing example |
-| Project graph and solution | Passed | Existing references, no cycles, routing provider included |
-| Public contracts and client source | Unchanged | Exact comparison with the foundation archive |
-| NuGet dependencies | Unchanged | Exact comparison of `Directory.Packages.props` |
-| C# delimiters | Lexical check passed | Strings/comments excluded; this does not compile C# |
-| Bash script | Syntax valid | `bash -n`; no .NET execution |
-
-TypeScript execution environment:
-
-```text
-Node.js 22.16.0
-npm 10.9.2
-TypeScript 5.8.3
-```
-
-The compiler already present in the environment was used.
-
-No npm restore or newly generated lockfile is presented as executed.
-
-## Not Executed and Not Claimed
-
-The .NET SDK is not installed in the generation environment.
-
-An attempt to retrieve it did not succeed because DNS resolution from the container to
-the installation endpoint failed.
-
-No .NET restore, C# build, C# test run, API startup, or client smoke test against the
-.NET server was executed here.
-
-Source review and lexical validation do not replace those checks.
-
-The file:
-
-```text
-docs/validation/routing-source-checks.json
-```
-
-records the structural checks.
-
-The files:
-
-```text
-typescript-tests-routing.txt
-typescript-typecheck-routing.txt
-```
-
-contain outputs from commands actually executed for this increment.
-
-The pre-existing files:
-
-```text
-source-checks.json
-typescript-tests.txt
-typescript-typecheck.txt
-```
-
-are historical evidence from version 0.1.0.
-
-They are not replaced by any claimed new .NET result.
-
-## .NET Test Inventory Without Execution Result
-
-The test suite contains:
-
-- **65 `Fact` methods**
-- **18 `Theory` methods**
-- **77 `InlineData` datasets**
-- **142 statically declared test cases in total**
-
-Of those, **87 cases were added** for the routing provider.
-
-The foundation previously declared 55 cases.
-
-None of these numbers represents xUnit discovery output or a number of passed tests.
-
-| Added test set | Behavior to verify under .NET |
-|---|---|
-| `RoutingContractTests` | Required inputs, positive versions, separation from public contracts, masked secret references |
-| `RoutingConfigurationTests` | Strict JSON, duplicate properties, lists, limits, references, scopes, UTF-8 files, and masked errors |
-| `DatabaseRouteResolverTests` | One application using multiple destinations, distinct scopes sharing a database, no fallback, concurrency, and immutable snapshots |
-| `AuthenticationDirectoryLocatorTests` | Registered context, expected application, administrative states, and cancellation |
-| `RoutingApiTests` | Server-side registration, invalid-configuration rejection, honest readiness, and absence of HTTP leakage |
-
-These tests exercise in-memory route selection and configuration-file loading.
-
-Even if all of them pass, they do not prove:
-
-- SQL isolation;
-- correct pool sizing;
-- PostgreSQL connectivity;
-- production revocation behavior;
-- authentication-protocol correctness.
-
-## Reproduction
-
-From the solution root:
+Run the complete .NET verification from the repository root:
 
 ```powershell
 .\scripts\verify.ps1
 ```
 
-The script performs restore, Release build, and test execution, checks exit codes, and
-writes the TRX result.
+The script performs restore, Release build, and .NET tests with exit-code checking.
 
-Preserve the complete output if a failure occurs.
+Equivalent commands:
 
-Manual activation of the file-based provider is described in:
-
-```text
-ROUTING_CONFIGURATION.md
+```powershell
+dotnet restore IdentityAccess.sln
+dotnet build IdentityAccess.sln -c Release --no-restore
+dotnet test IdentityAccess.sln -c Release --no-build --no-restore
 ```
 
-## Gates Still Open
+## TypeScript Client
 
-The new .NET build and test suite still require a real execution.
+```powershell
+cd clients\typescript
+npm install
+npm test
+npm run typecheck
+```
 
-Multi-database PostgreSQL is not connected yet.
+The TypeScript build output under `clients/typescript/dist` is generated content and is not
+part of the source manifest.
 
-The following areas remain absent:
+## External RBAC Compatibility
 
-- authentication;
-- OIDC;
-- MFA;
-- persistent identity directory;
-- integration with the existing RBAC engine.
+Build the supported external RBAC distribution first, then run:
 
-The delivered bootstrap component is an internal directory locator, not OIDC client
-validation or HTTP identity validation.
+```powershell
+.\scripts\verify-multiplexed-rbac.ps1 `
+  -ReferenceDirectory "<path-to-external-rbac-release-directory>"
+```
 
-No production-readiness or production-security guarantee is claimed.
+This suite validates exact and wildcard decisions against the external engine instead of
+duplicating wildcard logic locally.
+
+## PostgreSQL Verification
+
+Set the PostgreSQL administrator password only for the current shell when required:
+
+```powershell
+$env:PGPASSWORD = "<postgres-password>"
+```
+
+Recommended sequence:
+
+```powershell
+.\scripts\postgresql\apply-default-schema.ps1
+.\scripts\postgresql\verify-migration-integrity.ps1
+.\scripts\postgresql\verify-default-database.ps1
+.\scripts\postgresql\verify-directory-persistence.ps1
+.\scripts\postgresql\verify-permission-persistence.ps1
+.\scripts\postgresql\verify-assigned-capability-projection.ps1
+.\scripts\postgresql\verify-rbac-capability-alignment.ps1
+.\scripts\postgresql\verify-wildcard-policy-patterns.ps1
+.\scripts\postgresql\verify-authentication-foundation.ps1
+.\scripts\postgresql\verify-resource-scope-hierarchy.ps1
+.\scripts\postgresql\verify-atomic-mutations.ps1
+.\scripts\postgresql\verify-security-audit.ps1
+```
+
+`verify-migration-integrity.ps1` should run immediately after schema application so later
+live tests execute against a migration set whose names and SHA-256 checksums have already
+been validated.
+
+`verify-atomic-mutations.ps1` uses rollback-scoped fixtures and must not leave test rows in
+the database.
+
+`verify-security-audit.ps1` verifies the durable audit schema and rejects obvious
+credential-, token-, connection-, or secret-bearing audit columns.
+
+Remove the temporary password environment variable after validation:
+
+```powershell
+Remove-Item Env:PGPASSWORD -ErrorAction SilentlyContinue
+```
+
+## Validation Rules
+
+- A test is reported as passed only after execution.
+- Static source inspection is not a substitute for a .NET build.
+- In-memory routing tests are not a substitute for live PostgreSQL verification.
+- Compatibility tests against local emulation are not a substitute for the external RBAC suite.
+- A successful login alone does not demonstrate tenant isolation or authorization correctness.
+- A route resolution result does not demonstrate authorization.
+- Migration integrity validation is required before relying on live PostgreSQL behavior.
+- Test failures must not be converted into skipped or ignored production gates without documented justification.
+
+
+## Identity-Scope Administration Authority
+
+After migration application:
+
+```powershell
+$env:PGPASSWORD = "<postgres-password>"
+.\scripts\postgresql\verify-identity-scope-authority.ps1
+Remove-Item Env:PGPASSWORD
+```
+
+The validation transaction verifies active scope-administration grant projection and
+fail-closed behavior when an authority group is disabled.
+
+
+## Authorization Source Consistency
+
+Before compiling the administration authorization boundary after an overlay or repository
+migration:
+
+```powershell
+.\scripts\verify-authorization-source-consistency.ps1
+```
+
+This gate verifies that the API authorization helpers, project references, failure-code
+surface, public authorization constructors, identity-scope authority contracts, and current
+route test fixture are present as one coherent source set.
+
+
+## Identity-Scope Authority Administration
+
+```powershell
+$env:PGPASSWORD = "<postgres-password>"
+.\scripts\postgresql\verify-identity-scope-authority-administration.ps1
+Remove-Item Env:PGPASSWORD
+```
+
+This transaction verifies atomic active-user/group membership creation and active
+group/policy binding creation.
+
+
+## Transactional Security Mutation Ledger
+
+After migration application:
+
+```powershell
+$env:PGPASSWORD = "<postgres-password>"
+.\scripts\postgresql\verify-transactional-security-audit.ps1
+Remove-Item Env:PGPASSWORD
+```
+
+The fixture validates transaction co-commit, actor/correlation propagation, secret-safe
+record keys, and append-only ledger behavior.
+
+
+## External RBAC Compatibility Preflight
+
+The external RBAC compatibility suite now performs a contract preflight before wildcard
+tests.
+
+The preflight validates:
+
+```text
+required binary presence
+assembly identity
+assembly SHA-256 fingerprints
+required external types
+required constructors
+required writable properties
+required methods and return types
+```
+
+A contract mismatch is a technical failure and must not be interpreted as authorization
+denial.
+
+The adapter binding is process-pinned after the first preflight; changing external binaries
+requires a process restart.
+
+
+## OIDC Source Consistency
+
+The standard repository verification invokes:
+
+```powershell
+.\scripts\verify-oidc-source-consistency.ps1
+```
+
+This gate protects the OIDC contract, PKCE S256-only policy, authorization-code and rotating
+refresh-token storage, active signing-key selection, multi-key JWKS publication, legacy
+single-key compatibility, discovery/token controllers, family replay revocation, local-session
+linkage, and migration-0012/0013 transactional-audit triggers from partial overlays.
+
+
+### OIDC Signing-Key Rotation
+
+The .NET test suite validates that:
+
+```text
+new JWTs are signed only by the configured active private key
+JWT kid equals ActiveSigningKeyId
+JWKS exposes the active key and retained validation keys
+retained keys may be public-only
+duplicate kid values fail closed
+missing active-key membership fails closed
+public-only active keys fail closed
+legacy single-key configuration remains supported
+legacy and multi-key configuration cannot be mixed
+```
+
+Signing-key rotation is process-pinned. A configuration or PEM change requires a process
+restart; static source validation is not evidence that a production key rollover has been
+operationally completed.
+
+## OIDC Authorization Code + PKCE and Refresh-Token Rotation
+
+After migrations through 0013 are applied:
+
+```powershell
+$env:PGPASSWORD = "<postgres-password>"
+
+.\scripts\postgresql\verify-oidc-authorization-code.ps1
+.\scripts\postgresql\verify-oidc-refresh-token.ps1
+
+Remove-Item Env:PGPASSWORD
+```
+
+The live fixtures validate one-time code consumption, current-session enforcement,
+revoked-session rejection, refresh-token rotation, absolute family lifetime preservation,
+consumed-token replay family revocation, and secret-safe transactional-ledger capture.

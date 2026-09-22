@@ -1,6 +1,6 @@
 # Identity & Access TypeScript client
 
-Version 0.1.0 is an initial diagnostic client, not an authentication or authorization SDK.
+Version 0.2.0 is a diagnostics-only client, not an authentication or authorization SDK.
 No PostgreSQL, Redis or .NET engine internals are exposed. The package name is local and
 unpublished; install from the generated local archive, not from an assumed registry entry.
 
@@ -22,7 +22,7 @@ const api = createIdentityAccessClient({
 
 const info = await api.info();
 const live = await api.liveness();
-const readiness = await api.readiness(); // Expected ready: false / HTTP 503 in this increment.
+const readiness = await api.readiness(); // Readiness reflects the server's configured dependencies and may return HTTP 503 when required capabilities are unavailable.
 ```
 
 `info`, `liveness` and `readiness` accept an optional AbortSignal. Each operation owns its

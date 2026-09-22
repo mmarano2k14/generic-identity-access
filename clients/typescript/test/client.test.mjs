@@ -4,11 +4,20 @@ import { createServer } from "node:http";
 import { createIdentityAccessClient, IdentityAccessClientError } from "../dist/index.js";
 
 const info = {
-  service: "identity-access", apiVersion: "v1", moduleVersion: "0.1.0", stage: "foundation",
-  storageProvider: "postgresql", storageConfigured: false,
+  service: "identity-access", apiVersion: "v1", moduleVersion: "0.29.0", stage: "configuration",
+  storageProvider: "postgresql", databaseRoutingConfigured: false, storageConfigured: false,
   authenticationConfigured: false, authorizationConfigured: false,
 };
-const notReady = { ready: false, stage: "foundation", blockingCapabilities: ["postgresql-persistence", "authentication"] };
+const notReady = {
+  ready: false,
+  stage: "configuration",
+  blockingCapabilities: [
+    "database-routing",
+    "postgresql-persistence",
+    "authentication",
+    "administration-authorization",
+  ],
+};
 const json = (body, status = 200) => new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json" } });
 const client = (transport, options = {}) => createIdentityAccessClient({ baseUrl: "https://identity.example.test/", fetch: transport, ...options });
 const code = (expected) => (error) => error instanceof IdentityAccessClientError && error.code === expected;
@@ -70,8 +79,16 @@ test("malformed JSON is a protocol error", async () => {
 });
 
 test("missing descriptor flags are rejected", async () => {
-  const { authenticationConfigured: _, ...missing } = info;
-  await assert.rejects(client(async () => json(missing)).info(), code("protocol"));
+  for (const field of [
+    "databaseRoutingConfigured",
+    "storageConfigured",
+    "authenticationConfigured",
+    "authorizationConfigured",
+  ]) {
+    const missing = { ...info };
+    delete missing[field];
+    await assert.rejects(client(async () => json(missing)).info(), code("protocol"));
+  }
 });
 
 test("incompatible API versions are rejected", async () => {

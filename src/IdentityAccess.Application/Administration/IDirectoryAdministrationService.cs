@@ -1,0 +1,67 @@
+using IdentityAccess.Application.Storage;
+using IdentityAccess.Domain;
+
+namespace IdentityAccess.Application.Administration
+{
+
+    /// <summary>Defines the contract for directory administration service.</summary>
+    public interface IDirectoryAdministrationService
+    {
+        /// <summary>Gets the requested user.</summary>
+        Task<VersionedRecord<User>?> GetUserAsync(Guid identityScopeId, ApplicationKey application,
+            Guid userId, CancellationToken cancellationToken);
+        /// <summary>Creates a user.</summary>
+        Task<VersionedRecord<User>> CreateUserAsync(Guid identityScopeId, ApplicationKey application,
+            Guid userId, string displayName, UserStatus status, CancellationToken cancellationToken);
+        /// <summary>Updates a user using optimistic concurrency.</summary>
+        Task<VersionedRecord<User>> UpdateUserAsync(Guid identityScopeId, ApplicationKey application,
+            Guid userId, string displayName, UserStatus status, long expectedVersion, CancellationToken cancellationToken);
+
+        /// <summary>Gets the requested tenant.</summary>
+        Task<VersionedRecord<Tenant>?> GetTenantAsync(Guid identityScopeId, ApplicationKey application,
+            Guid tenantId, CancellationToken cancellationToken);
+        /// <summary>Creates a tenant.</summary>
+        Task<VersionedRecord<Tenant>> CreateTenantAsync(Guid identityScopeId, ApplicationKey application,
+            Guid tenantId, string displayName, TenantStatus status, CancellationToken cancellationToken);
+        /// <summary>Updates a tenant using optimistic concurrency.</summary>
+        Task<VersionedRecord<Tenant>> UpdateTenantAsync(Guid identityScopeId, ApplicationKey application,
+            Guid tenantId, string displayName, TenantStatus status, long expectedVersion, CancellationToken cancellationToken);
+
+        /// <summary>Gets the requested tenant membership.</summary>
+        Task<VersionedRecord<TenantMembership>?> GetTenantMembershipAsync(Guid identityScopeId,
+            ApplicationKey application, Guid tenantId, Guid membershipId, CancellationToken cancellationToken);
+        /// <summary>Finds a tenant membership for the requested user.</summary>
+        Task<VersionedRecord<TenantMembership>?> FindTenantMembershipByUserAsync(Guid identityScopeId,
+            ApplicationKey application, Guid tenantId, Guid userId, CancellationToken cancellationToken);
+        /// <summary>Creates a tenant membership.</summary>
+        Task<VersionedRecord<TenantMembership>> CreateTenantMembershipAsync(Guid identityScopeId,
+            ApplicationKey application, Guid tenantId, Guid membershipId, Guid userId, MembershipStatus status,
+            CancellationToken cancellationToken);
+        /// <summary>Updates a tenant membership using optimistic concurrency.</summary>
+        Task<VersionedRecord<TenantMembership>?> UpdateTenantMembershipAsync(Guid identityScopeId,
+            ApplicationKey application, Guid tenantId, Guid membershipId, MembershipStatus status, long expectedVersion,
+            CancellationToken cancellationToken);
+
+        /// <summary>Gets the requested user group.</summary>
+        Task<VersionedRecord<UserGroup>?> GetGroupAsync(Guid identityScopeId, Guid tenantId,
+            ApplicationKey application, Guid groupId, CancellationToken cancellationToken);
+        /// <summary>Creates a user group.</summary>
+        Task<VersionedRecord<UserGroup>> CreateGroupAsync(Guid identityScopeId, Guid tenantId,
+            ApplicationKey application, Guid groupId, string displayName, GroupStatus status,
+            CancellationToken cancellationToken);
+        /// <summary>Updates a user group using optimistic concurrency.</summary>
+        Task<VersionedRecord<UserGroup>> UpdateGroupAsync(Guid identityScopeId, Guid tenantId,
+            ApplicationKey application, Guid groupId, string displayName, GroupStatus status, long expectedVersion,
+            CancellationToken cancellationToken);
+
+        /// <summary>Lists members of the requested user group.</summary>
+        Task<IReadOnlyList<GroupMembership>> ListGroupMembersAsync(Guid identityScopeId, Guid tenantId,
+            ApplicationKey application, Guid groupId, CancellationToken cancellationToken);
+        /// <summary>Adds a tenant member to the requested user group.</summary>
+        Task<GroupMembership?> AddGroupMemberAsync(Guid identityScopeId, Guid tenantId, ApplicationKey application,
+            Guid groupId, Guid tenantMembershipId, CancellationToken cancellationToken);
+        /// <summary>Removes a tenant member from the requested user group.</summary>
+        Task<bool> RemoveGroupMemberAsync(Guid identityScopeId, Guid tenantId, ApplicationKey application,
+            Guid groupId, Guid tenantMembershipId, CancellationToken cancellationToken);
+    }
+}

@@ -1,18 +1,26 @@
-namespace IdentityAccess.Domain;
-
-/// <summary>An application identifier, not proof of trust or authorization.</summary>
-public sealed record ApplicationKey
+namespace IdentityAccess.Domain
 {
-    public string Value { get; }
-
-    public ApplicationKey(string value)
+    /// <summary>An application identifier, not proof of trust or authorization.</summary>
+    public sealed record ApplicationKey
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(value);
-        if (value.Length > 64 || value[0] is < 'a' or > 'z' ||
-            value.Any(c => !(c is >= 'a' and <= 'z' or >= '0' and <= '9' or '-')))
-            throw new ArgumentException("Application keys use 1 to 64 lowercase letters, digits or hyphens, starting with a letter.", nameof(value));
-        Value = value;
-    }
+        private const string InvalidKeyMessage =
+            "Application keys use 1 to 64 lowercase letters, digits or hyphens, starting with a letter.";
 
-    public override string ToString() => Value;
+        /// <summary>Gets the canonical application key.</summary>
+        public string Value { get; }
+
+        /// <summary>Initializes a new instance of <see cref="ApplicationKey"/>.</summary>
+        public ApplicationKey(string value)
+        {
+            Value = KeySyntax.RequireCanonicalLowercaseSlug(
+                value,
+                nameof(value),
+                maximumLength: 64,
+                allowUnderscore: false,
+                InvalidKeyMessage);
+        }
+
+        /// <inheritdoc />
+        public override string ToString() => Value;
+    }
 }
