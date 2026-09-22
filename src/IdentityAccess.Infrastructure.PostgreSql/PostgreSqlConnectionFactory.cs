@@ -63,14 +63,28 @@ namespace IdentityAccess.Infrastructure.PostgreSql
                     PostgreSqlStorageFailure.InvalidConfiguration);
             }
 
+            var registration = await GetOrCreateRegistrationAsync(
+                route,
+                cancellationToken).ConfigureAwait(false);
+
+            return await OpenExistingAsync(
+                registration,
+                route,
+                cancellationToken).ConfigureAwait(false);
+        }
+
+
+        private async ValueTask<DataSourceRegistration> GetOrCreateRegistrationAsync(
+            ResolvedDatabaseRoute route,
+            CancellationToken cancellationToken)
+        {
             if (dataSources.TryGetValue(
                     route.DestinationKey,
                     out var existing))
             {
-                return await OpenExistingAsync(
-                    existing.Value,
-                    route,
-                    cancellationToken).ConfigureAwait(false);
+                return MaterializeRegistration(
+                    route.DestinationKey,
+                    existing);
             }
 
             var connectionString = await secretResolver
@@ -90,10 +104,35 @@ namespace IdentityAccess.Infrastructure.PostgreSql
                 route.DestinationKey,
                 candidate);
 
-            return await OpenExistingAsync(
-                selected.Value,
-                route,
-                cancellationToken).ConfigureAwait(false);
+            return MaterializeRegistration(
+                route.DestinationKey,
+                selected);
+        }
+
+        private DataSourceRegistration MaterializeRegistration(
+            string destinationKey,
+            Lazy<DataSourceRegistration> registration)
+        {
+            try
+            {
+                return registration.Value;
+            }
+            catch
+            {
+                if (dataSources.TryGetValue(
+                        destinationKey,
+                        out var current) &&
+                    ReferenceEquals(
+                        current,
+                        registration))
+                {
+                    dataSources.TryRemove(
+                        destinationKey,
+                        out _);
+                }
+
+                throw;
+            }
         }
 
         private async ValueTask<DbConnection> OpenExistingAsync(
@@ -179,11 +218,10 @@ namespace IdentityAccess.Infrastructure.PostgreSql
                     route.ConnectionSecretReference.Value,
                     dataSource);
             }
-            catch (ArgumentException error)
+            catch (ArgumentException)
             {
                 throw new PostgreSqlStorageException(
-                    PostgreSqlStorageFailure.InvalidConnectionString,
-                    error);
+                    PostgreSqlStorageFailure.InvalidConnectionString);
             }
         }
 

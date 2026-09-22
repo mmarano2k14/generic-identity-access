@@ -217,6 +217,7 @@ See [`docs/LOCAL_AUTHENTICATION_FOUNDATION.md`](docs/LOCAL_AUTHENTICATION_FOUNDA
 - [`docs/SOURCE_LAYOUT.md`](docs/SOURCE_LAYOUT.md) — C# source conventions.
 - [`docs/VALIDATION.md`](docs/VALIDATION.md) — validation procedures.
 - [`docs/DEPENDENCIES.md`](docs/DEPENDENCIES.md) — toolchain and package versions.
+- [`docs/PRODUCTION_QUALIFICATION.md`](docs/PRODUCTION_QUALIFICATION.md) — release-candidate gates, backup/restore validation, and operational hardening.
 
 ## Status
 
@@ -336,3 +337,17 @@ The authorization endpoint consumes an already validated local session; browser/
 remains a separate host concern.
 
 See `docs/OIDC_AUTHORIZATION_CODE_PKCE.md`.
+
+## Production Qualification
+
+Release-candidate qualification is consolidated in:
+
+```powershell
+.\scripts\verify-production-qualification.ps1 `
+  -RbacReferenceDirectory "<multiplexed-rbac-release-directory>"
+```
+
+The full gate includes repository build/tests, external RBAC compatibility, PostgreSQL security and
+concurrency validation, OIDC live database fixtures, and a disposable backup/restore cycle. Run it
+against a dedicated qualification database. See `docs/PRODUCTION_QUALIFICATION.md`.
+

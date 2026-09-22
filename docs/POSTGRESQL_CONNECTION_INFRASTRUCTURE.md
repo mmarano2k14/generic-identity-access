@@ -107,3 +107,18 @@ The next storage increment must add an explicit schema and migration ownership m
 then validate isolation against at least two real PostgreSQL databases. Persistent directory
 operations must preserve the existing identity-scope boundary and route snapshot for each
 operation.
+
+## Data-Source Initialization Hardening
+
+Version 0.41.0 removes a failed lazy data-source registration when connection-string
+construction is rejected. The failed destination therefore does not remain poisoned until
+process restart; a later operation can resolve the trusted secret again and retry.
+
+`InvalidConnectionString` deliberately carries no parser inner exception. Connection-string
+material is a secret, and parser diagnostics are not part of the public/storage failure contract.
+Successful data-source registrations remain process-pinned and continue to reject a changed
+secret reference with `DestinationDefinitionChanged`.
+
+Backup/restore qualification for this storage layer is documented in
+`docs/PRODUCTION_QUALIFICATION.md` and implemented by
+`scripts/postgresql/verify-backup-restore.ps1`.

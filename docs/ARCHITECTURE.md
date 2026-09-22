@@ -228,3 +228,19 @@ the existing RBAC pipeline remains the only capability decision authority.
 Local `IdentitySession` authentication remains supported. Bearer and local-session credentials are
 never merged in one request. Invalid credentials map to unauthenticated, route/application or RBAC
 denial remains forbidden, and technical validation failures remain service-unavailable.
+
+## Production Qualification Boundary
+
+Production qualification is an executable release gate, not a new runtime authority. It composes
+existing source/build tests, external RBAC compatibility, PostgreSQL security invariants, OIDC
+persistence tests, and disposable backup/restore validation.
+
+The PostgreSQL connection factory retains successful process-pinned destination registrations. A
+failed data-source construction is removed from the registration dictionary before the failure is
+returned, allowing a later trusted-secret resolution to retry without restarting the process.
+`InvalidConnectionString` exposes only its stable typed failure and does not retain the parser
+exception that processed the raw connection-string secret.
+
+Backup/restore validation always restores into a generated scratch database. It does not redirect
+application traffic, mutate routing configuration, or treat a backup file alone as proof of
+recoverability.

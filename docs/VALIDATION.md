@@ -245,3 +245,40 @@ Remove-Item Env:PGPASSWORD
 The live fixtures validate one-time code consumption, current-session enforcement,
 revoked-session rejection, refresh-token rotation, absolute family lifetime preservation,
 consumed-token replay family revocation, and secret-safe transactional-ledger capture.
+
+## Production Qualification
+
+Version 0.41.0 adds a consolidated release-candidate gate:
+
+```powershell
+$env:PGPASSWORD = "<postgres-password>"
+
+.\scripts\verify-production-qualification.ps1 `
+  -RbacReferenceDirectory "D:\Dev\Personal\multiplexed-rbac\implementations\dotnet\src\Multiplexed.Rbac.Core\bin\Release\net10.0"
+
+Remove-Item Env:PGPASSWORD
+```
+
+Run it against a dedicated qualification database, not a live production database. The gate runs
+repository verification, external RBAC compatibility, all current PostgreSQL validation scripts,
+and a disposable `pg_dump` / `pg_restore` cycle by default.
+
+For fast local iteration only:
+
+```powershell
+.\scripts\verify-production-qualification.ps1 `
+  -RbacReferenceDirectory "<path>" `
+  -SkipBackupRestore
+```
+
+Using `-SkipBackupRestore` is explicitly partial qualification and must not be reported as restore
+validation.
+
+Backup/restore can also be run independently:
+
+```powershell
+.\scripts\postgresql\verify-backup-restore.ps1
+```
+
+See `docs/PRODUCTION_QUALIFICATION.md` for prerequisites, cleanup behavior, restart/secret
+operations, and the distinction between repository qualification and deployment-specific evidence.

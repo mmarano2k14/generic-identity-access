@@ -1,3 +1,16 @@
+# 0.41.0 - Production qualification and operational hardening
+
+- Added a consolidated production-qualification runner covering repository verification, external RBAC compatibility, PostgreSQL persistence/security gates, OIDC live database gates, and disposable backup/restore qualification.
+- Added executable PostgreSQL backup/restore qualification using a randomly named scratch database, migration-checksum revalidation, restored-schema structural checks, and guaranteed cleanup unless explicit retention is requested.
+- Added restored-database checks for required security tables, valid migration checksums, validated constraints, valid indexes, and absence of forbidden raw-secret columns.
+- Hardened PostgreSQL data-source initialization so a failed lazy registration is removed instead of poisoning a destination until process restart.
+- Removed connection-string parser exceptions from the public `InvalidConnectionString` failure path so raw secret values cannot leak through inner-exception serialization or broad exception logging.
+- Added regression coverage proving invalid connection-string initialization can be retried, leaves no registered destination behind, and does not disclose the secret value.
+- Added architecture coverage that pins the production-qualification and backup/restore gate composition.
+- Added production runbook guidance for qualification databases, restart-controlled PostgreSQL secret rotation, OIDC signing-key rollover, restore evidence, and deployment-specific evidence that remains outside repository qualification.
+- Changed no PostgreSQL schema or migration sequence; migration `0013` remains the latest migration.
+- Kept MFA, TOTP, passkeys/WebAuthn, recovery codes, and step-up authentication outside this release as optional later work.
+
 # 0.40.1 - Bearer administration test fixture layout correction
 
 - Extracted Bearer administration validator test doubles into one top-level type per source file so architecture source-layout validation can enforce filename/type parity.

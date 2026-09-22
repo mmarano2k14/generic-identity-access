@@ -1,7 +1,7 @@
-Target version: 0.40.1
-Baseline: 0.40.0
+Target version: 0.41.0
+Baseline: 0.40.1
 Files to delete: none
-Runtime changes: none; test source-layout correction only
+Runtime changes: PostgreSQL data-source initialization hardening plus production qualification and backup/restore validation tooling
 Schema changes: none
 Migration changes: none
 Latest migration: 0013_oidc_refresh_token_rotation.sql
@@ -9,11 +9,16 @@ Latest migration: 0013_oidc_refresh_token_rotation.sql
 Files included:
 CHANGELOG.md
 Directory.Build.props
+README.md
 SOURCE_MANIFEST.sha256
-tests/IdentityAccess.Tests/Api/BearerAdministrationRequestContextResolverTests.cs
-tests/IdentityAccess.Tests/Api/FixedSessionValidator.cs
-tests/IdentityAccess.Tests/Api/FixedValidator.cs
-tests/IdentityAccess.Tests/Api/ThrowingValidator.cs
-tests/IdentityAccess.Tests/Authentication/FixedDirectoryLocator.cs
-tests/IdentityAccess.Tests/Authentication/FixedSessionStore.cs
-tests/IdentityAccess.Tests/Authentication/OidcAccessTokenSessionValidatorTests.cs
+docs/ARCHITECTURE.md
+docs/POSTGRESQL_CONNECTION_INFRASTRUCTURE.md
+docs/PRODUCTION_QUALIFICATION.md
+docs/VALIDATION.md
+scripts/postgresql/validate-restored-database.sql
+scripts/postgresql/verify-backup-restore.ps1
+scripts/verify-production-qualification.ps1
+src/IdentityAccess.Infrastructure.PostgreSql/PostgreSqlConnectionFactory.cs
+tests/IdentityAccess.Tests/Architecture/ProductionQualificationContractTests.cs
+tests/IdentityAccess.Tests/PostgreSql/CountingConnectionSecretResolver.cs
+tests/IdentityAccess.Tests/PostgreSql/PostgreSqlConnectionFactoryHardeningTests.cs
