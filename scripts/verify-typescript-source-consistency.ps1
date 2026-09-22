@@ -31,4 +31,18 @@ if ($index -match 'createIdentityAccessClient') { throw "Legacy createIdentityAc
 $allSource = (Get-ChildItem $src -Filter *.ts -Recurse | ForEach-Object { Get-Content $_.FullName -Raw }) -join "`n"
 if ($allSource -match 'export\s+function\s+createIdentityAccessClient\b') { throw "Legacy functional client factory must not return." }
 if ($context -notmatch '\bisAllowed\s*\(') { throw "IdentityAuthorizationContext.isAllowed is required." }
+$requiredClientMethods = @(
+    "passwordLogin",
+    "validateSession",
+    "logout",
+    "authorizeOidc",
+    "exchangeAuthorizationCode",
+    "refreshOidcTokens"
+)
+foreach ($method in $requiredClientMethods) {
+    if ($client -notmatch ("\b" + [regex]::Escape($method) + "\s*\(")) {
+        throw "IdentityAccessClient.$method is required."
+    }
+}
+if ($client -match 'client_secret') { throw "The TypeScript public-client implementation must not introduce client_secret." }
 Write-Host "TypeScript source consistency validation passed."

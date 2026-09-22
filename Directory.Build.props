@@ -6,6 +6,6 @@
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <Deterministic>true</Deterministic>
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
-    <Version>0.42.2</Version>
+    <Version>0.42.3</Version>
   </PropertyGroup>
 </Project>

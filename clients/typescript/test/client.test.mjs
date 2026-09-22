@@ -285,3 +285,248 @@ test("native fetch interoperates with a local HTTP fixture, not a .NET server", 
     await new Promise((resolve, reject) => server.close((error) => error ? reject(error) : resolve()));
   }
 });
+
+const oidcCode = "A".repeat(43);
+const refreshTokenOne = "B".repeat(43);
+const refreshTokenTwo = "C".repeat(43);
+const accessTokenOne = "header.payload.signature";
+const idTokenOne = "idheader.idpayload.idsignature";
+const loginSessionId = "42333333-3333-3333-3333-333333333333";
+const loginUserId = "42444444-4444-4444-4444-444444444444";
+const loginExpiresAt = "2026-09-23T12:00:00+00:00";
+const loginRedirectUri = "https://app.example.test/callback";
+
+const loginSession = {
+  kind: "session",
+  clientId: "admin-web",
+  sessionId: loginSessionId,
+  sessionToken: "local-session-token",
+};
+
+test("password login returns a class-client session credential without placing the password in the URL", async () => {
+  const api = client(async (url, init) => {
+    assert.equal(url, "https://identity.example.test/api/v1/authentication/clients/admin-web/password-login");
+    assert.equal(url.includes("correct horse"), false);
+    assert.equal(init.method, "POST");
+    assert.equal(init.headers["Content-Type"], "application/json");
+    assert.deepEqual(JSON.parse(init.body), {
+      loginIdentifier: "marco@example.test",
+      password: "correct horse battery staple",
+      redirectUri: loginRedirectUri,
+    });
+    return json({
+      userId: loginUserId,
+      sessionId: loginSessionId,
+      sessionToken: "local-session-token",
+      expiresAt: loginExpiresAt,
+      redirectUri: loginRedirectUri,
+    });
+  });
+
+  assert.deepEqual(await api.passwordLogin({
+    clientId: "admin-web",
+    loginIdentifier: "marco@example.test",
+    password: "correct horse battery staple",
+    redirectUri: loginRedirectUri,
+  }), {
+    kind: "session",
+    clientId: "admin-web",
+    userId: loginUserId,
+    sessionId: loginSessionId,
+    sessionToken: "local-session-token",
+    expiresAt: loginExpiresAt,
+    redirectUri: loginRedirectUri,
+  });
+});
+
+test("session validation and logout use the registered client path and opaque session payload", async () => {
+  let calls = 0;
+  const api = client(async (url, init) => {
+    calls++;
+    if (url.endsWith("/sessions/validate")) {
+      assert.deepEqual(JSON.parse(init.body), {
+        sessionId: loginSessionId,
+        sessionToken: "local-session-token",
+      });
+      return json({ userId: loginUserId, sessionId: loginSessionId, expiresAt: loginExpiresAt });
+    }
+    assert.ok(url.endsWith("/logout"));
+    assert.deepEqual(JSON.parse(init.body), {
+      sessionId: loginSessionId,
+      sessionToken: "local-session-token",
+      postLogoutRedirectUri: "https://app.example.test/signed-out",
+    });
+    return json({ postLogoutRedirectUri: "https://app.example.test/signed-out" });
+  });
+
+  assert.deepEqual(await api.validateSession(loginSession), {
+    userId: loginUserId,
+    sessionId: loginSessionId,
+    expiresAt: loginExpiresAt,
+  });
+  assert.deepEqual(await api.logout(loginSession, "https://app.example.test/signed-out"), {
+    postLogoutRedirectUri: "https://app.example.test/signed-out",
+  });
+  assert.equal(calls, 2);
+});
+
+test("OIDC authorization generates S256 PKCE and never follows the authorization redirect", async () => {
+  const fixedState = "state-423-fixed-value";
+  const fixedNonce = "nonce-423-fixed-value";
+  let observedChallenge;
+
+  const api = client(async (url, init) => {
+    const request = new URL(url);
+    assert.equal(request.pathname, "/connect/authorize");
+    assert.equal(request.searchParams.get("client_id"), "admin-web");
+    assert.equal(request.searchParams.get("redirect_uri"), loginRedirectUri);
+    assert.equal(request.searchParams.get("response_type"), "code");
+    assert.equal(request.searchParams.get("scope"), "openid");
+    assert.equal(request.searchParams.get("state"), fixedState);
+    assert.equal(request.searchParams.get("nonce"), fixedNonce);
+    assert.equal(request.searchParams.get("code_challenge_method"), "S256");
+    observedChallenge = request.searchParams.get("code_challenge");
+    assert.match(observedChallenge, /^[A-Za-z0-9_-]{43}$/);
+    assert.equal(init.redirect, "manual");
+    assert.equal(init.headers.Authorization, "IdentitySession local-session-token");
+    assert.equal(init.headers["X-Identity-Access-Session"], loginSessionId);
+    assert.equal("X-Identity-Access-Client" in init.headers, false);
+    return new Response(null, {
+      status: 302,
+      headers: { location: `${loginRedirectUri}?code=${oidcCode}&state=${fixedState}` },
+    });
+  });
+
+  const authorization = await api.authorizeOidc(loginSession, {
+    clientId: "admin-web",
+    redirectUri: loginRedirectUri,
+    state: fixedState,
+    nonce: fixedNonce,
+  });
+
+  assert.equal(authorization.code, oidcCode);
+  assert.equal(authorization.state, fixedState);
+  assert.equal(authorization.nonce, fixedNonce);
+  assert.match(authorization.codeVerifier, /^[A-Za-z0-9_-]{43}$/);
+
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(authorization.codeVerifier));
+  const expectedChallenge = Buffer.from(digest).toString("base64url");
+  assert.equal(observedChallenge, expectedChallenge);
+});
+
+test("OIDC authorization protocol errors preserve the stable error code without following the redirect", async () => {
+  const api = client(async () => new Response(null, {
+    status: 302,
+    headers: { location: `${loginRedirectUri}?error=login_required&state=state-423-fixed-value` },
+  }));
+
+  await assert.rejects(api.authorizeOidc(loginSession, {
+    clientId: "admin-web",
+    redirectUri: loginRedirectUri,
+    state: "state-423-fixed-value",
+    nonce: "nonce-423-fixed-value",
+  }), (error) => {
+    assert.equal(error.code, "oidc");
+    assert.equal(error.protocolCode, "login_required");
+    assert.equal(error.httpStatus, 302);
+    return true;
+  });
+});
+
+test("authorization-code exchange sends only the public-client PKCE form and requires an ID token", async () => {
+  const api = client(async (url, init) => {
+    assert.equal(url, "https://identity.example.test/connect/token");
+    assert.equal(init.method, "POST");
+    assert.equal(init.headers["Content-Type"], "application/x-www-form-urlencoded");
+    const form = new URLSearchParams(init.body);
+    assert.deepEqual([...form.keys()].sort(), ["client_id", "code", "code_verifier", "grant_type", "redirect_uri"]);
+    assert.equal(form.get("client_id"), "admin-web");
+    assert.equal(form.get("grant_type"), "authorization_code");
+    assert.equal(form.get("code"), oidcCode);
+    assert.equal(form.get("redirect_uri"), loginRedirectUri);
+    assert.equal(form.get("code_verifier"), "D".repeat(43));
+    assert.equal(form.has("client_secret"), false);
+    return json({
+      access_token: accessTokenOne,
+      token_type: "Bearer",
+      expires_in: 600,
+      id_token: idTokenOne,
+      refresh_token: refreshTokenOne,
+      scope: "openid",
+    });
+  });
+
+  assert.deepEqual(await api.exchangeAuthorizationCode({
+    clientId: "admin-web",
+    redirectUri: loginRedirectUri,
+    code: oidcCode,
+    state: "state-423-fixed-value",
+    nonce: "nonce-423-fixed-value",
+    codeVerifier: "D".repeat(43),
+  }), {
+    accessToken: accessTokenOne,
+    tokenType: "Bearer",
+    expiresIn: 600,
+    idToken: idTokenOne,
+    refreshToken: refreshTokenOne,
+    scope: "openid",
+  });
+});
+
+test("refresh-token rotation sends no authorization-code fields and returns the replacement refresh token", async () => {
+  const api = client(async (_url, init) => {
+    const form = new URLSearchParams(init.body);
+    assert.deepEqual([...form.keys()].sort(), ["client_id", "grant_type", "refresh_token"]);
+    assert.equal(form.get("client_id"), "admin-web");
+    assert.equal(form.get("grant_type"), "refresh_token");
+    assert.equal(form.get("refresh_token"), refreshTokenOne);
+    assert.equal(form.has("code"), false);
+    assert.equal(form.has("code_verifier"), false);
+    assert.equal(form.has("client_secret"), false);
+    return json({
+      access_token: "new.header.payload",
+      token_type: "Bearer",
+      expires_in: 600,
+      refresh_token: refreshTokenTwo,
+      scope: "openid",
+    });
+  });
+
+  assert.deepEqual(await api.refreshOidcTokens("admin-web", refreshTokenOne), {
+    accessToken: "new.header.payload",
+    tokenType: "Bearer",
+    expiresIn: 600,
+    refreshToken: refreshTokenTwo,
+    scope: "openid",
+  });
+});
+
+test("OIDC token errors distinguish invalid grants from temporary unavailability", async () => {
+  const invalid = client(async () => json({ error: "invalid_grant" }, 400));
+  await assert.rejects(invalid.refreshOidcTokens("admin-web", refreshTokenOne), (error) => {
+    assert.equal(error.code, "oidc");
+    assert.equal(error.protocolCode, "invalid_grant");
+    return true;
+  });
+
+  const unavailable = client(async () => json({ error: "temporarily_unavailable" }, 503));
+  await assert.rejects(unavailable.refreshOidcTokens("admin-web", refreshTokenOne), (error) => {
+    assert.equal(error.code, "unavailable");
+    assert.equal(error.protocolCode, "temporarily_unavailable");
+    return true;
+  });
+});
+
+test("OIDC redirect validation rejects redirect target substitution", async () => {
+  const api = client(async () => new Response(null, {
+    status: 302,
+    headers: { location: `https://attacker.example.test/callback?code=${oidcCode}&state=state-423-fixed-value` },
+  }));
+
+  await assert.rejects(api.authorizeOidc(loginSession, {
+    clientId: "admin-web",
+    redirectUri: loginRedirectUri,
+    state: "state-423-fixed-value",
+    nonce: "nonce-423-fixed-value",
+  }), code("protocol"));
+});

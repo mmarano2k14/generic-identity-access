@@ -15,7 +15,7 @@ npm pack
 Install the generated archive together with `server-only`:
 
 ```powershell
-npm install "<path-to>/identity-access-client-0.3.0.tgz" server-only
+npm install "<path-to>/identity-access-client-0.4.0.tgz" server-only
 ```
 
 Configure only server-side deployment state:
@@ -33,4 +33,4 @@ const identity = new IdentityAccessServerConnector();
 const info = await identity.client.info();
 ```
 
-The connector is class-based. Authentication/OIDC session ownership and the full administration UI integration are added incrementally after the class/authorization foundation.
+The connector is class-based. `IdentityAccessClient` now supports password login, local-session validation/logout, OIDC Authorization Code + PKCE, token exchange, and refresh-token rotation. Keep password/session/token handling in server-only code. The complete typed administration CRUD surface remains a later `0.42.x` increment.

@@ -31,7 +31,7 @@ The class-based TypeScript connector uses:
 TypeScript 5.8.3
 ```
 
-Runtime client code has no third-party npm runtime dependency.
+Runtime client code has no third-party npm runtime dependency. Authentication/OIDC connector code uses the standard Fetch, URL, TextEncoder, and Web Crypto APIs for transport, PKCE randomness, and S256 hashing.
 
 ## PostgreSQL
 

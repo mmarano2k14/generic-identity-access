@@ -1,9 +1,8 @@
 # Identity & Access TypeScript Client
 
-Version 0.3.0 starts the class-based connector line for the Generic Identity Access API.
-Runtime components are classes. The legacy `createIdentityAccessClient(...)` factory is removed.
+Version 0.4.0 extends the class-based connector with local authentication and the OIDC Authorization Code + PKCE token lifecycle.
 
-Primary runtime classes:
+Runtime components remain class-based. The primary runtime classes are:
 
 ```text
 IdentityAccessClient
@@ -11,7 +10,7 @@ IdentityAuthorizationContext
 IdentityAccessAdminUiBuilder
 ```
 
-The decorator surface is deliberately thin:
+The decorator surface remains deliberately thin:
 
 ```typescript
 @RequireCapability("replay", "execution", "run")
@@ -33,6 +32,88 @@ const info = await client.info();
 const live = await client.liveness();
 const readiness = await client.readiness();
 ```
+
+## Password login and local session
+
+```typescript
+const session = await client.passwordLogin({
+  clientId: "admin-web",
+  loginIdentifier: "user@example.test",
+  password,
+  redirectUri: "https://app.example.test/callback",
+});
+
+await client.validateSession(session);
+```
+
+`IdentityLocalSession` is directly usable as an `IdentitySessionCredential`. No global current-session state is stored inside `IdentityAccessClient`.
+
+Logout is explicit:
+
+```typescript
+await client.logout(
+  session,
+  "https://app.example.test/signed-out",
+);
+```
+
+Registered redirect and post-logout redirect URIs remain validated by the server.
+
+## OIDC Authorization Code + PKCE
+
+The connector performs the authorization endpoint through an already authenticated local session. PKCE uses cryptographically random 32-byte input and S256.
+
+```typescript
+const authorization = await client.authorizeOidc(session, {
+  clientId: "admin-web",
+  redirectUri: session.redirectUri,
+});
+
+const tokens = await client.exchangeAuthorizationCode(authorization);
+```
+
+`authorizeOidc(...)` uses `redirect: "manual"`. It never follows the authorization redirect automatically. The returned `Location` target and `state` are validated before the one-time authorization code is exposed.
+
+The connector sends only the public-client fields required by the backend:
+
+```text
+client_id
+response_type=code
+scope=openid
+state
+nonce
+code_challenge
+code_challenge_method=S256
+```
+
+No client secret exists or is accepted by the client surface.
+
+## Refresh-token rotation
+
+```typescript
+const refreshed = await client.refreshOidcTokens(
+  "admin-web",
+  tokens.refreshToken,
+);
+```
+
+A successful refresh returns a replacement refresh token. The caller must discard the presented refresh token immediately. The client never retains or retries an old refresh token automatically.
+
+The current server contract returns:
+
+```text
+authorization_code grant
+    -> access token
+    -> ID token
+    -> refresh token
+
+refresh_token grant
+    -> access token
+    -> rotated refresh token
+    -> no new ID token
+```
+
+Stable OAuth/OIDC errors are surfaced through `IdentityAccessClientError.protocolCode`, while `temporarily_unavailable` remains a technical `unavailable` failure.
 
 ## Authorization context
 
@@ -89,8 +170,8 @@ npm run typecheck
 npm pack
 ```
 
-The repository-level `scripts/verify.ps1` performs this dependency bootstrap automatically when the local TypeScript compiler is absent. The dependency is pinned exactly in `package.json`; the bootstrap does not run package lifecycle scripts and does not create or update a lockfile.
+The repository-level `scripts/verify.ps1` performs dependency bootstrap automatically when the local TypeScript compiler is absent. The dependency is pinned exactly in `package.json`; bootstrap does not run package lifecycle scripts and does not create or update a package lockfile.
 
-Runtime code has no third-party npm runtime dependency. HTTPS is required except exact loopback development hosts. Redirects are rejected, cache storage is disabled, requests are bounded by timeout/cancellation, and raw credentials are never retained in public errors.
+Runtime code has no third-party npm runtime dependency. HTTPS is required except exact loopback development hosts. Requests are non-cacheable and bounded by timeout/cancellation. Authorization redirects are handled manually and validated. Raw passwords, session tokens, authorization codes, PKCE verifiers, access tokens, ID tokens, and refresh tokens are never retained in public errors.
 
-Authentication/OIDC token lifecycle and the complete typed administration API remain follow-up increments in the `0.42.x` connector line.
+The complete typed administration CRUD API remains a follow-up increment in the `0.42.x` connector line. MFA, TOTP, recovery codes, and passkeys/WebAuthn remain later optional work.

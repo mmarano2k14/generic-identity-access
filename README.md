@@ -17,7 +17,7 @@ The repository is application-agnostic. Consuming systems define their own resou
 - Persistent whole-segment wildcard capability patterns.
 - Neutral RBAC adapter boundary with external wildcard evaluation.
 - Local password credential management, lockout, opaque sessions, and registered redirect URIs.
-- Class-based TypeScript / Next.js connector foundation with server-delegated capability evaluation.
+- Class-based TypeScript / Next.js connector with local session authentication, OIDC Authorization Code + PKCE, refresh-token rotation, and server-delegated capability evaluation.
 
 ## Architecture
 

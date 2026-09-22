@@ -1,3 +1,18 @@
+# 0.42.3 - TypeScript authentication and OIDC/PKCE client lifecycle
+
+- Extended the class-based `IdentityAccessClient` with password login, local-session validation, and explicit logout against registered authentication clients.
+- Added cryptographic OIDC Authorization Code + PKCE orchestration using Web Crypto, 32-byte random verifier/state/nonce material, and S256 code challenges.
+- Added manual authorization-redirect handling that validates the registered redirect target and exact state before exposing a one-time authorization code.
+- Added public-client authorization-code exchange without client secrets and strict token-response validation for Bearer access tokens, ID tokens, rotating refresh tokens, expiry, and `openid` scope.
+- Added refresh-token rotation with an explicit caller obligation to replace the consumed refresh token and no automatic retry or retained mutable token state.
+- Preserved the current protocol contract where authorization-code exchange returns an ID token while refresh rotation returns access plus replacement refresh token without issuing a new ID token.
+- Added stable OAuth/OIDC protocol-error projection through `IdentityAccessClientError.protocolCode` while keeping temporary dependency failure distinct as `unavailable`.
+- Kept the TypeScript runtime class architecture centered on `IdentityAccessClient`, `IdentityAuthorizationContext`, and `IdentityAccessAdminUiBuilder`; no parallel TypeScript authorization engine was introduced.
+- Extended TypeScript source-consistency validation to require the authentication/OIDC lifecycle methods and reject any `client_secret` implementation.
+- Expanded TypeScript validation to 41 passing tests with strict type checking in the generation environment.
+- Changed no .NET authentication/OIDC runtime semantics, PostgreSQL schema, migration sequence, external RBAC behavior, or multi-database routing behavior.
+- Kept MFA, TOTP, recovery codes, and passkeys/WebAuthn outside this increment as later optional work.
+
 # 0.42.2 - TypeScript verification dependency bootstrap correction
 
 - Added repository verification bootstrap for the pinned TypeScript development dependency when the local `node_modules/.bin/tsc.cmd` compiler is absent on a clean workstation.

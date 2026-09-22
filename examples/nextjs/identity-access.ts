@@ -22,3 +22,14 @@ export class IdentityAccessServerConnector {
 // Example server use:
 // const identity = new IdentityAccessServerConnector();
 // const info = await identity.client.info();
+// const session = await identity.client.passwordLogin({
+//   clientId: "admin-web",
+//   loginIdentifier,
+//   password,
+//   redirectUri: "https://app.example.test/callback",
+// });
+// const authorization = await identity.client.authorizeOidc(session, {
+//   clientId: "admin-web",
+//   redirectUri: session.redirectUri,
+// });
+// const tokens = await identity.client.exchangeAuthorizationCode(authorization);

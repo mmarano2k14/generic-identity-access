@@ -48,6 +48,54 @@ export interface IdentitySessionCredential {
 
 export type IdentityAccessCredential = IdentityBearerCredential | IdentitySessionCredential;
 
+export interface IdentityPasswordLoginRequest {
+  readonly clientId: string;
+  readonly loginIdentifier: string;
+  readonly password: string;
+  readonly redirectUri: string;
+}
+
+export interface IdentityLocalSession extends IdentitySessionCredential {
+  readonly userId: string;
+  readonly expiresAt: string;
+  readonly redirectUri: string;
+}
+
+export interface IdentitySessionValidationResult {
+  readonly userId: string;
+  readonly sessionId: string;
+  readonly expiresAt: string;
+}
+
+export interface IdentityLogoutResult {
+  readonly postLogoutRedirectUri?: string;
+}
+
+export interface IdentityOidcAuthorizationOptions {
+  readonly clientId: string;
+  readonly redirectUri: string;
+  readonly state?: string;
+  readonly nonce?: string;
+}
+
+export interface IdentityOidcAuthorizationCode {
+  readonly clientId: string;
+  readonly redirectUri: string;
+  readonly code: string;
+  readonly state: string;
+  readonly nonce: string;
+  readonly codeVerifier: string;
+}
+
+export interface IdentityOidcTokenSet {
+  readonly accessToken: string;
+  readonly tokenType: "Bearer";
+  readonly expiresIn: number;
+  readonly idToken?: string;
+  readonly refreshToken: string;
+  readonly scope: "openid";
+}
+
 export interface AuthorizationEvaluationResponse {
   readonly allowed: boolean;
 }

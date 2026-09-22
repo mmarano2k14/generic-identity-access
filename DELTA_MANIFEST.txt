@@ -1,14 +1,21 @@
-Generic Identity Access 0.42.2 TypeScript verification dependency bootstrap correction delta
-Baseline: 0.42.1
+Generic Identity Access 0.42.3 TypeScript authentication and OIDC/PKCE client lifecycle delta
+Baseline: 0.42.2
 
 Changed files:
 CHANGELOG.md
 Directory.Build.props
-SOURCE_MANIFEST.sha256
+README.md
 clients/typescript/README.md
-docs/VALIDATION.md
-scripts/verify.ps1
-tests/IdentityAccess.Tests/Architecture/RepositoryVerificationScriptTests.cs
+clients/typescript/package.json
+clients/typescript/src/client.ts
+clients/typescript/src/contracts.ts
+clients/typescript/src/errors.ts
+clients/typescript/src/index.ts
+clients/typescript/test/client.test.mjs
+docs/DEPENDENCIES.md
+examples/nextjs/README.md
+examples/nextjs/identity-access.ts
+scripts/verify-typescript-source-consistency.ps1
 
 Added files:
 None
@@ -17,7 +24,7 @@ Deleted files:
 None
 
 Runtime changes:
-None
+TypeScript connector only. No .NET runtime behavior changes.
 
 Database changes:
 None
