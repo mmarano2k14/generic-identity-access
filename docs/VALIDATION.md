@@ -207,6 +207,28 @@ Signing-key rotation is process-pinned. A configuration or PEM change requires a
 restart; static source validation is not evidence that a production key rollover has been
 operationally completed.
 
+### OIDC Bearer Access-Token Validation
+
+The .NET test suite validates that:
+
+```text
+valid RS256 access tokens bind to the current registered client/application
+retained public keys validate access tokens issued before signing-key rotation
+unknown kid values fail closed with no fallback key
+tampered signatures fail
+issuer and audience mismatches fail
+expired tokens fail
+client/application mismatches fail
+Bearer credentials are not merged with IdentitySession headers
+current local session/user state is revalidated for every Bearer administration request
+revoked/expired/inactive session state invalidates Bearer authentication
+identity-scope route mismatch invalidates Bearer authentication
+unexpected validation/storage failures remain technical unavailability
+```
+
+Bearer validation introduces no migration beyond `0013`. Current session continuity uses the
+existing `user_sessions` + `users` state and the trusted authentication-directory route.
+
 ## OIDC Authorization Code + PKCE and Refresh-Token Rotation
 
 After migrations through 0013 are applied:

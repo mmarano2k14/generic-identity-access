@@ -1,3 +1,26 @@
+# 0.40.1 - Bearer administration test fixture layout correction
+
+- Extracted Bearer administration validator test doubles into one top-level type per source file so architecture source-layout validation can enforce filename/type parity.
+- Extracted OIDC access-token session test doubles into one top-level type per source file without changing test behavior.
+- Preserved the 0.40.0 Bearer access-token validation runtime, current-session continuity, administration authentication semantics, OIDC key-ring behavior, and RBAC integration unchanged.
+- Changed no production runtime behavior, PostgreSQL schema, migration sequence, authentication protocol contract, or public API surface.
+
+# 0.40.0 - OIDC Bearer access-token validation for administration APIs
+
+- Added strict RS256 Bearer access-token validation for protected administration APIs while preserving the existing `IdentitySession` transport.
+- Added process-pinned public-key validation by exact JWT `kid` with no fallback key, including retained-key continuity across controlled OIDC signing-key rotation.
+- Added exact JWT header and access-token claim validation for algorithm/type, signature, issuer, audience, expiry, issuance time, token id, logical subject, session id, identity scope, registered client, scope, and application binding.
+- Rebound the validated `client_id` to the current trusted server registration so authentication-context provenance is never accepted from a caller JWT claim.
+- Added current local-session and active-user revalidation for every Bearer administration request through the trusted authentication-directory route.
+- Added session-reference persistence validation that checks current session revocation/expiry, current Active user state, client, application, and identity-scope placement without requiring or reconstructing the opaque local-session token.
+- Rejected requests that mix Bearer authentication with `X-Identity-Access-Client` or `X-Identity-Access-Session` local-session provenance headers.
+- Preserved administration HTTP semantics: invalid Bearer/session state maps to unauthenticated, authenticated route/RBAC mismatch remains denied, and validation/storage failures remain technical unavailability.
+- Added typed OIDC access-token validation failure categories without exposing those categories as a public token-validation oracle.
+- Added unit and architecture coverage for valid tokens, tampering, unknown `kid`, retained-key validation, issuer/audience/expiry enforcement, client/application binding, current-session continuity, transport separation, and technical-failure handling.
+- Extended OIDC source-consistency validation and security documentation for Bearer authentication and session continuity.
+- Changed no PostgreSQL schema or migration sequence; migration `0013` remains the latest migration.
+- Kept MFA, TOTP, passkeys/WebAuthn, recovery codes, and step-up authentication outside this release as optional later work.
+
 # 0.39.0 - OIDC signing-key rotation and multi-key JWKS lifecycle
 
 - Added a process-pinned RSA signing-key ring with one explicit active `kid` for new RS256 access-token and ID-token signatures.

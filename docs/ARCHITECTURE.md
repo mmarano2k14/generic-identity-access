@@ -216,3 +216,15 @@ ID tokens, while all configured public keys remain published through JWKS for va
 continuity across controlled restarts. Retired keys may be configured as public-only material;
 the active key must contain private material. Signing-key configuration is server-owned and is
 not mutable through protocol requests.
+
+Protected administration APIs may consume those access tokens through `Authorization: Bearer`.
+Bearer validation is strict and process-pinned to the configured public key ring, canonical issuer,
+access-token audience, required token claims, and current registered client/application binding.
+After cryptographic validation, the source `sid` is revalidated against current PostgreSQL session
+and active-user state through the trusted authentication-directory route. The resulting identity is
+projected into the same `AdministrationRequestContext` used by the local opaque-session transport;
+the existing RBAC pipeline remains the only capability decision authority.
+
+Local `IdentitySession` authentication remains supported. Bearer and local-session credentials are
+never merged in one request. Invalid credentials map to unauthenticated, route/application or RBAC
+denial remains forbidden, and technical validation failures remain service-unavailable.

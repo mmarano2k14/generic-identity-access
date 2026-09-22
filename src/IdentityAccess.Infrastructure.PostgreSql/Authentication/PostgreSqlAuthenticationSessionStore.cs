@@ -141,6 +141,79 @@ namespace IdentityAccess.Infrastructure.PostgreSql.Authentication
         }
 
         /// <inheritdoc />
+        public async Task<AuthenticationSession?> ValidateReferenceAsync(
+            ResolvedDatabaseRoute route,
+            string clientId,
+            Guid sessionId,
+            DateTimeOffset now,
+            CancellationToken cancellationToken)
+        {
+            ArgumentException.ThrowIfNullOrWhiteSpace(clientId);
+
+            if (sessionId == Guid.Empty)
+                return null;
+
+            await using var connection = (NpgsqlConnection)await connectionFactory
+                .OpenAsync(route, cancellationToken)
+                .ConfigureAwait(false);
+
+            await using var command = new NpgsqlCommand("""
+                SELECT
+                    s.user_id,
+                    s.application_key,
+                    s.authentication_context_key,
+                    s.created_at,
+                    s.expires_at,
+                    s.revoked_at
+                FROM identity_access.user_sessions AS s
+                INNER JOIN identity_access.users AS u
+                    ON u.identity_scope_id = s.identity_scope_id
+                   AND u.user_id = s.user_id
+                WHERE s.identity_scope_id = @scope
+                  AND s.session_id = @session_id
+                  AND s.client_id = @client_id
+                  AND s.application_key = @application_key
+                  AND s.revoked_at IS NULL
+                  AND s.expires_at > @now
+                  AND u.status = @active_user_status;
+                """, connection);
+
+            command.Parameters.AddWithValue(
+                "scope",
+                route.Request.IdentityScopeId);
+            command.Parameters.AddWithValue("session_id", sessionId);
+            command.Parameters.AddWithValue("client_id", clientId);
+            command.Parameters.AddWithValue(
+                "application_key",
+                route.Request.Application.Value);
+            command.Parameters.AddWithValue("now", now);
+            command.Parameters.AddWithValue(
+                "active_user_status",
+                (short)UserStatus.Active);
+
+            await using var reader = await command
+                .ExecuteReaderAsync(cancellationToken)
+                .ConfigureAwait(false);
+
+            if (!await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
+                return null;
+
+            return new AuthenticationSession(
+                sessionId,
+                new SubjectReference(
+                    route.Request.IdentityScopeId,
+                    reader.GetGuid(0)),
+                clientId,
+                new ApplicationKey(reader.GetString(1)),
+                reader.GetString(2),
+                reader.GetFieldValue<DateTimeOffset>(3),
+                reader.GetFieldValue<DateTimeOffset>(4),
+                reader.IsDBNull(5)
+                    ? null
+                    : reader.GetFieldValue<DateTimeOffset>(5));
+        }
+
+        /// <inheritdoc />
         public async Task<bool> RevokeAsync(
             ResolvedDatabaseRoute route,
             string clientId,

@@ -188,7 +188,7 @@ The service currently provides a local authentication foundation with:
 - session validation and logout;
 - registered login and post-logout redirect URIs.
 
-OAuth 2.0 / OpenID Connect Authorization Code + PKCE, rotating refresh tokens, and process-pinned multi-key RSA signing-key rotation are implemented for registered public clients. MFA, passkeys, account recovery, and bearer validation middleware for protected administration APIs remain outside the current implementation.
+OAuth 2.0 / OpenID Connect Authorization Code + PKCE, rotating refresh tokens, process-pinned multi-key RSA signing-key rotation, and Bearer access-token validation for protected administration APIs are implemented for registered public clients. Bearer authentication revalidates the referenced local session and current active user before entering the existing RBAC pipeline. MFA, TOTP, passkeys/WebAuthn, recovery codes, and step-up authentication remain optional later work.
 
 See [`docs/LOCAL_AUTHENTICATION_FOUNDATION.md`](docs/LOCAL_AUTHENTICATION_FOUNDATION.md).
 
@@ -330,7 +330,7 @@ See `docs/RBAC_EXTERNAL_ADAPTER.md`.
 
 The authentication module supports a strict public-client Authorization Code + PKCE S256
 OpenID Connect flow with exact registered redirects, one-time hashed authorization codes,
-RS256 access/ID tokens, process-pinned active-key rotation with multi-key JWKS publication, rotating SHA-256-persisted refresh-token families, consumed-token replay revocation, discovery, and JWKS.
+RS256 access/ID tokens, process-pinned active-key rotation with multi-key JWKS publication, rotating SHA-256-persisted refresh-token families, consumed-token replay revocation, strict Bearer validation for protected administration APIs, current session/user continuity checks, discovery, and JWKS.
 
 The authorization endpoint consumes an already validated local session; browser/login UI
 remains a separate host concern.

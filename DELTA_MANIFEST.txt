@@ -1,28 +1,19 @@
-Target version: 0.39.0
-Baseline: 0.38.1
+Target version: 0.40.1
+Baseline: 0.40.0
 Files to delete: none
-Runtime changes: OIDC process-pinned RSA signing-key rotation with active-key selection and multi-key JWKS publication
+Runtime changes: none; test source-layout correction only
 Schema changes: none
+Migration changes: none
+Latest migration: 0013_oidc_refresh_token_rotation.sql
 
+Files included:
 CHANGELOG.md
 Directory.Build.props
-README.md
 SOURCE_MANIFEST.sha256
-docs/ARCHITECTURE.md
-docs/FAILURE_CODES.md
-docs/OIDC_AUTHORIZATION_CODE_PKCE.md
-docs/VALIDATION.md
-scripts/verify-oidc-source-consistency.ps1
-src/IdentityAccess.Api/Controllers/OidcDiscoveryController.cs
-src/IdentityAccess.Api/Oidc/OidcJsonWebKeySetResponse.cs
-src/IdentityAccess.Application/Authentication/IOidcAuthorizationService.cs
-src/IdentityAccess.Application/Authentication/IOidcTokenIssuer.cs
-src/IdentityAccess.Application/Authentication/OidcAuthorizationService.cs
-src/IdentityAccess.Infrastructure.Authentication/AuthenticationServiceCollectionExtensions.cs
-src/IdentityAccess.Infrastructure.Authentication/RsaOidcSigningKeyConfigurationLoader.cs
-src/IdentityAccess.Infrastructure.Authentication/RsaOidcSigningKeyOptions.cs
-src/IdentityAccess.Infrastructure.Authentication/RsaOidcTokenIssuer.cs
-tests/IdentityAccess.Tests/Architecture/OidcProtocolArchitectureTests.cs
-tests/IdentityAccess.Tests/Authentication/OidcTestTokenIssuer.cs
-tests/IdentityAccess.Tests/Authentication/RsaOidcSigningKeyConfigurationLoaderTests.cs
-tests/IdentityAccess.Tests/Authentication/RsaOidcTokenIssuerTests.cs
+tests/IdentityAccess.Tests/Api/BearerAdministrationRequestContextResolverTests.cs
+tests/IdentityAccess.Tests/Api/FixedSessionValidator.cs
+tests/IdentityAccess.Tests/Api/FixedValidator.cs
+tests/IdentityAccess.Tests/Api/ThrowingValidator.cs
+tests/IdentityAccess.Tests/Authentication/FixedDirectoryLocator.cs
+tests/IdentityAccess.Tests/Authentication/FixedSessionStore.cs
+tests/IdentityAccess.Tests/Authentication/OidcAccessTokenSessionValidatorTests.cs

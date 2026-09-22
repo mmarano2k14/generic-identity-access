@@ -29,8 +29,9 @@ database destination
 connection information
 ```
 
-`Subject`, `Application`, `ClientId`, and `AuthenticationContextKey` come from a validated
-server session and registered authentication client state.
+`Subject`, `Application`, `ClientId`, and `AuthenticationContextKey` come from either a validated
+opaque local session or a validated OIDC access token rebound to current registered-client state.
+Bearer authentication additionally revalidates the referenced current local session/user state.
 
 Tenant and resource identifiers remain authorization targets from the current route; they
 are not authentication claims.
@@ -49,6 +50,23 @@ The request does not supply trusted user, identity-scope, or application claims.
 
 The server validates the session through `ILocalAuthenticationService`, which resolves the
 registered client and current identity directory.
+
+## OIDC Bearer HTTP Transport
+
+When OIDC is enabled, protected administration endpoints also accept:
+
+```text
+Authorization: Bearer <RS256-access-token>
+```
+
+The token is validated against the process-pinned OIDC public key ring, issuer, audience, lifetime,
+subject, session, client, scope, identity-scope, and application claims. The `client_id` is rebound
+to the current server registration so `AuthenticationContextKey` is never accepted as a caller JWT
+claim. The referenced `sid` must still identify an active, unexpired local session for the same
+active user/client/application/context.
+
+A Bearer request containing `X-Identity-Access-Client` or `X-Identity-Access-Session` is rejected;
+the two credential transports are not merged.
 
 ## Request Boundary Matching
 
@@ -79,23 +97,13 @@ There is no global mutable current user, current tenant, or current database sta
 
 ## Authorization State
 
-This baseline establishes trusted authentication only.
-
-Capability authorization remains fail-closed:
+Trusted authentication feeds the existing capability authorization pipeline:
 
 ```text
+IdentitySession OR Bearer
+        |
 trusted AdministrationRequestContext
         |
-        +-- identity established
-        |
-        +-- capability authorization unavailable
-                |
-                -> HTTP 503
-```
-
-The next authorization integration connects the trusted context to:
-
-```text
 IdentityAuthorizationService
         |
 IRbacAuthorizationAdapter
@@ -103,6 +111,8 @@ IRbacAuthorizationAdapter
 external RBAC engine
 ```
 
-Missing or invalid administration session credentials return HTTP 401.
+Missing or invalid administration credentials return HTTP 401. An authenticated
+identity-scope/application boundary mismatch or RBAC denial returns HTTP 403. Technical
+authentication/authorization unavailability returns HTTP 503.
 
 A valid authenticated context does not by itself grant any administrative capability.

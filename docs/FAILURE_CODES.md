@@ -71,6 +71,18 @@ unavailable PEM material, and a public-only active key prevent OIDC service regi
 provider does not fall back to another configured key or expose key-file diagnostics through an
 OAuth error response.
 
+`OidcAccessTokenValidationFailureCode` identifies internal Bearer validation failures including
+malformed JWTs, unsupported headers, unknown signing keys, invalid signatures, issuer/audience
+mismatch, expiry/lifetime violations, claim inconsistency, and registered-client binding failure.
+These categories are not exposed as a token-validation oracle to callers; invalid Bearer credentials
+map to the same administration HTTP 401 boundary.
+
+`AdministrationAuthenticationFailureCode` additionally distinguishes an invalid Bearer credential
+from technical Bearer/session-continuity validation unavailability. Technical failures map to HTTP
+503 and must not be collapsed into an authorization denial. A cryptographically valid token that
+requests a different identity-scope/application route reaches the existing authenticated boundary
+mismatch and maps to HTTP 403.
+
 ## Administration Authorization
 
 `AdministrationAccessFailureCode` identifies technical unavailability of administration

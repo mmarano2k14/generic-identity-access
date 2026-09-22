@@ -36,6 +36,7 @@ namespace IdentityAccess.Tests.Architecture
                 .ToArray();
 
             Assert.Contains(nameof(IAuthenticationSessionStore.CreateForActiveUserAsync), methods);
+            Assert.Contains(nameof(IAuthenticationSessionStore.ValidateReferenceAsync), methods);
             Assert.Contains(nameof(IAuthenticationSessionStore.RevokeAllForSubjectAsync), methods);
             Assert.Contains(nameof(IAuthenticationSessionStore.RevokeAllForClientAsync), methods);
             Assert.DoesNotContain("CreateAsync", methods);

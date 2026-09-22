@@ -32,6 +32,17 @@ namespace IdentityAccess.Application.Authentication
             DateTimeOffset now,
             CancellationToken cancellationToken);
 
+        /// <summary>
+        /// Revalidates an already authenticated session reference against current session and user
+        /// state without treating the reference itself as a credential.
+        /// </summary>
+        Task<AuthenticationSession?> ValidateReferenceAsync(
+            ResolvedDatabaseRoute route,
+            string clientId,
+            Guid sessionId,
+            DateTimeOffset now,
+            CancellationToken cancellationToken);
+
         /// <summary>Revokes one opaque local session.</summary>
         Task<bool> RevokeAsync(
             ResolvedDatabaseRoute route,

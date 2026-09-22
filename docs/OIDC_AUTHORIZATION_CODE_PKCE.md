@@ -1,4 +1,4 @@
-# OAuth 2.0 / OpenID Connect Authorization Code + PKCE, Refresh-Token Rotation, and Signing-Key Rotation
+# OAuth 2.0 / OpenID Connect Authorization Code + PKCE, Refresh-Token Rotation, Signing-Key Rotation, and Bearer API Validation
 
 Identity Access provides a strict first-party OpenID Connect provider foundation built on
 the existing local authentication, multi-database routing, session lifecycle, transactional
@@ -18,6 +18,8 @@ refresh-token family replay detection
 local-session-bound refresh continuity
 process-pinned RSA signing-key rotation
 multi-key JWKS publication
+administration API Bearer access-token validation
+current local-session/user revalidation for Bearer access
 OIDC discovery
 JWKS
 ```
@@ -32,8 +34,9 @@ client secrets
 device authorization
 dynamic client registration
 userinfo
-bearer access-token validation middleware for the administration API
 MFA protocol signaling
+passkeys / WebAuthn
+step-up authentication
 ```
 
 These exclusions keep the first protocol surface narrow and fail-closed.
@@ -475,6 +478,72 @@ IdentityScopeId + UserId
 ```
 
 rather than `UserId` alone.
+
+## Administration API Bearer Validation
+
+Protected administration endpoints accept the existing local-session transport and, when OIDC
+is enabled, the standard access-token transport:
+
+```text
+Authorization: Bearer <access-token>
+```
+
+Bearer authentication is not a second authorization engine. It establishes the same trusted
+`AdministrationRequestContext` that the existing capability/TRN/RBAC pipeline consumes.
+
+The Bearer validator is process-pinned to the same public signing-key ring exposed through JWKS.
+It requires the exact access-token contract issued by this provider and validates:
+
+```text
+JWT structure with no duplicate header/claim names
+alg = RS256
+typ = JWT
+kid resolves to one process-pinned published key
+RS256 signature
+iss = configured canonical issuer
+aud = configured access-token audience
+exp is in the future
+iat is not in the future
+exp > iat
+encoded lifetime does not exceed configured AccessTokenLifetimeMinutes
+jti is a non-empty canonical token UUID
+sid is a non-empty local-session UUID
+identity_scope_id is a non-empty UUID
+sub = identity_scope_id:user_id
+client_id resolves to a current registered OIDC client
+scope is currently allowed for that client
+application_key matches the server-registered client application
+```
+
+The authentication-context key is not trusted from a JWT claim. It is rebound from the current
+server-side `client_id` registration after signature/claim validation.
+
+After cryptographic validation, the API revalidates the JWT `sid` against the current
+`user_sessions` and `users` state through the registered authentication-directory route. Bearer
+access therefore fails when the source session is revoked or expired, when the current user is no
+longer Active, when the session/client/application/context binding changed, or when the route no
+longer resolves to the token identity scope. The raw opaque local-session token is not required or
+reconstructed for this continuity check.
+
+Bearer requests must not also supply the legacy local-session provenance headers:
+
+```text
+X-Identity-Access-Client
+X-Identity-Access-Session
+```
+
+Mixing the two authentication transports is rejected instead of merging credentials.
+
+HTTP semantics remain aligned with the existing administration boundary:
+
+```text
+401  missing/invalid/expired Bearer token or ineligible current session/user
+403  authenticated token crosses the requested identity-scope/application boundary or RBAC denies
+503  token/session validation or authorization fails technically
+```
+
+A valid access token still grants no administration capability by itself. The current RBAC decision
+is evaluated after authentication for every protected operation.
 
 ## Signing-Key Ring and Rotation
 

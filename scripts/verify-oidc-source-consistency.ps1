@@ -44,10 +44,14 @@ $requiredFiles = @(
     "src/IdentityAccess.Application/Authentication/IOidcRefreshTokenService.cs",
     "src/IdentityAccess.Application/Authentication/IOidcRefreshTokenStore.cs",
     "src/IdentityAccess.Application/Authentication/IOidcTokenIssuer.cs",
+    "src/IdentityAccess.Application/Authentication/IOidcAccessTokenValidator.cs",
+    "src/IdentityAccess.Application/Authentication/IOidcAccessTokenSessionValidator.cs",
+    "src/IdentityAccess.Application/Authentication/OidcAccessTokenSessionValidator.cs",
     "src/IdentityAccess.Application/Authentication/OidcAuthorizationService.cs",
     "src/IdentityAccess.Infrastructure.Authentication/CryptographicOidcCodeService.cs",
     "src/IdentityAccess.Infrastructure.Authentication/CryptographicOidcRefreshTokenService.cs",
     "src/IdentityAccess.Infrastructure.Authentication/RsaOidcTokenIssuer.cs",
+    "src/IdentityAccess.Infrastructure.Authentication/RsaOidcAccessTokenValidator.cs",
     "src/IdentityAccess.Infrastructure.Authentication/RsaOidcSigningKeyConfigurationLoader.cs",
     "src/IdentityAccess.Infrastructure.PostgreSql/Authentication/PostgreSqlOidcAuthorizationCodeStore.cs",
     "src/IdentityAccess.Infrastructure.PostgreSql/Authentication/PostgreSqlOidcRefreshTokenStore.cs",
@@ -59,7 +63,9 @@ $requiredFiles = @(
     "src/IdentityAccess.Api/Oidc/IOidcLocalSessionResolver.cs",
     "src/IdentityAccess.Api/Oidc/OidcLocalSessionResolver.cs",
     "src/IdentityAccess.Api/Oidc/OidcRedirectBuilder.cs",
-    "src/IdentityAccess.Api/Oidc/OidcRequestParameterGuard.cs"
+    "src/IdentityAccess.Api/Oidc/OidcRequestParameterGuard.cs",
+    "src/IdentityAccess.Api/Security/BearerAdministrationRequestContextResolver.cs",
+    "src/IdentityAccess.Api/Security/CompositeAdministrationRequestContextResolver.cs"
 )
 
 foreach ($file in $requiredFiles) {
@@ -230,5 +236,53 @@ Reject-Text `
 Reject-Text `
     "src/IdentityAccess.Api/Controllers/OidcTokenController.cs" `
     "password"
+
+Require-Text `
+    "src/IdentityAccess.Infrastructure.Authentication/AuthenticationServiceCollectionExtensions.cs" `
+    "IOidcAccessTokenValidator"
+
+Require-Text `
+    "src/IdentityAccess.Infrastructure.Authentication/AuthenticationServiceCollectionExtensions.cs" `
+    "IOidcAccessTokenSessionValidator"
+
+Require-Text `
+    "src/IdentityAccess.Infrastructure.Authentication/RsaOidcAccessTokenValidator.cs" `
+    "UnknownSigningKey"
+
+Require-Text `
+    "src/IdentityAccess.Infrastructure.Authentication/RsaOidcAccessTokenValidator.cs" `
+    "SignatureInvalid"
+
+Require-Text `
+    "src/IdentityAccess.Infrastructure.Authentication/RsaOidcAccessTokenValidator.cs" `
+    "IssuerMismatch"
+
+Require-Text `
+    "src/IdentityAccess.Infrastructure.Authentication/RsaOidcAccessTokenValidator.cs" `
+    "AudienceMismatch"
+
+Require-Text `
+    "src/IdentityAccess.Infrastructure.Authentication/RsaOidcAccessTokenValidator.cs" `
+    '"identity_scope_id"'
+
+Require-Text `
+    "src/IdentityAccess.Infrastructure.Authentication/RsaOidcAccessTokenValidator.cs" `
+    '"application_key"'
+
+Require-Text `
+    "src/IdentityAccess.Application/Authentication/OidcAccessTokenSessionValidator.cs" `
+    "ValidateReferenceAsync"
+
+Require-Text `
+    "src/IdentityAccess.Infrastructure.PostgreSql/Authentication/PostgreSqlAuthenticationSessionStore.cs" `
+    "ValidateReferenceAsync"
+
+Require-Text `
+    "src/IdentityAccess.Api/Security/AdministrationSecurityServiceRegistration.cs" `
+    "CompositeAdministrationRequestContextResolver"
+
+Require-Text `
+    "src/IdentityAccess.Api/Security/BearerAdministrationRequestContextResolver.cs" `
+    "BearerTokenInvalid"
 
 Write-Host "OIDC source consistency validation passed."

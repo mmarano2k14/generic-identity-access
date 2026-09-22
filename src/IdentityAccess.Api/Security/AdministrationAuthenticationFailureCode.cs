@@ -13,6 +13,12 @@ namespace IdentityAccess.Api.Security
         SessionInvalid = 3,
 
         /// <summary>Local authentication is unavailable on the current host.</summary>
-        AuthenticationUnavailable = 4
+        AuthenticationUnavailable = 4,
+
+        /// <summary>The supplied bearer access token is invalid, expired, or outside its trusted binding.</summary>
+        BearerTokenInvalid = 5,
+
+        /// <summary>The configured bearer access-token validation capability failed technically.</summary>
+        BearerValidationUnavailable = 6
     }
 }

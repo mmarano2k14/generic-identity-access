@@ -262,6 +262,13 @@ namespace IdentityAccess.Infrastructure.Authentication
             services.AddSingleton<IOidcCodeService, CryptographicOidcCodeService>();
             services.AddSingleton<IOidcRefreshTokenService, CryptographicOidcRefreshTokenService>();
             services.AddSingleton<IOidcTokenIssuer>(_ => tokenIssuer);
+            services.AddSingleton<IOidcAccessTokenValidator>(provider =>
+                new RsaOidcAccessTokenValidator(
+                    oidcOptions,
+                    registry,
+                    provider.GetRequiredService<IOidcTokenIssuer>(),
+                    provider.GetRequiredService<TimeProvider>()));
+            services.AddSingleton<IOidcAccessTokenSessionValidator, OidcAccessTokenSessionValidator>();
             services.AddSingleton<IOidcAuthorizationService, OidcAuthorizationService>();
         }
 

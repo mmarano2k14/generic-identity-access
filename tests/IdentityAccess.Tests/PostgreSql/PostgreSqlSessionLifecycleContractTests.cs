@@ -34,6 +34,40 @@ namespace IdentityAccess.Tests.PostgreSql
         }
 
         /// <summary>
+        /// Verifies bearer session-reference validation uses current persisted session and user state
+        /// without requiring or reconstructing the opaque local-session token hash.
+        /// </summary>
+        [Fact]
+        public void Session_reference_validation_checks_current_session_and_user_state()
+        {
+            var source = Read(
+                "src",
+                "IdentityAccess.Infrastructure.PostgreSql",
+                "Authentication",
+                "PostgreSqlAuthenticationSessionStore.cs");
+
+            Assert.Contains(
+                "ValidateReferenceAsync",
+                source,
+                StringComparison.Ordinal);
+
+            Assert.Contains(
+                "s.revoked_at IS NULL",
+                source,
+                StringComparison.Ordinal);
+
+            Assert.Contains(
+                "s.expires_at > @now",
+                source,
+                StringComparison.Ordinal);
+
+            Assert.Contains(
+                "u.status = @active_user_status",
+                source,
+                StringComparison.Ordinal);
+        }
+
+        /// <summary>
         /// Verifies user suspension revokes existing sessions in the same SQL command.
         /// </summary>
         [Fact]

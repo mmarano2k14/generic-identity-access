@@ -17,6 +17,7 @@ namespace IdentityAccess.Tests.Authentication
         [InlineData(typeof(IOidcAuthorizationService))]
         [InlineData(typeof(IOidcAuthorizationCodeStore))]
         [InlineData(typeof(IOidcRefreshTokenStore))]
+        [InlineData(typeof(IOidcAccessTokenSessionValidator))]
         public void Authentication_contracts_require_explicit_cancellation_tokens(Type contract)
         {
             foreach (var method in contract

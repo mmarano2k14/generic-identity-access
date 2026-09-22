@@ -137,6 +137,63 @@ namespace IdentityAccess.Tests.Architecture
                 StringComparison.Ordinal);
         }
 
+        /// <summary>Verifies administration Bearer authentication is composed with the existing local-session transport.</summary>
+        [Fact]
+        public void Administration_api_supports_strict_bearer_validation_without_replacing_local_sessions()
+        {
+            var registration = Read(
+                "src",
+                "IdentityAccess.Api",
+                "Security",
+                "AdministrationSecurityServiceRegistration.cs");
+
+            Assert.Contains(
+                "IOidcAccessTokenValidator",
+                registration,
+                StringComparison.Ordinal);
+
+            Assert.Contains(
+                "CompositeAdministrationRequestContextResolver",
+                registration,
+                StringComparison.Ordinal);
+
+            var resolver = Read(
+                "src",
+                "IdentityAccess.Api",
+                "Security",
+                "BearerAdministrationRequestContextResolver.cs");
+
+            Assert.Contains(
+                "IOidcAccessTokenSessionValidator",
+                resolver,
+                StringComparison.Ordinal);
+
+            Assert.Contains(
+                "BearerTokenInvalid",
+                resolver,
+                StringComparison.Ordinal);
+        }
+
+        /// <summary>Verifies access-token validation owns strict signature, key, issuer, audience, and claim checks.</summary>
+        [Fact]
+        public void Access_token_validator_is_strict_and_process_pinned()
+        {
+            var validator = Read(
+                "src",
+                "IdentityAccess.Infrastructure.Authentication",
+                "RsaOidcAccessTokenValidator.cs");
+
+            Assert.Contains("RS256", validator, StringComparison.Ordinal);
+            Assert.Contains("UnknownSigningKey", validator, StringComparison.Ordinal);
+            Assert.Contains("SignatureInvalid", validator, StringComparison.Ordinal);
+            Assert.Contains("IssuerMismatch", validator, StringComparison.Ordinal);
+            Assert.Contains("AudienceMismatch", validator, StringComparison.Ordinal);
+            Assert.Contains("identity_scope_id", validator, StringComparison.Ordinal);
+            Assert.Contains("application_key", validator, StringComparison.Ordinal);
+            Assert.Contains("client_id", validator, StringComparison.Ordinal);
+            Assert.Contains("sid", validator, StringComparison.Ordinal);
+        }
+
         private static string Read(params string[] segments)
         {
             var current = new DirectoryInfo(AppContext.BaseDirectory);
