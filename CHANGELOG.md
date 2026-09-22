@@ -1,3 +1,36 @@
+# 0.42.2 - TypeScript verification dependency bootstrap correction
+
+- Added repository verification bootstrap for the pinned TypeScript development dependency when the local `node_modules/.bin/tsc.cmd` compiler is absent on a clean workstation.
+- Runs the bootstrap with package lifecycle scripts, audit, and funding output disabled and without creating or mutating a package lockfile.
+- Preserved the existing TypeScript build, test, strict type-check, .NET restore/build/test, authorization, OIDC, and source-consistency gates unchanged after dependency restoration.
+- Added regression coverage that pins the clean-workstation TypeScript dependency-restore behavior in `scripts/verify.ps1`.
+- Updated TypeScript and repository validation documentation with the explicit dependency-bootstrap command.
+- Changed no TypeScript connector runtime behavior, .NET API behavior, PostgreSQL schema, migration sequence, OIDC protocol behavior, or authorization semantics.
+
+# 0.42.1 - Repository verification PowerShell gate correction
+
+- Corrected the repository verification runner so nested PowerShell source-consistency scripts are evaluated through PowerShell success state instead of reading an uninitialized native-process `$LASTEXITCODE`.
+- Preserved `$LASTEXITCODE` checks for native `npm` and `dotnet` processes where the variable is defined by process execution.
+- Added regression coverage pinning the distinction between PowerShell-script gates and native-process exit-code gates under strict mode.
+- Changed no TypeScript connector runtime behavior, .NET API behavior, PostgreSQL schema, migration sequence, OIDC protocol behavior, or authorization semantics.
+
+# 0.42.0 - TypeScript class connector and authorization-context foundation
+
+- Replaced the legacy functional `createIdentityAccessClient(...)` implementation with the class-based `IdentityAccessClient` runtime API.
+- Added `IdentityAuthorizationContext` with an async `isAllowed(resource, feature, action)` contract that delegates every decision to the trusted .NET administration authorization boundary.
+- Added three capability-evaluation HTTP routes for identity-scope, tenant, and resource-scope boundaries without duplicating wildcard/TRN evaluation outside the existing authorization services.
+- Preserved authorization semantics for external runtimes: explicit RBAC denial returns `allowed=false`, unauthenticated requests remain 401, trusted-boundary mismatch remains 403, and technical authorization failure remains 503.
+- Added `RequireCapability(...)` TypeScript decorator metadata for declarative capability requirements while keeping authorization execution server-side.
+- Added the class-based `IdentityAccessAdminUiBuilder` with optional permission-aware presentation filtering; UI visibility does not replace server-side authorization.
+- Added strict Bearer and `IdentitySession` credential construction with no mixed authentication provenance.
+- Extended TypeScript error mapping so 401, 403, and 503 remain distinct from generic HTTP failures.
+- Replaced the function-based Next.js diagnostic helper with a class-based server-only connector example.
+- Added a TypeScript source-consistency gate that pins the three required runtime classes, `RequireCapability`, `isAllowed`, and removal of the legacy functional factory.
+- Integrated TypeScript source consistency, build, tests, and strict type checking into the standard repository verification script.
+- Executed the TypeScript suite successfully with 33 passed tests and strict type checking in the generation environment.
+- Changed no PostgreSQL schema or migration sequence; migration `0013` remains the latest migration.
+- Kept MFA, TOTP, passkeys/WebAuthn, recovery codes, and step-up authentication outside this increment.
+
 # 0.41.0 - Production qualification and operational hardening
 
 - Added a consolidated production-qualification runner covering repository verification, external RBAC compatibility, PostgreSQL persistence/security gates, OIDC live database gates, and disposable backup/restore qualification.

@@ -25,7 +25,7 @@ Package versions are maintained in `Directory.Packages.props`.
 
 ## TypeScript
 
-The diagnostic TypeScript client uses:
+The class-based TypeScript connector uses:
 
 ```text
 TypeScript 5.8.3

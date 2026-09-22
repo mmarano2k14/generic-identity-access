@@ -1,10 +1,22 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { createServer } from "node:http";
-import { createIdentityAccessClient, IdentityAccessClientError } from "../dist/index.js";
+import * as apiExports from "../dist/index.js";
+import {
+  IdentityAccessAdminUiBuilder,
+  IdentityAccessClient,
+  IdentityAccessClientError,
+  IdentityAuthorizationContext,
+  RequireCapability,
+} from "../dist/index.js";
+
+const scopeId = "42111111-1111-1111-1111-111111111111";
+const tenantId = "42bbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb";
+const resourceScopeId = "42cccccc-cccc-cccc-cccc-cccccccccccc";
+const sessionId = "42dddddd-dddd-dddd-dddd-dddddddddddd";
 
 const info = {
-  service: "identity-access", apiVersion: "v1", moduleVersion: "0.29.0", stage: "configuration",
+  service: "identity-access", apiVersion: "v1", moduleVersion: "0.42.0", stage: "configuration",
   storageProvider: "postgresql", databaseRoutingConfigured: false, storageConfigured: false,
   authenticationConfigured: false, authorizationConfigured: false,
 };
@@ -19,14 +31,20 @@ const notReady = {
   ],
 };
 const json = (body, status = 200) => new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json" } });
-const client = (transport, options = {}) => createIdentityAccessClient({ baseUrl: "https://identity.example.test/", fetch: transport, ...options });
+const client = (transport, options = {}) => new IdentityAccessClient({ baseUrl: "https://identity.example.test/", fetch: transport, ...options });
 const code = (expected) => (error) => error instanceof IdentityAccessClientError && error.code === expected;
+const bearer = { kind: "bearer", accessToken: "header.payload.signature" };
+const session = { kind: "session", clientId: "admin-web", sessionId, sessionToken: "opaque-session-token" };
 
 for (const baseUrl of ["", "invalid", " http://localhost", "http://remote.example.test", "https://user:secret@example.test", "https://example.test/?token=secret", "https://example.test/#token", "file:///tmp/identity"]) {
   test(`rejects unsafe or invalid base URL: ${baseUrl}`, () => {
-    assert.throws(() => createIdentityAccessClient({ baseUrl }), code("configuration"));
+    assert.throws(() => new IdentityAccessClient({ baseUrl }), code("configuration"));
   });
 }
+
+test("the legacy functional client factory is not exported", () => {
+  assert.equal("createIdentityAccessClient" in apiExports, false);
+});
 
 test("liveness uses the configured path prefix and non-cacheable transport", async () => {
   const api = client(async (url, init) => {
@@ -46,7 +64,7 @@ test("validates and returns the service descriptor", async () => {
   assert.deepEqual(await client(async () => json(info)).info(), info);
 });
 
-test("readiness accepts a documented 503 without converting it into success", async () => {
+test("readiness accepts a documented 503 without converting it into a transport failure", async () => {
   assert.deepEqual(await client(async () => json(notReady, 503)).readiness(), notReady);
 });
 
@@ -64,9 +82,16 @@ test("invalid blocking capability values are rejected", async () => {
   await assert.rejects(client(async () => json({ ...notReady, blockingCapabilities: [42] }, 503)).readiness(), code("protocol"));
 });
 
-test("unexpected HTTP errors are distinct from authorization denial", async () => {
+test("security HTTP statuses remain distinct", async () => {
+  await assert.rejects(client(async () => json({}, 401)).info(), code("unauthenticated"));
+  await assert.rejects(client(async () => json({}, 403)).info(), code("forbidden"));
+  await assert.rejects(client(async () => json({}, 503)).info(), code("unavailable"));
+  await assert.rejects(client(async () => json({}, 500)).info(), code("http"));
+});
+
+test("HTTP errors never retain response bodies", async () => {
   await assert.rejects(client(async () => json({ secret: "must-not-escape" }, 403)).info(), (error) => {
-    assert.equal(error.code, "http");
+    assert.equal(error.code, "forbidden");
     assert.equal(error.httpStatus, 403);
     assert.ok(!JSON.stringify(error).includes("must-not-escape"));
     assert.ok(!String(error).includes("must-not-escape"));
@@ -148,6 +173,100 @@ test("invalid timeout values are rejected", () => {
   }
 });
 
+test("bearer authorization context delegates to the tenant authorization endpoint", async () => {
+  const transport = async (url, init) => {
+    assert.equal(url, `https://identity.example.test/api/v1/identity-scopes/${scopeId}/tenants/${tenantId}/applications/app-a/authorization/evaluate`);
+    assert.equal(init.method, "POST");
+    assert.equal(init.headers.Authorization, "Bearer header.payload.signature");
+    assert.equal("X-Identity-Access-Client" in init.headers, false);
+    assert.deepEqual(JSON.parse(init.body), { resource: "billing", feature: "invoice", action: "refund" });
+    return json({ allowed: true });
+  };
+
+  const auth = new IdentityAuthorizationContext(client(transport), {
+    identityScopeId: scopeId,
+    applicationKey: "app-a",
+    tenantId,
+    credential: bearer,
+  });
+
+  assert.equal(await auth.isAllowed("billing", "invoice", "refund"), true);
+});
+
+test("local session authorization uses only IdentitySession provenance", async () => {
+  const transport = async (_url, init) => {
+    assert.equal(init.headers.Authorization, "IdentitySession opaque-session-token");
+    assert.equal(init.headers["X-Identity-Access-Client"], "admin-web");
+    assert.equal(init.headers["X-Identity-Access-Session"], sessionId);
+    return json({ allowed: false });
+  };
+
+  const auth = new IdentityAuthorizationContext(client(transport), {
+    identityScopeId: scopeId,
+    applicationKey: "app-a",
+    tenantId,
+    resourceScopeId,
+    credential: session,
+  });
+
+  assert.equal(await auth.isAllowed("billing", "invoice", "refund"), false);
+});
+
+test("resource scope cannot exist without a tenant", () => {
+  assert.throws(() => new IdentityAuthorizationContext(client(async () => json({ allowed: true })), {
+    identityScopeId: scopeId,
+    applicationKey: "app-a",
+    resourceScopeId,
+    credential: bearer,
+  }), code("configuration"));
+});
+
+test("RequireCapability metadata evaluates through IdentityAuthorizationContext", async () => {
+  class ReplayHandler {
+    async run() { return "executed"; }
+  }
+
+  const handler = new ReplayHandler();
+  RequireCapability("replay", "execution", "run")(handler.run, {});
+
+  const transport = async (_url, init) => {
+    assert.deepEqual(JSON.parse(init.body), { resource: "replay", feature: "execution", action: "run" });
+    return json({ allowed: true });
+  };
+
+  const auth = new IdentityAuthorizationContext(client(transport), {
+    identityScopeId: scopeId,
+    applicationKey: "app-a",
+    credential: bearer,
+  });
+
+  assert.equal(await auth.isAllowedFor(handler, "run"), true);
+});
+
+test("admin UI builder is class-based and visibility uses the same authorization context", async () => {
+  const seen = [];
+  const transport = async (_url, init) => {
+    const capability = JSON.parse(init.body);
+    seen.push(capability.feature);
+    return json({ allowed: capability.feature !== "policy" });
+  };
+
+  const auth = new IdentityAuthorizationContext(client(transport), {
+    identityScopeId: scopeId,
+    applicationKey: "app-a",
+    credential: bearer,
+  });
+
+  const builder = new IdentityAccessAdminUiBuilder(auth)
+    .withUsers()
+    .withGroups()
+    .withPolicies();
+
+  assert.deepEqual(builder.build().entries.map((entry) => entry.section), ["users", "groups", "policies"]);
+  assert.deepEqual((await builder.buildVisible()).entries.map((entry) => entry.section), ["users", "groups"]);
+  assert.deepEqual(seen, ["user", "group", "policy"]);
+});
+
 test("native fetch interoperates with a local HTTP fixture, not a .NET server", async () => {
   const server = createServer((_request, response) => {
     response.writeHead(200, { "content-type": "application/json" });
@@ -160,7 +279,7 @@ test("native fetch interoperates with a local HTTP fixture, not a .NET server", 
   try {
     const address = server.address();
     assert.ok(address && typeof address !== "string");
-    const api = createIdentityAccessClient({ baseUrl: `http://127.0.0.1:${address.port}` });
+    const api = new IdentityAccessClient({ baseUrl: `http://127.0.0.1:${address.port}` });
     assert.deepEqual(await api.info(), info);
   } finally {
     await new Promise((resolve, reject) => server.close((error) => error ? reject(error) : resolve()));

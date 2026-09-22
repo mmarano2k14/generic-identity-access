@@ -1,24 +1,26 @@
-Target version: 0.41.0
-Baseline: 0.40.1
-Files to delete: none
-Runtime changes: PostgreSQL data-source initialization hardening plus production qualification and backup/restore validation tooling
-Schema changes: none
-Migration changes: none
-Latest migration: 0013_oidc_refresh_token_rotation.sql
+Generic Identity Access 0.42.2 TypeScript verification dependency bootstrap correction delta
+Baseline: 0.42.1
 
-Files included:
+Changed files:
 CHANGELOG.md
 Directory.Build.props
-README.md
 SOURCE_MANIFEST.sha256
-docs/ARCHITECTURE.md
-docs/POSTGRESQL_CONNECTION_INFRASTRUCTURE.md
-docs/PRODUCTION_QUALIFICATION.md
+clients/typescript/README.md
 docs/VALIDATION.md
-scripts/postgresql/validate-restored-database.sql
-scripts/postgresql/verify-backup-restore.ps1
-scripts/verify-production-qualification.ps1
-src/IdentityAccess.Infrastructure.PostgreSql/PostgreSqlConnectionFactory.cs
-tests/IdentityAccess.Tests/Architecture/ProductionQualificationContractTests.cs
-tests/IdentityAccess.Tests/PostgreSql/CountingConnectionSecretResolver.cs
-tests/IdentityAccess.Tests/PostgreSql/PostgreSqlConnectionFactoryHardeningTests.cs
+scripts/verify.ps1
+tests/IdentityAccess.Tests/Architecture/RepositoryVerificationScriptTests.cs
+
+Added files:
+None
+
+Deleted files:
+None
+
+Runtime changes:
+None
+
+Database changes:
+None
+
+Migration changes:
+None

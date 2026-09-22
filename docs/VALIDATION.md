@@ -8,7 +8,7 @@ Run the complete .NET verification from the repository root:
 .\scripts\verify.ps1
 ```
 
-The script performs restore, Release build, and .NET tests with exit-code checking.
+The script performs TypeScript source-consistency, restores the pinned TypeScript development dependency when the local compiler is absent, runs build/tests/typecheck, then performs .NET restore, Release build, and .NET tests with exit-code checking.
 
 Equivalent commands:
 
@@ -21,8 +21,9 @@ dotnet test IdentityAccess.sln -c Release --no-build --no-restore
 ## TypeScript Client
 
 ```powershell
+.\scripts\verify-typescript-source-consistency.ps1
 cd clients\typescript
-npm install
+npm install --ignore-scripts --no-audit --no-fund --package-lock=false
 npm test
 npm run typecheck
 ```

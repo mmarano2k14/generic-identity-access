@@ -9,10 +9,40 @@ if (-not (Get-Command dotnet -ErrorAction SilentlyContinue)) {
 Push-Location $root
 try {
     & (Join-Path $root "scripts/verify-authorization-source-consistency.ps1")
-    if ($LASTEXITCODE -ne 0) { throw "Authorization source consistency validation failed." }
+    if (-not $?) { throw "Authorization source consistency validation failed." }
 
     & (Join-Path $root "scripts/verify-oidc-source-consistency.ps1")
-    if ($LASTEXITCODE -ne 0) { throw "OIDC source consistency validation failed." }
+    if (-not $?) { throw "OIDC source consistency validation failed." }
+
+    & (Join-Path $root "scripts/verify-typescript-source-consistency.ps1")
+    if (-not $?) { throw "TypeScript source consistency validation failed." }
+
+    if (-not (Get-Command npm -ErrorAction SilentlyContinue)) {
+        throw "Node.js/npm is required for the TypeScript connector validation."
+    }
+    $typescriptRoot = Join-Path $root "clients/typescript"
+    $localTypeScriptCompiler = Join-Path $typescriptRoot "node_modules/.bin/tsc.cmd"
+    $localTypeScriptCompilerUnix = Join-Path $typescriptRoot "node_modules/.bin/tsc"
+    if (-not ((Test-Path $localTypeScriptCompiler -PathType Leaf) -or (Test-Path $localTypeScriptCompilerUnix -PathType Leaf))) {
+        Write-Host "Installing pinned TypeScript development dependencies..."
+        Push-Location $typescriptRoot
+        try {
+            & npm install --ignore-scripts --no-audit --no-fund --package-lock=false
+            if ($LASTEXITCODE -ne 0) { throw "TypeScript dependency restore failed." }
+        } finally {
+            Pop-Location
+        }
+    }
+
+    Push-Location $typescriptRoot
+    try {
+        & npm test
+        if ($LASTEXITCODE -ne 0) { throw "TypeScript tests failed." }
+        & npm run typecheck
+        if ($LASTEXITCODE -ne 0) { throw "TypeScript typecheck failed." }
+    } finally {
+        Pop-Location
+    }
 
     & dotnet --info
     if ($LASTEXITCODE -ne 0) { throw "SDK check failed." }

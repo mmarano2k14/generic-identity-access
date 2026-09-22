@@ -183,3 +183,28 @@ r:*:*
 ```
 
 or any other wildcard evaluation logic.
+
+
+## External Runtime Capability Evaluation
+
+Class-based external connectors may evaluate a concrete capability through the same trusted administration authorizer used by MVC administration operations.
+
+```text
+POST /api/v1/identity-scopes/{identityScopeId}/applications/{applicationKey}/authorization/evaluate
+POST /api/v1/identity-scopes/{identityScopeId}/tenants/{tenantId}/applications/{applicationKey}/authorization/evaluate
+POST /api/v1/identity-scopes/{identityScopeId}/tenants/{tenantId}/applications/{applicationKey}/resource-scopes/{resourceScopeId}/authorization/evaluate
+```
+
+Request body:
+
+```json
+{
+  "resource": "billing",
+  "feature": "invoice",
+  "action": "refund"
+}
+```
+
+A normal RBAC denial returns `200 { "allowed": false }` so an external runtime can implement an `isAllowed(...)` contract without converting denial into a transport failure. Authentication failure remains `401`, trusted-boundary mismatch remains `403`, and technical authorization unavailability remains `503`.
+
+The endpoint does not evaluate wildcard rules locally and does not accept caller-selected RBAC project/namespace values.

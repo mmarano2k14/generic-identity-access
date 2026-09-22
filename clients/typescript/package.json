@@ -1,9 +1,9 @@
 {
   "name": "@identity-access/client",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "private": true,
   "type": "module",
-  "description": "Diagnostics-only TypeScript client for the Identity & Access API.",
+  "description": "Class-based TypeScript connector foundation for the Generic Identity Access API.",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",

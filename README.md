@@ -17,7 +17,7 @@ The repository is application-agnostic. Consuming systems define their own resou
 - Persistent whole-segment wildcard capability patterns.
 - Neutral RBAC adapter boundary with external wildcard evaluation.
 - Local password credential management, lockout, opaque sessions, and registered redirect URIs.
-- TypeScript diagnostic client and server-side Next.js integration example.
+- Class-based TypeScript / Next.js connector foundation with server-delegated capability evaluation.
 
 ## Architecture
 
@@ -92,6 +92,8 @@ From the repository root:
 ```powershell
 .\scripts\verify.ps1
 ```
+
+The standard verification now also runs TypeScript source-consistency, build, tests, and strict type checking.
 
 Equivalent commands:
 

@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
-import { createIdentityAccessClient } from "../dist/index.js";
+import { IdentityAccessClient } from "../dist/index.js";
 
-const api = createIdentityAccessClient({
+const api = new IdentityAccessClient({
   baseUrl: process.argv[2] ?? "http://127.0.0.1:5080",
 });
 
@@ -21,6 +21,4 @@ assert.equal(info.storageConfigured, false);
 assert.equal(info.authenticationConfigured, false);
 assert.equal(info.authorizationConfigured, false);
 
-console.log(
-  "PASS: diagnostic contract verified against the running API. Readiness remains false.",
-);
+console.log("PASS: class-based diagnostic contract verified against the running API.");

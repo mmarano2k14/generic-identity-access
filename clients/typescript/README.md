@@ -1,47 +1,96 @@
-# Identity & Access TypeScript client
+# Identity & Access TypeScript Client
 
-Version 0.2.0 is a diagnostics-only client, not an authentication or authorization SDK.
-No PostgreSQL, Redis or .NET engine internals are exposed. The package name is local and
-unpublished; install from the generated local archive, not from an assumed registry entry.
+Version 0.3.0 starts the class-based connector line for the Generic Identity Access API.
+Runtime components are classes. The legacy `createIdentityAccessClient(...)` factory is removed.
 
-```sh
-npm install
-npm test
-npm pack
+Primary runtime classes:
+
+```text
+IdentityAccessClient
+IdentityAuthorizationContext
+IdentityAccessAdminUiBuilder
 ```
 
-Runtime code has no third-party dependencies. The compiler is a development dependency.
+The decorator surface is deliberately thin:
 
 ```typescript
-import { createIdentityAccessClient } from "@identity-access/client";
+@RequireCapability("replay", "execution", "run")
+```
 
-const api = createIdentityAccessClient({
-  baseUrl: "http://127.0.0.1:5080", // Trusted server configuration, not request input.
+It stores capability metadata only. Permission evaluation always returns to the .NET Identity Access API and the configured external RBAC engine.
+
+## Diagnostics
+
+```typescript
+import { IdentityAccessClient } from "@identity-access/client";
+
+const client = new IdentityAccessClient({
+  baseUrl: "http://127.0.0.1:5080",
   timeoutMs: 10000,
 });
 
-const info = await api.info();
-const live = await api.liveness();
-const readiness = await api.readiness(); // Readiness reflects the server's configured dependencies and may return HTTP 503 when required capabilities are unavailable.
+const info = await client.info();
+const live = await client.liveness();
+const readiness = await client.readiness();
 ```
 
-`info`, `liveness` and `readiness` accept an optional AbortSignal. Each operation owns its
-AbortController and timeout; there is no global mutable current-user/session state.
-Errors distinguish configuration, HTTP, protocol, timeout, cancellation and transport.
-HTTP failures are not turned into business authorization denials. Raw error bodies and
-transport error messages are not copied into public errors.
+## Authorization context
 
-HTTPS is required except for exact loopback hosts over HTTP. Base URL credentials, query
-parameters and fragments are rejected. Redirects are rejected, cookies omitted and cache
-storage disabled. There is no automatic retry. Injected transports must honor the provided
-AbortSignal and redirect policy. The generic client does not itself authenticate an API.
+The TypeScript equivalent of:
 
-The unit suite uses injected fixtures and one native HTTP fixture served by Node.
-After starting the .NET API, run the separate live-contract smoke check:
+```csharp
+if (!_auth.IsAllowed("billing", "invoice", "refund"))
+{
+    return;
+}
+```
+
+is:
+
+```typescript
+const allowed = await auth.isAllowed("billing", "invoice", "refund");
+if (!allowed) {
+  return;
+}
+```
+
+`IdentityAuthorizationContext` supports either a Bearer access token or the existing local `IdentitySession` credential transport. The two provenance forms are never mixed.
+
+## Declarative capability metadata
+
+```typescript
+export class ReplayExecutionHandler {
+  @RequireCapability("replay", "execution", "run")
+  public async run(): Promise<void> {
+  }
+}
+```
+
+The decorator does not authorize locally. `IdentityAuthorizationContext.isAllowedFor(...)` resolves the metadata and calls the .NET authorization endpoint.
+
+## Administration UI builder
+
+```typescript
+const definition = await new IdentityAccessAdminUiBuilder(auth)
+  .withUsers()
+  .withGroups()
+  .withPolicies()
+  .buildVisible();
+```
+
+Visibility filtering is presentation behavior only. Every real administration operation remains protected server-side.
+
+## Validation
 
 ```sh
-npm run smoke -- http://127.0.0.1:5080
+npm install --ignore-scripts --no-audit --no-fund --package-lock=false
+npm test
+npm run typecheck
+npm pack
 ```
 
-The Next.js server integration is an example in `examples/nextjs` at repository root.
-It does not include login, session storage, Server Actions guards, MFA or access-context rotation.
+The repository-level `scripts/verify.ps1` performs this dependency bootstrap automatically when the local TypeScript compiler is absent. The dependency is pinned exactly in `package.json`; the bootstrap does not run package lifecycle scripts and does not create or update a lockfile.
+
+Runtime code has no third-party npm runtime dependency. HTTPS is required except exact loopback development hosts. Redirects are rejected, cache storage is disabled, requests are bounded by timeout/cancellation, and raw credentials are never retained in public errors.
+
+Authentication/OIDC token lifecycle and the complete typed administration API remain follow-up increments in the `0.42.x` connector line.
