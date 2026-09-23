@@ -23,6 +23,8 @@ Centrally managed package versions:
 
 Package versions are maintained in `Directory.Packages.props`.
 
+`System.Formats.Cbor` is consumed from the .NET 10 shared framework surface and is intentionally not declared as an explicit NuGet `PackageReference`; explicitly referencing it produces `NU1510` under the repository's warnings-as-errors policy.
+
 ## TypeScript
 
 The class-based TypeScript connector uses:

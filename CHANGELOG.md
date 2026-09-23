@@ -1,3 +1,28 @@
+# 0.46.1 - WebAuthn framework dependency correction
+
+- Removed the explicit `System.Formats.Cbor` NuGet package reference from the WebAuthn provider because .NET 10 supplies the assembly automatically.
+- Removed the now-unused central `System.Formats.Cbor` package version entry.
+- Updated the WebAuthn source-consistency gate to reject reintroducing the redundant package reference.
+- Preserved all 0.46.0 WebAuthn registration behavior, persistence, cryptographic validation, and public contracts unchanged.
+- Corrected the `NU1510` warning-as-error that prevented `IdentityAccess.Mfa.WebAuthn` from producing its assembly and caused downstream `CS0006` cascade errors in the API and test projects.
+
+# 0.46.0 - WebAuthn / passkey registration provider
+
+- Added the separate `IdentityAccess.Mfa.WebAuthn` project while preserving the provider-neutral generic MFA core and the independent TOTP and recovery providers.
+- Added a conservative WebAuthn registration profile with 32-byte cryptographic challenges, exact configured origin validation, RP ID hash validation, required user presence, required user verification, and discoverable credentials.
+- Added `none` attestation validation and an ES256/P-256 COSE public-key profile for the initial passkey registration increment.
+- Added hash-only durable registration challenge state in provider-owned `identity_access.webauthn_registration_challenges`; raw challenges are returned to the caller but are not persisted.
+- Added provider-owned `identity_access.webauthn_credentials` persistence for credential ID, COSE public key, ES256 algorithm identifier, AAGUID, initial signature counter, backup flags, and opaque scoped-user handle.
+- Kept WebAuthn private keys completely outside Identity Access; no private-key or provider-secret payload was added to the generic `user_authenticators` table.
+- Added expiring single-use challenge consumption with PostgreSQL row locking around the generic authenticator and registration challenge.
+- Added duplicate credential-ID rejection through a provider-specific unique constraint and atomic insert conflict handling.
+- Added stable 32-byte opaque WebAuthn user handles derived from identity-scope and user identifiers without exposing login names or e-mail addresses.
+- Added provider registration behind `IdentityAccess:Mfa:WebAuthn`; the provider remains disabled by default and requires explicit RP ID, RP name, and allowed origins when enabled.
+- Added `System.Formats.Cbor` 10.0.0 as a centrally managed dependency for bounded WebAuthn CBOR parsing.
+- Added WebAuthn provider metadata, option-boundary tests, valid registration tests, invalid-origin tests, registration replay tests, PostgreSQL schema tests, repository source-consistency validation, and live PostgreSQL verification.
+- Exposed only the Enrollment capability in this increment; WebAuthn assertion authentication and signature verification remain the dedicated `0.47.0` increment.
+- Did not integrate WebAuthn into password login, OIDC token issuance, step-up orchestration, or lost-factor administration in this increment.
+
 # 0.45.0 - Recovery-code authentication-factor provider
 
 - Added the separate `IdentityAccess.Mfa.Recovery` project while preserving the provider-neutral generic MFA core and the independent TOTP provider.

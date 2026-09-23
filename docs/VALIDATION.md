@@ -328,3 +328,17 @@ Remove-Item Env:PGPASSWORD
 
 The live schema gate verifies the provider tables, `bytea` hash storage, absence of raw/protected code columns, absence of recovery-specific columns from the generic authenticator table, transactional mutation-trigger coverage, and the one-active-recovery-set partial unique index.
 
+
+## WebAuthn registration provider validation
+
+Version `0.46.0` adds `scripts/verify-webauthn-registration-source-consistency.ps1` to the primary repository verification chain. The gate pins the separate provider project, `webauthn.create` client-data validation, `none` attestation profile, ES256/P-256 COSE public-key validation, hash-only challenge persistence, row-lock single-use challenge consumption, API host registration, and focused tests.
+
+After applying PostgreSQL migrations, run:
+
+```powershell
+$env:PGPASSWORD = "<password>"
+.\scripts\postgresql\verify-webauthn-registration.ps1
+Remove-Item Env:PGPASSWORD
+```
+
+The live schema gate verifies the registration-challenge and credential tables, `bytea` challenge-hash/public-key storage, absence of private-key columns, generic authenticator separation, and transactional mutation-trigger coverage.

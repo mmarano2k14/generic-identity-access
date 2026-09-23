@@ -28,6 +28,10 @@ namespace IdentityAccess.Tests.Architecture
                 source,
                 StringComparison.Ordinal);
             Assert.Contains(
+                "if (-not $?) { throw \"WebAuthn registration source consistency validation failed.\" }",
+                source,
+                StringComparison.Ordinal);
+            Assert.Contains(
                 "if (-not $?) { throw \"TypeScript source consistency validation failed.\" }",
                 source,
                 StringComparison.Ordinal);

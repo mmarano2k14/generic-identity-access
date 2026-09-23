@@ -8,6 +8,7 @@ using IdentityAccess.Infrastructure.ConfigurationRouting;
 using IdentityAccess.Infrastructure.PostgreSql;
 using IdentityAccess.Mfa.Totp;
 using IdentityAccess.Mfa.Recovery;
+using IdentityAccess.Mfa.WebAuthn;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -44,6 +45,8 @@ builder.Services.AddIdentityAccessTotpProvider(
     builder.Configuration.GetSection("IdentityAccess:Mfa:Totp"));
 builder.Services.AddIdentityAccessRecoveryProvider(
     builder.Configuration.GetSection("IdentityAccess:Mfa:Recovery"));
+builder.Services.AddIdentityAccessWebAuthnProvider(
+    builder.Configuration.GetSection("IdentityAccess:Mfa:WebAuthn"));
 builder.AddIdentityAdministrationAuthorization();
 builder.AddIdentityApiFeatures();
 builder.AddIdentityAdministrationSecurity();

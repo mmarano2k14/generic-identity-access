@@ -1,53 +1,20 @@
 Generic Identity Access delta
-Version: 0.45.0
-Baseline: 0.44.0 GREEN
+Version: 0.46.1
+Baseline: 0.46.0 NOT GREEN (NU1510 compile repair)
 
 Added files:
-A docs/RECOVERY_PROVIDER.md
-A scripts/postgresql/verify-recovery-provider.ps1
-A scripts/verify-recovery-source-consistency.ps1
-A src/IdentityAccess.Infrastructure.PostgreSql/Migrations/0016_recovery_provider.sql
-A src/IdentityAccess.Mfa.Recovery/IRecoveryAuthenticationFactorService.cs
-A src/IdentityAccess.Mfa.Recovery/IRecoveryCodeStore.cs
-A src/IdentityAccess.Mfa.Recovery/IdentityAccess.Mfa.Recovery.csproj
-A src/IdentityAccess.Mfa.Recovery/PostgreSqlRecoveryCodeStore.cs
-A src/IdentityAccess.Mfa.Recovery/Properties/AssemblyInfo.cs
-A src/IdentityAccess.Mfa.Recovery/RecoveryAuthenticationFactorProvider.cs
-A src/IdentityAccess.Mfa.Recovery/RecoveryAuthenticationFactorProviderKey.cs
-A src/IdentityAccess.Mfa.Recovery/RecoveryAuthenticationFactorService.cs
-A src/IdentityAccess.Mfa.Recovery/RecoveryCodeGenerator.cs
-A src/IdentityAccess.Mfa.Recovery/RecoveryCodeProviderOptions.cs
-A src/IdentityAccess.Mfa.Recovery/RecoveryCodeSet.cs
-A src/IdentityAccess.Mfa.Recovery/RecoveryCodeStoreMutationResult.cs
-A src/IdentityAccess.Mfa.Recovery/RecoveryCodeVerificationResult.cs
-A src/IdentityAccess.Mfa.Recovery/RecoveryServiceCollectionExtensions.cs
-A tests/IdentityAccess.Tests/Mfa/Recovery/RecoveryAuthenticationFactorProviderTests.cs
-A tests/IdentityAccess.Tests/Mfa/Recovery/RecoveryAuthenticationFactorServiceTests.cs
-A tests/IdentityAccess.Tests/Mfa/Recovery/RecoveryCodeGeneratorTests.cs
-A tests/IdentityAccess.Tests/Mfa/Recovery/RecoveryTestRouteResolver.cs
-A tests/IdentityAccess.Tests/Mfa/Recovery/RecoveryTestSecurityAuditWriter.cs
-A tests/IdentityAccess.Tests/Mfa/Recovery/RecoveryTestSet.cs
-A tests/IdentityAccess.Tests/Mfa/Recovery/RecoveryTestStore.cs
-A tests/IdentityAccess.Tests/Mfa/Recovery/RecoveryTestTimeProvider.cs
-A tests/IdentityAccess.Tests/PostgreSql/PostgreSqlRecoverySchemaTests.cs
 
 Modified files:
 M CHANGELOG.md
 M Directory.Build.props
-M IdentityAccess.sln
-M README.md
+M Directory.Packages.props
 M SOURCE_MANIFEST.sha256
-M docs/MFA_PROVIDER_ARCHITECTURE.md
-M docs/PRODUCTION_QUALIFICATION.md
-M docs/VALIDATION.md
-M scripts/verify.ps1
-M src/IdentityAccess.Api/IdentityAccess.Api.csproj
-M src/IdentityAccess.Api/Program.cs
-M src/IdentityAccess.Api/appsettings.json
-M tests/IdentityAccess.Tests/Architecture/RepositoryVerificationScriptTests.cs
-M tests/IdentityAccess.Tests/IdentityAccess.Tests.csproj
+M docs/DEPENDENCIES.md
+M scripts/verify-webauthn-registration-source-consistency.ps1
+M src/IdentityAccess.Mfa.WebAuthn/IdentityAccess.Mfa.WebAuthn.csproj
 
 Deleted files:
 
-Apply this ZIP as an overlay on the confirmed 0.44.0 baseline.
-Run .\scripts\verify.ps1 after overlay. Do not treat 0.45.0 as GREEN until that command succeeds in the target .NET 10 environment.
+Apply this ZIP as an overlay on the 0.46.0 WebAuthn registration tree.
+The correction removes the redundant explicit System.Formats.Cbor package dependency that .NET 10 reports as NU1510 under warnings-as-errors.
+Run .\scripts\verify.ps1 after overlay. Do not treat 0.46.1 as GREEN until that command succeeds in the target .NET 10 environment.

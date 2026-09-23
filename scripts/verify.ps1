@@ -23,6 +23,9 @@ try {
     & (Join-Path $root "scripts/verify-recovery-source-consistency.ps1")
     if (-not $?) { throw "Recovery source consistency validation failed." }
 
+    & (Join-Path $root "scripts/verify-webauthn-registration-source-consistency.ps1")
+    if (-not $?) { throw "WebAuthn registration source consistency validation failed." }
+
     & (Join-Path $root "scripts/verify-typescript-source-consistency.ps1")
     if (-not $?) { throw "TypeScript source consistency validation failed." }
 

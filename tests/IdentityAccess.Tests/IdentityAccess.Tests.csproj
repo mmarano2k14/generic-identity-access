@@ -24,6 +24,7 @@
     <ProjectReference Include="../../src/IdentityAccess.Infrastructure.PostgreSql/IdentityAccess.Infrastructure.PostgreSql.csproj" />
     <ProjectReference Include="../../src/IdentityAccess.Mfa.Totp/IdentityAccess.Mfa.Totp.csproj" />
     <ProjectReference Include="../../src/IdentityAccess.Mfa.Recovery/IdentityAccess.Mfa.Recovery.csproj" />
+    <ProjectReference Include="../../src/IdentityAccess.Mfa.WebAuthn/IdentityAccess.Mfa.WebAuthn.csproj" />
     <ProjectReference Include="../../src/IdentityAccess.Rbac/IdentityAccess.Rbac.csproj" />
     <ProjectReference Include="../../src/IdentityAccess.Authorization/IdentityAccess.Authorization.csproj" />
     <ProjectReference Include="../../src/IdentityAccess.Rbac.MultiplexedAdapter/IdentityAccess.Rbac.MultiplexedAdapter.csproj" />
