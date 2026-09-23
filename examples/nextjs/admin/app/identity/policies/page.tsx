@@ -8,7 +8,7 @@ import { createPolicyAction } from "../actions";
 
 export default async function PoliciesPage() {
   const request = await IdentityAccessAdminRequest.fromCurrentRequest();
-  const policies = await request.client.listPolicies(request.tenantContext(), { limit: 50 });
+  const policies = await request.client.administration.policies.list(request.tenantContext(), { limit: 50 });
   const create = (
     <AdminMutationDialog title="Create policy" description="Create a tenant-scoped permission policy. Statements and bindings remain explicit follow-up operations." triggerLabel="Create policy" submitLabel="Create policy" action={createPolicyAction}>
       <AdminField label="Display name" name="displayName" autoComplete="off" required maxLength={200} />

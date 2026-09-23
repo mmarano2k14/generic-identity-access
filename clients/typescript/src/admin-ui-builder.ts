@@ -62,6 +62,10 @@ export class IdentityAccessAdminUiBuilder {
     return this.#with("resource-scopes", "resource-scope", "Resource scopes", "Manage application-defined resource hierarchy.", true);
   }
 
+  public withMfa(): this {
+    return this.#with("mfa", "mfa-policy", "Multi-factor authentication", "Manage provider-neutral MFA policy and authenticators.", false);
+  }
+
   public withSessions(): this {
     return this.#with("sessions", "session", "Sessions", "Revoke active user or client sessions.", false);
   }
@@ -79,6 +83,7 @@ export class IdentityAccessAdminUiBuilder {
       .withGroups()
       .withPolicies()
       .withResourceScopes()
+      .withMfa()
       .withSessions()
       .withScopeAuthority();
   }

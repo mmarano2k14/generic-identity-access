@@ -85,7 +85,7 @@ export class IdentityAccessHostSessionService {
     const loginIdentifier = IdentityAccessHostSessionService.requiredInput(loginIdentifierValue, "login identifier", 320);
     const password = IdentityAccessHostSessionService.requiredSecret(passwordValue, "password", 4096);
 
-    const session = await this.#connector.client.passwordLogin({
+    const session = await this.#connector.client.authentication.passwordLogin({
       clientId: this.#clientId,
       loginIdentifier,
       password,
@@ -93,11 +93,11 @@ export class IdentityAccessHostSessionService {
     });
 
     try {
-      const authorization = await this.#connector.client.authorizeOidc(session, {
+      const authorization = await this.#connector.client.oidc.authorize(session, {
         clientId: this.#clientId,
         redirectUri: this.#redirectUri,
       });
-      const tokens = await this.#connector.client.exchangeAuthorizationCode(authorization);
+      const tokens = await this.#connector.client.oidc.exchangeAuthorizationCode(authorization);
       this.#persist(session, tokens);
     } catch (error) {
       await this.#bestEffortRevoke(session);
@@ -108,7 +108,7 @@ export class IdentityAccessHostSessionService {
   public async signOut(): Promise<void> {
     const session = this.#sessionCredential();
     try {
-      if (session !== undefined) await this.#connector.client.logout(session);
+      if (session !== undefined) await this.#connector.client.authentication.logout(session);
     } catch {
       // Local logout still completes when the remote revocation endpoint is temporarily unavailable.
     } finally {
@@ -171,7 +171,7 @@ export class IdentityAccessHostSessionService {
 
   async #bestEffortRevoke(session: IdentitySessionCredential): Promise<void> {
     try {
-      await this.#connector.client.logout(session);
+      await this.#connector.client.authentication.logout(session);
     } catch {
       // The original sign-in failure remains authoritative. Never replace it with cleanup failure detail.
     }

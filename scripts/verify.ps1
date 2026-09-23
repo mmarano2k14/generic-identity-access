@@ -14,6 +14,9 @@ try {
     & (Join-Path $root "scripts/verify-oidc-source-consistency.ps1")
     if (-not $?) { throw "OIDC source consistency validation failed." }
 
+    & (Join-Path $root "scripts/verify-mfa-source-consistency.ps1")
+    if (-not $?) { throw "MFA source consistency validation failed." }
+
     & (Join-Path $root "scripts/verify-typescript-source-consistency.ps1")
     if (-not $?) { throw "TypeScript source consistency validation failed." }
 
@@ -79,6 +82,8 @@ try {
     if ($LASTEXITCODE -ne 0) { throw "NuGet restore failed." }
     & dotnet build IdentityAccess.sln --configuration $Configuration --no-restore
     if ($LASTEXITCODE -ne 0) { throw "Build failed." }
+    & dotnet build tools/IdentityAccess.DevPasswordHasher/IdentityAccess.DevPasswordHasher.csproj --configuration $Configuration
+    if ($LASTEXITCODE -ne 0) { throw "Development password hasher build failed." }
     & dotnet test IdentityAccess.sln --configuration $Configuration --no-build --no-restore `
         --logger "trx;LogFileName=identity-access.trx" --results-directory (Join-Path $root "artifacts/test-results")
     if ($LASTEXITCODE -ne 0) { throw "Tests failed." }

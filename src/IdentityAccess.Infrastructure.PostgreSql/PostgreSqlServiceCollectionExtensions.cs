@@ -1,4 +1,5 @@
 using IdentityAccess.Application.Authentication;
+using IdentityAccess.Application.Authentication.Mfa;
 using IdentityAccess.Application.Authorization;
 using IdentityAccess.Application.Storage;
 using IdentityAccess.Application.Security;
@@ -120,6 +121,8 @@ namespace IdentityAccess.Infrastructure.PostgreSql
             services.AddSingleton<IAuthenticationSessionStore, PostgreSqlAuthenticationSessionStore>();
             services.AddSingleton<IOidcAuthorizationCodeStore, PostgreSqlOidcAuthorizationCodeStore>();
             services.AddSingleton<IOidcRefreshTokenStore, PostgreSqlOidcRefreshTokenStore>();
+            services.AddSingleton<IMfaPolicyStore, PostgreSqlMfaPolicyStore>();
+            services.AddSingleton<IUserAuthenticatorStore, PostgreSqlUserAuthenticatorStore>();
             services.AddSingleton<ISecurityAuditWriter, PostgreSqlSecurityAuditWriter>();
 
             return services;

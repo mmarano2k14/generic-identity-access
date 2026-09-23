@@ -6,9 +6,9 @@ const api = new IdentityAccessClient({
 });
 
 const [live, ready, info] = await Promise.all([
-  api.liveness(),
-  api.readiness(),
-  api.info(),
+  api.system.liveness(),
+  api.system.readiness(),
+  api.system.info(),
 ]);
 
 assert.equal(live.status, "alive");

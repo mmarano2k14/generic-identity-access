@@ -35,8 +35,7 @@ export class IdentityAuthorizationContext {
     this.#credential = options.credential;
 
     // Validate all passive boundary/credential values immediately at construction.
-    IdentityAccessClient.authorizationPath(this.#boundary);
-    IdentityAccessClient.credentialHeaders(this.#credential);
+    this.#client.authorization.validateContext(this.#boundary, this.#credential);
   }
 
   public async isAllowed(
@@ -45,7 +44,7 @@ export class IdentityAuthorizationContext {
     action: string,
     signal?: AbortSignal,
   ): Promise<boolean> {
-    return this.#client.evaluateCapability(
+    return this.#client.authorization.evaluate(
       this.#boundary,
       { resource, feature, action },
       this.#credential,
@@ -57,7 +56,7 @@ export class IdentityAuthorizationContext {
     requirement: IdentityCapabilityRequirement,
     signal?: AbortSignal,
   ): Promise<boolean> {
-    return this.#client.evaluateCapability(
+    return this.#client.authorization.evaluate(
       this.#boundary,
       requirement,
       this.#credential,

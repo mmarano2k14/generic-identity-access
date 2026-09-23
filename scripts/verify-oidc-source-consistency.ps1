@@ -65,12 +65,44 @@ $requiredFiles = @(
     "src/IdentityAccess.Api/Oidc/OidcRedirectBuilder.cs",
     "src/IdentityAccess.Api/Oidc/OidcRequestParameterGuard.cs",
     "src/IdentityAccess.Api/Security/BearerAdministrationRequestContextResolver.cs",
-    "src/IdentityAccess.Api/Security/CompositeAdministrationRequestContextResolver.cs"
+    "src/IdentityAccess.Api/Security/CompositeAdministrationRequestContextResolver.cs",
+    "scripts/authentication/create-dev-oidc-signing-key.ps1",
+    "tools/IdentityAccess.DevOidcSigningKey/IdentityAccess.DevOidcSigningKey.csproj",
+    "tools/IdentityAccess.DevOidcSigningKey/Program.cs"
 )
 
 foreach ($file in $requiredFiles) {
     Require-File $file | Out-Null
 }
+
+
+Require-Text `
+    "scripts/authentication/create-dev-oidc-signing-key.ps1" `
+    "IdentityAccess.DevOidcSigningKey"
+
+Require-Text `
+    "scripts/authentication/create-dev-oidc-signing-key.ps1" `
+    "dotnet build"
+
+Reject-Text `
+    "scripts/authentication/create-dev-oidc-signing-key.ps1" `
+    "System.Security.Cryptography.RSA"
+
+Reject-Text `
+    "scripts/authentication/create-dev-oidc-signing-key.ps1" `
+    "ExportPkcs8PrivateKey"
+
+Require-Text `
+    "tools/IdentityAccess.DevOidcSigningKey/Program.cs" `
+    "RSA.Create(keySize)"
+
+Require-Text `
+    "tools/IdentityAccess.DevOidcSigningKey/Program.cs" `
+    "ExportPkcs8PrivateKeyPem()"
+
+Require-Text `
+    "tools/IdentityAccess.DevOidcSigningKey/IdentityAccess.DevOidcSigningKey.csproj" `
+    "<TargetFramework>net10.0</TargetFramework>"
 
 Require-Text `
     "src/IdentityAccess.Application/Authentication/AuthenticatedSessionContext.cs" `

@@ -1,17 +1,18 @@
-Generic Identity Access delta manifest
-Version: 0.42.12
-Baseline: 0.42.11
-Content: Runnable Next.js request-time configuration correction
+Generic Identity Access delta
+Version: 0.43.2
+Baseline: 0.43.1
 
-Added files: 0
-Modified files: 7
-Deleted files: 0
+Added files:
 
-[MODIFIED]
-CHANGELOG.md
-Directory.Build.props
-SOURCE_MANIFEST.sha256
-examples/nextjs/admin/README.md
-examples/nextjs/admin/package.json
-examples/nextjs/admin/server/IdentityAccessHostSessionService.ts
-scripts/verify-typescript-source-consistency.ps1
+Modified files:
+M CHANGELOG.md
+M Directory.Build.props
+M SOURCE_MANIFEST.sha256
+M scripts/verify-mfa-source-consistency.ps1
+M src/IdentityAccess.Infrastructure.Authentication/AuthenticationFactorProviderServiceCollectionExtensions.cs
+M src/IdentityAccess.Infrastructure.Authentication/AuthenticationServiceCollectionExtensions.cs
+M src/IdentityAccess.Infrastructure.PostgreSql/Authentication/PostgreSqlUserAuthenticatorStore.cs
+
+Deleted files:
+
+Apply this ZIP as an overlay on the current 0.43.1 continuation baseline.

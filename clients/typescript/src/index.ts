@@ -30,6 +30,12 @@ export type {
 } from "./contracts.js";
 
 export type {
+  IdentityAuthenticatorStatus,
+  IdentityCreateMfaPolicyRequest,
+  IdentityMfaPolicyMode,
+  IdentityMfaPolicyRecord,
+  IdentityMfaProviderCapability,
+  IdentityMfaProviderRecord,
   IdentityAddGroupPolicyBindingRequest,
   IdentityAddPolicyStatementRequest,
   IdentityAddScopeTypeRequest,
@@ -68,6 +74,8 @@ export type {
   IdentityUpdateTenantMembershipRequest,
   IdentityUpdateTenantRequest,
   IdentityUpdateUserRequest,
+  IdentityUpdateMfaPolicyRequest,
+  IdentityUserAuthenticatorRecord,
   IdentityUserRecord,
   IdentityUserStatus,
 } from "./admin-contracts.js";

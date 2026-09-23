@@ -7,7 +7,7 @@ import { createGroupAction } from "../actions";
 
 export default async function GroupsPage() {
   const request = await IdentityAccessAdminRequest.fromCurrentRequest();
-  const groups = await request.client.listGroups(request.tenantContext(), { limit: 50 });
+  const groups = await request.client.administration.groups.list(request.tenantContext(), { limit: 50 });
   const create = (
     <AdminMutationDialog title="Create group" description="Create a tenant-scoped group for explicit authorization assignments." triggerLabel="Create group" submitLabel="Create group" action={createGroupAction}>
       <AdminField label="Display name" name="displayName" autoComplete="off" required maxLength={200} />

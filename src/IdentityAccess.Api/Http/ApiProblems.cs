@@ -81,6 +81,13 @@ namespace IdentityAccess.Api.Http
                 "Authentication unavailable",
                 "Local authentication is not configured on this host.");
 
+        /// <summary>Creates the MFA-administration unavailable response.</summary>
+        public static ObjectResult MfaAdministrationUnavailable() =>
+            Result(
+                StatusCodes.Status503ServiceUnavailable,
+                "MFA administration unavailable",
+                "Generic MFA policy and authenticator stores are not configured on this host.");
+
         /// <summary>Creates the administration-authorization unavailable response.</summary>
         public static ObjectResult AdministrationAuthorizationUnavailable() =>
             Result(

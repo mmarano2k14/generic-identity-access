@@ -7,7 +7,7 @@ import { createTenantAction } from "../actions";
 
 export default async function TenantsPage() {
   const request = await IdentityAccessAdminRequest.fromCurrentRequest();
-  const tenants = await request.client.listTenants(request.administrationContext, { limit: 50 });
+  const tenants = await request.client.administration.tenants.list(request.administrationContext, { limit: 50 });
   const create = (
     <AdminMutationDialog title="Create tenant" description="Create a security and account boundary inside the current identity scope." triggerLabel="Create tenant" submitLabel="Create tenant" action={createTenantAction}>
       <AdminField label="Display name" name="displayName" autoComplete="off" required maxLength={200} />

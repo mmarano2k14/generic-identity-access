@@ -16,8 +16,7 @@ The qualification surface covers:
 - restored-schema structural validation;
 - operational key/secret handling and restart boundaries.
 
-MFA, TOTP, passkeys/WebAuthn, recovery codes, and step-up authentication remain optional later
-work and are not part of this qualification release.
+The generic MFA provider foundation is included in the current qualification gates. Concrete TOTP, recovery-code, passkey/WebAuthn, and step-up provider flows remain optional later work and are not yet qualified.
 
 ## Primary qualification command
 

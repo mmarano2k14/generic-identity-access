@@ -10,8 +10,8 @@ export default async function AuthorityPage({ searchParams }: { readonly searchP
   const request = await IdentityAccessAdminRequest.fromCurrentRequest();
   const { groupId, policyId } = await searchParams;
   const [group, policy] = await Promise.all([
-    groupId ? request.client.getScopeAuthorityGroup(request.administrationContext, groupId) : Promise.resolve(null),
-    policyId ? request.client.getScopeAuthorityPolicy(request.administrationContext, policyId) : Promise.resolve(null),
+    groupId ? request.client.administration.scopeAuthority.getGroup(request.administrationContext, groupId) : Promise.resolve(null),
+    policyId ? request.client.administration.scopeAuthority.getPolicy(request.administrationContext, policyId) : Promise.resolve(null),
   ]);
   const actions = (
     <div className="ia-action-row">

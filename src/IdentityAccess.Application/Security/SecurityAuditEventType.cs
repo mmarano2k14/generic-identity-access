@@ -88,6 +88,12 @@ namespace IdentityAccess.Application.Security
         /// <summary>A consumed OAuth refresh token was replayed.</summary>
         OidcRefreshTokenReuseDetected = 42,
         /// <summary>An OAuth refresh-token family was revoked after replay detection.</summary>
-        OidcRefreshTokenFamilyRevoked = 43
+        OidcRefreshTokenFamilyRevoked = 43,
+        /// <summary>An MFA policy was created.</summary>
+        MfaPolicyCreated = 44,
+        /// <summary>An MFA policy was updated.</summary>
+        MfaPolicyUpdated = 45,
+        /// <summary>A user authenticator was revoked.</summary>
+        UserAuthenticatorRevoked = 46
     }
 }

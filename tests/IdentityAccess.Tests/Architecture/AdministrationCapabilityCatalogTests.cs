@@ -30,6 +30,8 @@ namespace IdentityAccess.Tests.Architecture
                 IdentityAccessAdministrationCapabilities.ScopeTypes,
                 IdentityAccessAdministrationCapabilities.ResourceScopes,
                 IdentityAccessAdministrationCapabilities.Sessions,
+                IdentityAccessAdministrationCapabilities.MfaPolicies,
+                IdentityAccessAdministrationCapabilities.MfaAuthenticators,
                 IdentityAccessAdministrationCapabilities.IdentityScopeAuthorityGroups,
                 IdentityAccessAdministrationCapabilities.IdentityScopeAuthorityMemberships,
                 IdentityAccessAdministrationCapabilities.IdentityScopeAuthorityPolicies,

@@ -8,10 +8,10 @@ import { IdentityAccessAdminRequest } from "../../server/IdentityAccessAdminRequ
 export default async function IdentityOverviewPage() {
   const request = await IdentityAccessAdminRequest.fromCurrentRequest();
   const [users, tenants, groups, policies] = await Promise.all([
-    request.client.listUsers(request.administrationContext, { limit: 50 }),
-    request.client.listTenants(request.administrationContext, { limit: 50 }),
-    request.client.listGroups(request.tenantContext(), { limit: 50 }),
-    request.client.listPolicies(request.tenantContext(), { limit: 50 }),
+    request.client.administration.users.list(request.administrationContext, { limit: 50 }),
+    request.client.administration.tenants.list(request.administrationContext, { limit: 50 }),
+    request.client.administration.groups.list(request.tenantContext(), { limit: 50 }),
+    request.client.administration.policies.list(request.tenantContext(), { limit: 50 }),
   ]);
   const visibleCount = (count: number) => count >= 50 ? "50+" : String(count);
 

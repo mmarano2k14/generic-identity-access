@@ -21,20 +21,20 @@ export class IdentityAccessServerConnector {
 
 // Example server use:
 // const identity = new IdentityAccessServerConnector();
-// const info = await identity.client.info();
-// const session = await identity.client.passwordLogin({
+// const info = await identity.client.system.info();
+// const session = await identity.client.authentication.passwordLogin({
 //   clientId: "admin-web",
 //   loginIdentifier,
 //   password,
 //   redirectUri: "https://app.example.test/callback",
 // });
-// const authorization = await identity.client.authorizeOidc(session, {
+// const authorization = await identity.client.oidc.authorize(session, {
 //   clientId: "admin-web",
 //   redirectUri: session.redirectUri,
 // });
-// const tokens = await identity.client.exchangeAuthorizationCode(authorization);
+// const tokens = await identity.client.oidc.exchangeAuthorizationCode(authorization);
 
-// const user = await identity.client.createUser({
+// const user = await identity.client.administration.users.create({
 //   identityScopeId,
 //   applicationKey: "admin-app",
 //   credential: { kind: "bearer", accessToken: tokens.accessToken },

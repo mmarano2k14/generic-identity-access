@@ -9,6 +9,6 @@ namespace IdentityAccess.Api.Controllers
     /// <summary>Represents the request payload for password login.</summary>
     public sealed record PasswordLoginRequest(
         string LoginIdentifier,
-        [property: DataType(DataType.Password)] string Password,
+        [param: DataType(DataType.Password)] string Password,
         string RedirectUri);
 }

@@ -48,6 +48,12 @@ namespace IdentityAccess.Api.Security
         /// <summary>Gets the session administration feature.</summary>
         public const string Sessions = "session";
 
+        /// <summary>Gets the generic MFA policy administration feature.</summary>
+        public const string MfaPolicies = "mfa-policy";
+
+        /// <summary>Gets the generic user-authenticator administration feature.</summary>
+        public const string MfaAuthenticators = "mfa-authenticator";
+
         /// <summary>Gets the identity-scope authority-group administration feature.</summary>
         public const string IdentityScopeAuthorityGroups = "scope-authority-group";
 

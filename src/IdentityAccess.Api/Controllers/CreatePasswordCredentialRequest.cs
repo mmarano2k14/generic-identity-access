@@ -9,5 +9,5 @@ namespace IdentityAccess.Api.Controllers
 
     /// <summary>Represents the request payload for create password credential.</summary>
     public sealed record CreatePasswordCredentialRequest(string LoginIdentifier,
-        [property: DataType(DataType.Password)] string Password);
+        [param: DataType(DataType.Password)] string Password);
 }

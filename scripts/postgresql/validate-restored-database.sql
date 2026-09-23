@@ -32,6 +32,9 @@ BEGIN
         'identity_scope_administration_group_policy_bindings',
         'oidc_authorization_codes',
         'oidc_refresh_tokens',
+        'mfa_policies',
+        'mfa_policy_providers',
+        'user_authenticators',
         'schema_migrations'
     ]
     LOOP
@@ -79,7 +82,7 @@ BEGIN
         FROM information_schema.columns
         WHERE table_schema = 'identity_access'
           AND column_name IN
-              ('password', 'session_token', 'refresh_token', 'authorization_code', 'connection_string')
+              ('password', 'session_token', 'refresh_token', 'authorization_code', 'connection_string', 'totp_secret', 'provider_payload', 'private_key', 'recovery_code')
     ) THEN
         RAISE EXCEPTION 'restored identity_access schema contains a forbidden raw-secret column';
     END IF;

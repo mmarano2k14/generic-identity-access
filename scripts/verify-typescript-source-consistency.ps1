@@ -12,95 +12,124 @@ $required = @(
     "contracts.ts",
     "admin-contracts.ts",
     "errors.ts",
-    "index.ts"
+    "index.ts",
+    "client/IdentityAccessClient.ts",
+    "client/IdentityAccessHttpTransport.ts",
+    "client/IdentityAccessSystemClient.ts",
+    "client/IdentityAccessAuthenticationClient.ts",
+    "client/IdentityAccessOidcClient.ts",
+    "client/IdentityAccessAuthorizationClient.ts",
+    "client/IdentityAccessValueCodec.ts",
+    "client/IdentityAccessPathBuilder.ts",
+    "client/IdentityAccessProtocolCodec.ts",
+    "client/IdentityAccessAdministrationCodec.ts",
+    "client/IdentityAccessCrypto.ts",
+    "client/administration/IdentityAccessAdministrationClient.ts",
+    "client/administration/IdentityAccessAdministrationTransport.ts",
+    "client/administration/IdentityAccessUsersClient.ts",
+    "client/administration/IdentityAccessTenantsClient.ts",
+    "client/administration/IdentityAccessMembershipsClient.ts",
+    "client/administration/IdentityAccessMfaClient.ts",
+    "client/administration/IdentityAccessGroupsClient.ts",
+    "client/administration/IdentityAccessPoliciesClient.ts",
+    "client/administration/IdentityAccessResourceScopesClient.ts",
+    "client/administration/IdentityAccessSecurityModelsClient.ts",
+    "client/administration/IdentityAccessSessionsClient.ts",
+    "client/administration/IdentityAccessScopeAuthorityClient.ts"
 )
 foreach ($name in $required) {
     if (-not (Test-Path (Join-Path $src $name) -PathType Leaf)) {
         throw "TypeScript connector source is incomplete: missing $name."
     }
 }
-$client = Get-Content (Join-Path $src "client.ts") -Raw
+
+$compatClient = Get-Content (Join-Path $src "client.ts") -Raw
+$client = Get-Content (Join-Path $src "client/IdentityAccessClient.ts") -Raw
+$systemClient = Get-Content (Join-Path $src "client/IdentityAccessSystemClient.ts") -Raw
+$authenticationClient = Get-Content (Join-Path $src "client/IdentityAccessAuthenticationClient.ts") -Raw
+$oidcClient = Get-Content (Join-Path $src "client/IdentityAccessOidcClient.ts") -Raw
+$authorizationClient = Get-Content (Join-Path $src "client/IdentityAccessAuthorizationClient.ts") -Raw
+$administrationClient = Get-Content (Join-Path $src "client/administration/IdentityAccessAdministrationClient.ts") -Raw
+$usersClient = Get-Content (Join-Path $src "client/administration/IdentityAccessUsersClient.ts") -Raw
+$tenantsClient = Get-Content (Join-Path $src "client/administration/IdentityAccessTenantsClient.ts") -Raw
+$membershipsClient = Get-Content (Join-Path $src "client/administration/IdentityAccessMembershipsClient.ts") -Raw
+$mfaClient = Get-Content (Join-Path $src "client/administration/IdentityAccessMfaClient.ts") -Raw
+$groupsClient = Get-Content (Join-Path $src "client/administration/IdentityAccessGroupsClient.ts") -Raw
+$policiesClient = Get-Content (Join-Path $src "client/administration/IdentityAccessPoliciesClient.ts") -Raw
+$resourceScopesClient = Get-Content (Join-Path $src "client/administration/IdentityAccessResourceScopesClient.ts") -Raw
+$securityModelsClient = Get-Content (Join-Path $src "client/administration/IdentityAccessSecurityModelsClient.ts") -Raw
+$sessionsClient = Get-Content (Join-Path $src "client/administration/IdentityAccessSessionsClient.ts") -Raw
+$scopeAuthorityClient = Get-Content (Join-Path $src "client/administration/IdentityAccessScopeAuthorityClient.ts") -Raw
+$valueCodec = Get-Content (Join-Path $src "client/IdentityAccessValueCodec.ts") -Raw
 $context = Get-Content (Join-Path $src "authorization-context.ts") -Raw
 $builder = Get-Content (Join-Path $src "admin-ui-builder.ts") -Raw
 $decorator = Get-Content (Join-Path $src "require-capability.ts") -Raw
 $index = Get-Content (Join-Path $src "index.ts") -Raw
+$allSource = (Get-ChildItem $src -Filter *.ts -Recurse | ForEach-Object { Get-Content $_.FullName -Raw }) -join "`n"
+
 if ($client -notmatch 'export\s+class\s+IdentityAccessClient\b') { throw "IdentityAccessClient must be a class." }
+if ($compatClient -match 'export\s+class\s+IdentityAccessClient\b') { throw "client.ts must remain a compatibility re-export; implementation belongs under src/client/." }
 if ($context -notmatch 'export\s+class\s+IdentityAuthorizationContext\b') { throw "IdentityAuthorizationContext must be a class." }
 if ($builder -notmatch 'export\s+class\s+IdentityAccessAdminUiBuilder\b') { throw "IdentityAccessAdminUiBuilder must be a class." }
 if ($decorator -notmatch 'export\s+function\s+RequireCapability\b') { throw "RequireCapability decorator is missing." }
 if ($index -match 'createIdentityAccessClient') { throw "Legacy createIdentityAccessClient export must not return." }
-$allSource = (Get-ChildItem $src -Filter *.ts -Recurse | ForEach-Object { Get-Content $_.FullName -Raw }) -join "`n"
 if ($allSource -match 'export\s+function\s+createIdentityAccessClient\b') { throw "Legacy functional client factory must not return." }
 if ($context -notmatch '\bisAllowed\s*\(') { throw "IdentityAuthorizationContext.isAllowed is required." }
-$requiredClientMethods = @(
-    "passwordLogin",
-    "validateSession",
-    "logout",
-    "authorizeOidc",
-    "exchangeAuthorizationCode",
-    "refreshOidcTokens",
-    "listUsers",
-    "getUser",
-    "createUser",
-    "updateUser",
-    "listTenants",
-    "getTenant",
-    "createTenant",
-    "updateTenant",
-    "getTenantMembership",
-    "findTenantMembershipByUser",
-    "createTenantMembership",
-    "updateTenantMembership",
-    "listGroups",
-    "getGroup",
-    "createGroup",
-    "updateGroup",
-    "listGroupMembers",
-    "addGroupMember",
-    "removeGroupMember",
-    "listPolicies",
-    "getPolicy",
-    "createPolicy",
-    "updatePolicy",
-    "listPolicyStatements",
-    "addPolicyStatement",
-    "removePolicyStatement",
-    "listPolicyBindings",
-    "addPolicyBinding",
-    "removePolicyBinding",
-    "listResourceScopes",
-    "getResourceScope",
-    "createResourceScope",
-    "updateResourceScope",
-    "listScopeTypes",
-    "addScopeType",
-    "revokeUserSessions",
-    "revokeClientSessions",
-    "getScopeAuthorityGroup",
-    "createScopeAuthorityGroup",
-    "updateScopeAuthorityGroup",
-    "listScopeAuthorityMembers",
-    "addScopeAuthorityMember",
-    "removeScopeAuthorityMember",
-    "getScopeAuthorityPolicy",
-    "createScopeAuthorityPolicy",
-    "updateScopeAuthorityPolicy",
-    "listScopeAuthorityPolicyStatements",
-    "addScopeAuthorityPolicyStatement",
-    "removeScopeAuthorityPolicyStatement",
-    "listScopeAuthorityPolicyBindings",
-    "addScopeAuthorityPolicyBinding",
-    "removeScopeAuthorityPolicyBinding"
-)
-foreach ($method in $requiredClientMethods) {
-    if ($client -notmatch ("\b" + [regex]::Escape($method) + "\s*\(")) {
-        throw "IdentityAccessClient.$method is required."
+
+$rootProperties = @("system", "authentication", "oidc", "authorization", "administration")
+foreach ($property in $rootProperties) {
+    if ($client -notmatch ("public\s+readonly\s+" + [regex]::Escape($property) + "\s*:")) {
+        throw "IdentityAccessClient must expose the $property class responsibility."
     }
 }
-if ($client -match 'client_secret') { throw "The TypeScript public-client implementation must not introduce client_secret." }
 
-if ($client -notmatch 'capabilityPatternSegment') { throw "Typed policy administration must preserve supported wildcard capability patterns." }
-if ($client -match 'class\s+Identity.*AdministrationClient\b') { throw "Administration must remain on IdentityAccessClient; do not introduce a parallel runtime client class." }
+$legacyRootMethods = @(
+    "liveness", "readiness", "info", "passwordLogin", "validateSession", "logout",
+    "authorizeOidc", "exchangeAuthorizationCode", "refreshOidcTokens",
+    "listUsers", "createUser", "listTenants", "createTenant", "listGroups", "createGroup",
+    "listPolicies", "createPolicy", "listResourceScopes", "revokeUserSessions", "evaluateCapability"
+)
+foreach ($method in $legacyRootMethods) {
+    if ($client -match ("\b" + [regex]::Escape($method) + "\s*\(")) {
+        throw "IdentityAccessClient must remain a composition facade; $method belongs to a focused client class."
+    }
+}
+
+$classRequirements = @(
+    @{ Source = $systemClient; ClassName = "IdentityAccessSystemClient"; Methods = @("liveness", "readiness", "info") },
+    @{ Source = $authenticationClient; ClassName = "IdentityAccessAuthenticationClient"; Methods = @("passwordLogin", "validateSession", "logout") },
+    @{ Source = $oidcClient; ClassName = "IdentityAccessOidcClient"; Methods = @("authorize", "exchangeAuthorizationCode", "refreshTokens") },
+    @{ Source = $authorizationClient; ClassName = "IdentityAccessAuthorizationClient"; Methods = @("validateContext", "evaluate") },
+    @{ Source = $usersClient; ClassName = "IdentityAccessUsersClient"; Methods = @("list", "get", "create", "update") },
+    @{ Source = $tenantsClient; ClassName = "IdentityAccessTenantsClient"; Methods = @("list", "get", "create", "update") },
+    @{ Source = $membershipsClient; ClassName = "IdentityAccessMembershipsClient"; Methods = @("get", "findByUser", "create", "update") },
+    @{ Source = $mfaClient; ClassName = "IdentityAccessMfaClient"; Methods = @("listProviders", "getPolicy", "createPolicy", "updatePolicy", "listAuthenticators", "revokeAuthenticator") },
+    @{ Source = $groupsClient; ClassName = "IdentityAccessGroupsClient"; Methods = @("list", "get", "create", "update", "listMembers", "addMember", "removeMember") },
+    @{ Source = $policiesClient; ClassName = "IdentityAccessPoliciesClient"; Methods = @("list", "get", "create", "update", "listStatements", "addStatement", "removeStatement", "listBindings", "addBinding", "removeBinding") },
+    @{ Source = $resourceScopesClient; ClassName = "IdentityAccessResourceScopesClient"; Methods = @("list", "get", "create", "update") },
+    @{ Source = $securityModelsClient; ClassName = "IdentityAccessSecurityModelsClient"; Methods = @("listScopeTypes", "addScopeType") },
+    @{ Source = $sessionsClient; ClassName = "IdentityAccessSessionsClient"; Methods = @("revokeUser", "revokeClient") },
+    @{ Source = $scopeAuthorityClient; ClassName = "IdentityAccessScopeAuthorityClient"; Methods = @("getGroup", "createGroup", "updateGroup", "listMembers", "addMember", "removeMember", "getPolicy", "createPolicy", "updatePolicy", "listPolicyStatements", "addPolicyStatement", "removePolicyStatement", "listPolicyBindings", "addPolicyBinding", "removePolicyBinding") }
+)
+foreach ($requirement in $classRequirements) {
+    $source = [string]$requirement.Source
+    $className = [string]$requirement.ClassName
+    if ($source -notmatch ("export\s+class\s+" + [regex]::Escape($className) + "\b")) {
+        throw "$className must remain a class."
+    }
+    foreach ($method in $requirement.Methods) {
+        if ($source -notmatch ("\b" + [regex]::Escape([string]$method) + "\s*\(")) {
+            throw "$className.$method is required."
+        }
+    }
+}
+
+if ($administrationClient -notmatch 'public\s+readonly\s+users\s*:' -or $administrationClient -notmatch 'public\s+readonly\s+mfa\s*:' -or $administrationClient -notmatch 'public\s+readonly\s+scopeAuthority\s*:') {
+    throw "IdentityAccessAdministrationClient must compose the focused administration clients."
+}
+if ($allSource -match 'client_secret') { throw "The TypeScript public-client implementation must not introduce client_secret." }
+if ($valueCodec -notmatch 'capabilityPatternSegment') { throw "Typed policy administration must preserve supported wildcard capability patterns." }
+if ($context -notmatch '\.authorization\.evaluate\s*\(') { throw "IdentityAuthorizationContext must delegate through IdentityAccessAuthorizationClient." }
 if ($builder -notmatch '\bwithAll\s*\(') { throw "IdentityAccessAdminUiBuilder.withAll is required." }
 if ($builder -notmatch '\bwithTenantAuthorization\s*\(') { throw "Tenant-scoped UI visibility must use an explicit tenant authorization context." }
 if ($builder -notmatch '\bhref\s*:') { throw "Administration UI entries must carry stable route metadata." }
@@ -131,6 +160,7 @@ $requiredNextFiles = @(
     "app/identity/groups/page.tsx",
     "app/identity/policies/page.tsx",
     "app/identity/resource-scopes/page.tsx",
+    "app/identity/mfa/page.tsx",
     "app/identity/sessions/page.tsx",
     "app/identity/authority/page.tsx",
     "app/layout.tsx",
@@ -193,6 +223,8 @@ function Get-NextAdminOwnedFiles {
 }
 
 $nextTypeScriptSource = (Get-NextAdminOwnedFiles -Extensions @(".ts", ".tsx") | ForEach-Object { Get-Content $_.FullName -Raw }) -join "`n"
+$legacyHostClientMethods = 'client\.(?:info|liveness|readiness|passwordLogin|validateSession|logout|authorizeOidc|exchangeAuthorizationCode|refreshOidcTokens|listUsers|createUser|listTenants|createTenant|listGroups|createGroup|listPolicies|createPolicy|listResourceScopes|revokeUserSessions|revokeClientSessions)\s*\('
+if ($nextTypeScriptSource -match $legacyHostClientMethods) { throw "Next.js administration must consume focused IdentityAccessClient responsibility classes instead of legacy root methods." }
 if ($mutationService -notmatch 'export\s+class\s+IdentityAccessAdminMutationService\b') { throw "Next.js administration mutation orchestration must remain class-based." }
 if ($actions -notmatch '^"use server";') { throw "Next.js administration actions must be explicit server actions." }
 if ($actions -match '\.client\.') { throw "Next.js Server Action adapters must delegate through IdentityAccessAdminMutationService instead of calling IdentityAccessClient directly." }
@@ -210,7 +242,7 @@ if ($layout -match 'styles/identity-access-admin\.css') { throw "Global administ
 if ($hostSession -notmatch 'export\s+class\s+IdentityAccessHostSessionService\b') { throw "Runnable host session orchestration must remain class-based." }
 if ($hostConnector -notmatch 'export\s+class\s+IdentityAccessServerConnector\b' -or $hostConnector -notmatch '@identity-access/client') { throw "Runnable host server connector must remain host-local and consume the packaged class-based client." }
 if ($hostSession -match '\.\./\.\./identity-access' -or $nextTypeScriptSource -match 'from\s+["'']\.\./\.\./identity-access["'']') { throw "Runnable host must not import its server connector from outside the Next.js package root." }
-if ($hostSession -notmatch 'passwordLogin' -or $hostSession -notmatch 'authorizeOidc' -or $hostSession -notmatch 'exchangeAuthorizationCode') { throw "Runnable host sign-in must use local authentication plus OIDC Authorization Code/PKCE." }
+if ($hostSession -notmatch '\.client\.authentication\.passwordLogin' -or $hostSession -notmatch '\.client\.oidc\.authorize' -or $hostSession -notmatch '\.client\.oidc\.exchangeAuthorizationCode') { throw "Runnable host sign-in must use the composed authentication and OIDC client classes." }
 $requestCookieIndex = $hostSession.IndexOf('const cookieStore = await cookies();', [System.StringComparison]::Ordinal)
 $runtimeEnvironmentIndex = $hostSession.IndexOf('requiredEnvironment("IDENTITY_ACCESS_BEARER_COOKIE_NAME")', [System.StringComparison]::Ordinal)
 if ($requestCookieIndex -lt 0 -or $runtimeEnvironmentIndex -lt 0 -or $requestCookieIndex -gt $runtimeEnvironmentIndex) {

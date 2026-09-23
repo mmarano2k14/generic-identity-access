@@ -10,6 +10,7 @@ const ICONS: Readonly<Record<IdentityAccessAdminUiSection, AdminIconName>> = {
   groups: "groups",
   policies: "policies",
   "resource-scopes": "resource-scopes",
+  mfa: "mfa",
   sessions: "sessions",
   "scope-authority": "scope-authority",
 };
@@ -39,9 +40,9 @@ function NavigationGroup({ label, entries }: { readonly label: string; readonly 
 
 /** Server Component rendering permission-filtered administration navigation. */
 export function AdminNavigation({ entries }: { readonly entries: readonly IdentityAccessAdminUiEntry[] }) {
-  const scopeEntries = entries.filter((entry) => !entry.tenantScoped && entry.section !== "sessions" && entry.section !== "scope-authority");
+  const scopeEntries = entries.filter((entry) => !entry.tenantScoped && entry.section !== "mfa" && entry.section !== "sessions" && entry.section !== "scope-authority");
   const tenantEntries = entries.filter((entry) => entry.tenantScoped);
-  const securityEntries = entries.filter((entry) => entry.section === "sessions" || entry.section === "scope-authority");
+  const securityEntries = entries.filter((entry) => entry.section === "mfa" || entry.section === "sessions" || entry.section === "scope-authority");
 
   return (
     <nav className="ia-navigation" aria-label="Identity administration">

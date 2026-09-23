@@ -9,5 +9,5 @@ namespace IdentityAccess.Api.Controllers
 
     /// <summary>Represents the request payload for change password.</summary>
     public sealed record ChangePasswordRequest(string LoginIdentifier,
-        [property: DataType(DataType.Password)] string Password, long ExpectedVersion);
+        [param: DataType(DataType.Password)] string Password, long ExpectedVersion);
 }

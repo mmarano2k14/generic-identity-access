@@ -1,9 +1,9 @@
 {
   "name": "@identity-access/client",
-  "version": "0.8.0",
+  "version": "0.10.0",
   "private": true,
   "type": "module",
-  "description": "Class-based TypeScript connector with authentication, OIDC/PKCE, authorization, typed administration, and hardened Next.js admin UI composition.",
+  "description": "Class-composed TypeScript connector with provider-neutral MFA administration and separated system, authentication, OIDC, authorization, administration, and Next.js responsibilities.",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",

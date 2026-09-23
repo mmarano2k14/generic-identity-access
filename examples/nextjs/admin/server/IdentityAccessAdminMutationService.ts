@@ -14,35 +14,35 @@ export class IdentityAccessAdminMutationService {
   }
 
   public async createUser(formData: FormData): Promise<void> {
-    await this.#request.client.createUser(this.#request.administrationContext, {
+    await this.#request.client.administration.users.create(this.#request.administrationContext, {
       displayName: IdentityAccessAdminMutationService.requiredText(formData, "displayName", 200),
       status: IdentityAccessAdminMutationService.lifecycleStatus(formData, "status"),
     });
   }
 
   public async createTenant(formData: FormData): Promise<void> {
-    await this.#request.client.createTenant(this.#request.administrationContext, {
+    await this.#request.client.administration.tenants.create(this.#request.administrationContext, {
       displayName: IdentityAccessAdminMutationService.requiredText(formData, "displayName", 200),
       status: IdentityAccessAdminMutationService.lifecycleStatus(formData, "status"),
     });
   }
 
   public async createTenantMembership(formData: FormData): Promise<void> {
-    await this.#request.client.createTenantMembership(this.#request.tenantContext(), {
+    await this.#request.client.administration.memberships.create(this.#request.tenantContext(), {
       userId: IdentityAccessAdminMutationService.requiredText(formData, "userId", 64),
       status: IdentityAccessAdminMutationService.lifecycleStatus(formData, "status"),
     });
   }
 
   public async createGroup(formData: FormData): Promise<void> {
-    await this.#request.client.createGroup(this.#request.tenantContext(), {
+    await this.#request.client.administration.groups.create(this.#request.tenantContext(), {
       displayName: IdentityAccessAdminMutationService.requiredText(formData, "displayName", 200),
       status: IdentityAccessAdminMutationService.lifecycleStatus(formData, "status"),
     });
   }
 
   public async createPolicy(formData: FormData): Promise<void> {
-    await this.#request.client.createPolicy(this.#request.tenantContext(), {
+    await this.#request.client.administration.policies.create(this.#request.tenantContext(), {
       displayName: IdentityAccessAdminMutationService.requiredText(formData, "displayName", 200),
       status: IdentityAccessAdminMutationService.lifecycleStatus(formData, "status"),
     });
@@ -50,7 +50,7 @@ export class IdentityAccessAdminMutationService {
 
   public async createResourceScope(formData: FormData): Promise<void> {
     const parentResourceScopeId = IdentityAccessAdminMutationService.optionalText(formData, "parentResourceScopeId", 64);
-    await this.#request.client.createResourceScope(this.#request.tenantContext(), {
+    await this.#request.client.administration.resourceScopes.create(this.#request.tenantContext(), {
       modelVersion: IdentityAccessAdminMutationService.positiveInteger(formData, "modelVersion"),
       scopeType: IdentityAccessAdminMutationService.requiredText(formData, "scopeType", 128),
       externalResourceId: IdentityAccessAdminMutationService.requiredText(formData, "externalResourceId", 256),
@@ -61,14 +61,14 @@ export class IdentityAccessAdminMutationService {
   }
 
   public async createScopeAuthorityGroup(formData: FormData): Promise<void> {
-    await this.#request.client.createScopeAuthorityGroup(this.#request.administrationContext, {
+    await this.#request.client.administration.scopeAuthority.createGroup(this.#request.administrationContext, {
       displayName: IdentityAccessAdminMutationService.requiredText(formData, "displayName", 200),
       status: IdentityAccessAdminMutationService.lifecycleStatus(formData, "status"),
     });
   }
 
   public async createScopeAuthorityPolicy(formData: FormData): Promise<void> {
-    await this.#request.client.createScopeAuthorityPolicy(this.#request.administrationContext, {
+    await this.#request.client.administration.scopeAuthority.createPolicy(this.#request.administrationContext, {
       displayName: IdentityAccessAdminMutationService.requiredText(formData, "displayName", 200),
       status: IdentityAccessAdminMutationService.lifecycleStatus(formData, "status"),
     });
@@ -76,7 +76,7 @@ export class IdentityAccessAdminMutationService {
 
   public async revokeUserSessions(formData: FormData): Promise<number> {
     IdentityAccessAdminMutationService.requireConfirmation(formData);
-    const result = await this.#request.client.revokeUserSessions(
+    const result = await this.#request.client.administration.sessions.revokeUser(
       this.#request.administrationContext,
       IdentityAccessAdminMutationService.requiredText(formData, "userId", 64),
     );
@@ -85,7 +85,7 @@ export class IdentityAccessAdminMutationService {
 
   public async revokeClientSessions(formData: FormData): Promise<number> {
     IdentityAccessAdminMutationService.requireConfirmation(formData);
-    const result = await this.#request.client.revokeClientSessions(
+    const result = await this.#request.client.administration.sessions.revokeClient(
       this.#request.administrationContext,
       IdentityAccessAdminMutationService.requiredText(formData, "clientId", 128),
     );

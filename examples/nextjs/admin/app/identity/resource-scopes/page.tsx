@@ -7,7 +7,7 @@ import { createResourceScopeAction } from "../actions";
 
 export default async function ResourceScopesPage() {
   const request = await IdentityAccessAdminRequest.fromCurrentRequest();
-  const scopes = await request.client.listResourceScopes(request.tenantContext());
+  const scopes = await request.client.administration.resourceScopes.list(request.tenantContext());
   const create = (
     <AdminMutationDialog title="Create resource scope" description="Register an application-defined resource in the current tenant hierarchy." triggerLabel="Create resource scope" submitLabel="Create resource scope" action={createResourceScopeAction}>
       <AdminField label="Security model version" name="modelVersion" type="number" min={1} step={1} required />

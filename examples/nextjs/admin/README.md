@@ -36,6 +36,7 @@ TypeScript  5.8.3
 /identity/groups
 /identity/policies
 /identity/resource-scopes
+/identity/mfa
 /identity/sessions
 /identity/authority
 ```

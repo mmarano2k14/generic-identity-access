@@ -46,6 +46,20 @@ test("the legacy functional client factory is not exported", () => {
   assert.equal("createIdentityAccessClient" in apiExports, false);
 });
 
+test("the root client is a composition facade with focused class responsibilities", () => {
+  const api = client(async () => json(info));
+  assert.equal(typeof api.system.info, "function");
+  assert.equal(typeof api.authentication.passwordLogin, "function");
+  assert.equal(typeof api.oidc.authorize, "function");
+  assert.equal(typeof api.authorization.evaluate, "function");
+  assert.equal(typeof api.administration.users.list, "function");
+  assert.equal(typeof api.administration.groups.list, "function");
+  assert.equal(typeof api.administration.scopeAuthority.getGroup, "function");
+  assert.equal("info" in api, false);
+  assert.equal("passwordLogin" in api, false);
+  assert.equal("listUsers" in api, false);
+});
+
 test("liveness uses the configured path prefix and non-cacheable transport", async () => {
   const api = client(async (url, init) => {
     assert.equal(url, "https://identity.example.test/iam/health/live");
@@ -57,40 +71,40 @@ test("liveness uses the configured path prefix and non-cacheable transport", asy
     assert.deepEqual(Object.keys(init.headers), ["Accept"]);
     return json({ status: "alive" });
   }, { baseUrl: "https://identity.example.test/iam" });
-  assert.deepEqual(await api.liveness(), { status: "alive" });
+  assert.deepEqual(await api.system.liveness(), { status: "alive" });
 });
 
 test("validates and returns the service descriptor", async () => {
-  assert.deepEqual(await client(async () => json(info)).info(), info);
+  assert.deepEqual(await client(async () => json(info)).system.info(), info);
 });
 
 test("readiness accepts a documented 503 without converting it into a transport failure", async () => {
-  assert.deepEqual(await client(async () => json(notReady, 503)).readiness(), notReady);
+  assert.deepEqual(await client(async () => json(notReady, 503)).system.readiness(), notReady);
 });
 
 test("readiness permits 200 only with ready true", async () => {
   const ready = { ready: true, stage: "future", blockingCapabilities: [] };
-  assert.deepEqual(await client(async () => json(ready)).readiness(), ready);
-  await assert.rejects(client(async () => json(notReady)).readiness(), code("protocol"));
+  assert.deepEqual(await client(async () => json(ready)).system.readiness(), ready);
+  await assert.rejects(client(async () => json(notReady)).system.readiness(), code("protocol"));
 });
 
 test("readiness rejects a 503 that claims ready true", async () => {
-  await assert.rejects(client(async () => json({ ...notReady, ready: true }, 503)).readiness(), code("protocol"));
+  await assert.rejects(client(async () => json({ ...notReady, ready: true }, 503)).system.readiness(), code("protocol"));
 });
 
 test("invalid blocking capability values are rejected", async () => {
-  await assert.rejects(client(async () => json({ ...notReady, blockingCapabilities: [42] }, 503)).readiness(), code("protocol"));
+  await assert.rejects(client(async () => json({ ...notReady, blockingCapabilities: [42] }, 503)).system.readiness(), code("protocol"));
 });
 
 test("security HTTP statuses remain distinct", async () => {
-  await assert.rejects(client(async () => json({}, 401)).info(), code("unauthenticated"));
-  await assert.rejects(client(async () => json({}, 403)).info(), code("forbidden"));
-  await assert.rejects(client(async () => json({}, 503)).info(), code("unavailable"));
-  await assert.rejects(client(async () => json({}, 500)).info(), code("http"));
+  await assert.rejects(client(async () => json({}, 401)).system.info(), code("unauthenticated"));
+  await assert.rejects(client(async () => json({}, 403)).system.info(), code("forbidden"));
+  await assert.rejects(client(async () => json({}, 503)).system.info(), code("unavailable"));
+  await assert.rejects(client(async () => json({}, 500)).system.info(), code("http"));
 });
 
 test("HTTP errors never retain response bodies", async () => {
-  await assert.rejects(client(async () => json({ secret: "must-not-escape" }, 403)).info(), (error) => {
+  await assert.rejects(client(async () => json({ secret: "must-not-escape" }, 403)).system.info(), (error) => {
     assert.equal(error.code, "forbidden");
     assert.equal(error.httpStatus, 403);
     assert.ok(!JSON.stringify(error).includes("must-not-escape"));
@@ -100,7 +114,7 @@ test("HTTP errors never retain response bodies", async () => {
 });
 
 test("malformed JSON is a protocol error", async () => {
-  await assert.rejects(client(async () => new Response("<html>secret</html>")).info(), code("protocol"));
+  await assert.rejects(client(async () => new Response("<html>secret</html>")).system.info(), code("protocol"));
 });
 
 test("missing descriptor flags are rejected", async () => {
@@ -112,16 +126,16 @@ test("missing descriptor flags are rejected", async () => {
   ]) {
     const missing = { ...info };
     delete missing[field];
-    await assert.rejects(client(async () => json(missing)).info(), code("protocol"));
+    await assert.rejects(client(async () => json(missing)).system.info(), code("protocol"));
   }
 });
 
 test("incompatible API versions are rejected", async () => {
-  await assert.rejects(client(async () => json({ ...info, apiVersion: "v99" })).info(), code("protocol"));
+  await assert.rejects(client(async () => json({ ...info, apiVersion: "v99" })).system.info(), code("protocol"));
 });
 
 test("transport failures do not disclose underlying error details", async () => {
-  await assert.rejects(client(async () => { throw new Error("secret-token-in-url"); }).info(), (error) => {
+  await assert.rejects(client(async () => { throw new Error("secret-token-in-url"); }).system.info(), (error) => {
     assert.equal(error.code, "transport");
     assert.ok(!String(error).includes("secret-token-in-url"));
     assert.equal(error.cause, undefined);
@@ -134,26 +148,26 @@ const abortingTransport = (_url, init) => new Promise((_resolve, reject) => {
 });
 
 test("request timeout aborts the transport", async () => {
-  await assert.rejects(client(abortingTransport, { timeoutMs: 10 }).info(), code("timeout"));
+  await assert.rejects(client(abortingTransport, { timeoutMs: 10 }).system.info(), code("timeout"));
 });
 
 test("already-cancelled request never calls the transport", async () => {
   const signal = AbortSignal.abort();
   let calls = 0;
-  await assert.rejects(client(async () => { calls++; return json(info); }).info(signal), code("cancelled"));
+  await assert.rejects(client(async () => { calls++; return json(info); }).system.info(signal), code("cancelled"));
   assert.equal(calls, 0);
 });
 
 test("caller cancellation remains separate from timeout", async () => {
   const controller = new AbortController();
-  const pending = client(abortingTransport).info(controller.signal);
+  const pending = client(abortingTransport).system.info(controller.signal);
   controller.abort();
   await assert.rejects(pending, code("cancelled"));
 });
 
 test("requests are not automatically retried", async () => {
   let calls = 0;
-  await assert.rejects(client(async () => { calls++; return json({}, 500); }).info(), code("http"));
+  await assert.rejects(client(async () => { calls++; return json({}, 500); }).system.info(), code("http"));
   assert.equal(calls, 1);
 });
 
@@ -161,8 +175,8 @@ test("concurrent clients preserve independent destinations", async () => {
   const urls = [];
   const transport = async (url) => { urls.push(url); return json(info); };
   await Promise.all([
-    client(transport, { baseUrl: "https://one.example.test" }).info(),
-    client(transport, { baseUrl: "https://two.example.test" }).info(),
+    client(transport, { baseUrl: "https://one.example.test" }).system.info(),
+    client(transport, { baseUrl: "https://two.example.test" }).system.info(),
   ]);
   assert.deepEqual(urls.sort(), ["https://one.example.test/api/v1/system/info", "https://two.example.test/api/v1/system/info"]);
 });
@@ -298,7 +312,7 @@ test("native fetch interoperates with a local HTTP fixture, not a .NET server", 
     const address = server.address();
     assert.ok(address && typeof address !== "string");
     const api = new IdentityAccessClient({ baseUrl: `http://127.0.0.1:${address.port}` });
-    assert.deepEqual(await api.info(), info);
+    assert.deepEqual(await api.system.info(), info);
   } finally {
     await new Promise((resolve, reject) => server.close((error) => error ? reject(error) : resolve()));
   }
@@ -341,7 +355,7 @@ test("password login returns a class-client session credential without placing t
     });
   });
 
-  assert.deepEqual(await api.passwordLogin({
+  assert.deepEqual(await api.authentication.passwordLogin({
     clientId: "admin-web",
     loginIdentifier: "marco@example.test",
     password: "correct horse battery staple",
@@ -377,12 +391,12 @@ test("session validation and logout use the registered client path and opaque se
     return json({ postLogoutRedirectUri: "https://app.example.test/signed-out" });
   });
 
-  assert.deepEqual(await api.validateSession(loginSession), {
+  assert.deepEqual(await api.authentication.validateSession(loginSession), {
     userId: loginUserId,
     sessionId: loginSessionId,
     expiresAt: loginExpiresAt,
   });
-  assert.deepEqual(await api.logout(loginSession, "https://app.example.test/signed-out"), {
+  assert.deepEqual(await api.authentication.logout(loginSession, "https://app.example.test/signed-out"), {
     postLogoutRedirectUri: "https://app.example.test/signed-out",
   });
   assert.equal(calls, 2);
@@ -415,7 +429,7 @@ test("OIDC authorization generates S256 PKCE and never follows the authorization
     });
   });
 
-  const authorization = await api.authorizeOidc(loginSession, {
+  const authorization = await api.oidc.authorize(loginSession, {
     clientId: "admin-web",
     redirectUri: loginRedirectUri,
     state: fixedState,
@@ -438,7 +452,7 @@ test("OIDC authorization protocol errors preserve the stable error code without 
     headers: { location: `${loginRedirectUri}?error=login_required&state=state-423-fixed-value` },
   }));
 
-  await assert.rejects(api.authorizeOidc(loginSession, {
+  await assert.rejects(api.oidc.authorize(loginSession, {
     clientId: "admin-web",
     redirectUri: loginRedirectUri,
     state: "state-423-fixed-value",
@@ -474,7 +488,7 @@ test("authorization-code exchange sends only the public-client PKCE form and req
     });
   });
 
-  assert.deepEqual(await api.exchangeAuthorizationCode({
+  assert.deepEqual(await api.oidc.exchangeAuthorizationCode({
     clientId: "admin-web",
     redirectUri: loginRedirectUri,
     code: oidcCode,
@@ -510,7 +524,7 @@ test("refresh-token rotation sends no authorization-code fields and returns the 
     });
   });
 
-  assert.deepEqual(await api.refreshOidcTokens("admin-web", refreshTokenOne), {
+  assert.deepEqual(await api.oidc.refreshTokens("admin-web", refreshTokenOne), {
     accessToken: "new.header.payload",
     tokenType: "Bearer",
     expiresIn: 600,
@@ -521,14 +535,14 @@ test("refresh-token rotation sends no authorization-code fields and returns the 
 
 test("OIDC token errors distinguish invalid grants from temporary unavailability", async () => {
   const invalid = client(async () => json({ error: "invalid_grant" }, 400));
-  await assert.rejects(invalid.refreshOidcTokens("admin-web", refreshTokenOne), (error) => {
+  await assert.rejects(invalid.oidc.refreshTokens("admin-web", refreshTokenOne), (error) => {
     assert.equal(error.code, "oidc");
     assert.equal(error.protocolCode, "invalid_grant");
     return true;
   });
 
   const unavailable = client(async () => json({ error: "temporarily_unavailable" }, 503));
-  await assert.rejects(unavailable.refreshOidcTokens("admin-web", refreshTokenOne), (error) => {
+  await assert.rejects(unavailable.oidc.refreshTokens("admin-web", refreshTokenOne), (error) => {
     assert.equal(error.code, "unavailable");
     assert.equal(error.protocolCode, "temporarily_unavailable");
     return true;
@@ -541,7 +555,7 @@ test("OIDC redirect validation rejects redirect target substitution", async () =
     headers: { location: `https://attacker.example.test/callback?code=${oidcCode}&state=state-423-fixed-value` },
   }));
 
-  await assert.rejects(api.authorizeOidc(loginSession, {
+  await assert.rejects(api.oidc.authorize(loginSession, {
     clientId: "admin-web",
     redirectUri: loginRedirectUri,
     state: "state-423-fixed-value",
@@ -587,10 +601,10 @@ test("typed user administration sends trusted Bearer provenance and optimistic c
     return json({ userId: adminUserId, displayName: "Alice Updated", status: 2, version: 2 });
   });
 
-  assert.deepEqual(await api.createUser(adminBearerContext, { displayName: "Alice" }), {
+  assert.deepEqual(await api.administration.users.create(adminBearerContext, { displayName: "Alice" }), {
     userId: adminUserId, displayName: "Alice", status: 1, version: 1,
   });
-  assert.deepEqual(await api.updateUser(adminBearerContext, adminUserId, {
+  assert.deepEqual(await api.administration.users.update(adminBearerContext, adminUserId, {
     displayName: "Alice Updated", status: 2, expectedVersion: 1,
   }), {
     userId: adminUserId, displayName: "Alice Updated", status: 2, version: 2,
@@ -603,8 +617,8 @@ test("typed nullable administration GET returns null on 404 without parsing an e
     assert.equal(init.method, "GET");
     return new Response(null, { status: 404 });
   });
-  assert.equal(await api.getUser(adminBearerContext, adminUserId), null);
-  assert.equal(await api.getTenant(adminBearerContext, adminTenantId), null);
+  assert.equal(await api.administration.users.get(adminBearerContext, adminUserId), null);
+  assert.equal(await api.administration.tenants.get(adminBearerContext, adminTenantId), null);
 });
 
 
@@ -623,7 +637,7 @@ test("tenant membership administration preserves the API route shape and Identit
     return json({ membershipId: adminMembershipId, tenantId: adminTenantId, userId: adminUserId, status: 1, version: 3 });
   });
 
-  assert.deepEqual(await api.findTenantMembershipByUser(context, adminUserId), {
+  assert.deepEqual(await api.administration.memberships.findByUser(context, adminUserId), {
     membershipId: adminMembershipId, tenantId: adminTenantId, userId: adminUserId, status: 1, version: 3,
   });
 });
@@ -650,13 +664,13 @@ test("group membership administration supports list, add, and idempotent not-fou
     return new Response(null, { status: 404 });
   });
 
-  assert.deepEqual(await api.listGroupMembers(adminTenantContext, adminGroupId), [
+  assert.deepEqual(await api.administration.groups.listMembers(adminTenantContext, adminGroupId), [
     { tenantMembershipId: adminMembershipId, userId: adminUserId },
   ]);
-  assert.deepEqual(await api.addGroupMember(adminTenantContext, adminGroupId, adminMembershipId), {
+  assert.deepEqual(await api.administration.groups.addMember(adminTenantContext, adminGroupId, adminMembershipId), {
     tenantMembershipId: adminMembershipId, userId: adminUserId,
   });
-  assert.equal(await api.removeGroupMember(adminTenantContext, adminGroupId, adminMembershipId), false);
+  assert.equal(await api.administration.groups.removeMember(adminTenantContext, adminGroupId, adminMembershipId), false);
 });
 
 
@@ -680,7 +694,7 @@ test("policy statement administration preserves supported whole-segment wildcard
     }, 201);
   });
 
-  assert.deepEqual(await api.addPolicyStatement(adminTenantContext, adminPolicyId, {
+  assert.deepEqual(await api.administration.policies.addStatement(adminTenantContext, adminPolicyId, {
     statementId: adminStatementId,
     modelVersion: 2,
     resource: "billing",
@@ -711,14 +725,14 @@ test("policy binding administration preserves optional resource scope and descen
     return new Response(null, { status: 204 });
   });
 
-  assert.deepEqual(await api.addPolicyBinding(adminTenantContext, adminGroupId, {
+  assert.deepEqual(await api.administration.policies.addBinding(adminTenantContext, adminGroupId, {
     policyId: adminPolicyId,
     resourceScopeId: adminResourceScopeId,
     includeDescendants: true,
   }), {
     groupId: adminGroupId, policyId: adminPolicyId, resourceScopeId: adminResourceScopeId, includeDescendants: true,
   });
-  assert.equal(await api.removePolicyBinding(adminTenantContext, adminGroupId, adminPolicyId, adminResourceScopeId), true);
+  assert.equal(await api.administration.policies.removeBinding(adminTenantContext, adminGroupId, adminPolicyId, adminResourceScopeId), true);
 });
 
 
@@ -763,7 +777,7 @@ test("resource-scope administration decodes hierarchy metadata and sends nullabl
     }, 201);
   });
 
-  assert.deepEqual(await api.listResourceScopes(adminTenantContext), [{
+  assert.deepEqual(await api.administration.resourceScopes.list(adminTenantContext), [{
     resourceScopeId: adminResourceScopeId,
     modelVersion: 4,
     scopeType: "business",
@@ -772,7 +786,7 @@ test("resource-scope administration decodes hierarchy metadata and sends nullabl
     status: 1,
     version: 5,
   }]);
-  assert.equal((await api.createResourceScope(adminTenantContext, {
+  assert.equal((await api.administration.resourceScopes.create(adminTenantContext, {
     modelVersion: 4,
     scopeType: "business",
     externalResourceId: "business-43",
@@ -793,7 +807,7 @@ test("scope-type administration is typed against the existing security-model ver
     });
     return json({ key: "business", displayName: "Business", parentKey: null, canAttachToTenant: true }, 201);
   });
-  assert.deepEqual(await api.addScopeType(adminBearerContext, 7, {
+  assert.deepEqual(await api.administration.securityModels.addScopeType(adminBearerContext, 7, {
     key: "business", displayName: "Business", canAttachToTenant: true,
   }), { key: "business", displayName: "Business", canAttachToTenant: true });
 });
@@ -811,8 +825,8 @@ test("session administration exposes bulk revocation as a typed result", async (
     assert.equal(url, `https://identity.example.test/api/v1/identity-scopes/${adminScopeId}/applications/admin-app/sessions/clients/admin-web`);
     return json({ revokedCount: 2 });
   });
-  assert.deepEqual(await api.revokeUserSessions(adminBearerContext, adminUserId), { revokedCount: 3 });
-  assert.deepEqual(await api.revokeClientSessions(adminBearerContext, "admin-web"), { revokedCount: 2 });
+  assert.deepEqual(await api.administration.sessions.revokeUser(adminBearerContext, adminUserId), { revokedCount: 3 });
+  assert.deepEqual(await api.administration.sessions.revokeClient(adminBearerContext, "admin-web"), { revokedCount: 2 });
 });
 
 
@@ -838,17 +852,17 @@ test("identity-scope authority administration stays tenant-free and typed", asyn
     return json({ groupId: adminGroupId, policyId: adminPolicyId }, 201);
   });
 
-  assert.deepEqual(await api.addScopeAuthorityMember(adminBearerContext, adminGroupId, adminUserId), {
+  assert.deepEqual(await api.administration.scopeAuthority.addMember(adminBearerContext, adminGroupId, adminUserId), {
     groupId: adminGroupId, userId: adminUserId,
   });
-  assert.equal((await api.addScopeAuthorityPolicyStatement(adminBearerContext, adminPolicyId, {
+  assert.equal((await api.administration.scopeAuthority.addPolicyStatement(adminBearerContext, adminPolicyId, {
     statementId: adminStatementId,
     modelVersion: 2,
     resource: "*",
     feature: "*",
     action: "read",
   })).resource, "*");
-  assert.deepEqual(await api.addScopeAuthorityPolicyBinding(adminBearerContext, adminGroupId, adminPolicyId), {
+  assert.deepEqual(await api.administration.scopeAuthority.addPolicyBinding(adminBearerContext, adminGroupId, adminPolicyId), {
     groupId: adminGroupId, policyId: adminPolicyId,
   });
 });
@@ -857,12 +871,12 @@ test("identity-scope authority administration stays tenant-free and typed", asyn
 test("typed administration rejects invalid lifecycle and optimistic-concurrency input before transport", async () => {
   let calls = 0;
   const api = client(async () => { calls++; return json({}); });
-  await assert.rejects(api.updateUser(adminBearerContext, adminUserId, {
+  await assert.rejects(api.administration.users.update(adminBearerContext, adminUserId, {
     displayName: "Alice",
     status: 3,
     expectedVersion: 1,
   }), code("configuration"));
-  await assert.rejects(api.updateTenant(adminBearerContext, adminTenantId, {
+  await assert.rejects(api.administration.tenants.update(adminBearerContext, adminTenantId, {
     displayName: "Tenant",
     status: 1,
     expectedVersion: 0,
@@ -892,17 +906,44 @@ test("bounded administration list methods preserve explicit paging and typed rec
     return json([{ policyId: adminPolicyId, displayName: "Operators", status: 1, version: 7 }]);
   });
 
-  assert.equal((await api.listUsers(adminBearerContext, { offset: 10, limit: 25 }))[0].displayName, "Alice");
-  assert.equal((await api.listTenants(adminBearerContext, { limit: 20 }))[0].tenantId, adminTenantId);
-  assert.equal((await api.listGroups(adminTenantContext, { offset: 5 }))[0].groupId, adminGroupId);
-  assert.equal((await api.listPolicies(adminTenantContext))[0].policyId, adminPolicyId);
+  assert.equal((await api.administration.users.list(adminBearerContext, { offset: 10, limit: 25 }))[0].displayName, "Alice");
+  assert.equal((await api.administration.tenants.list(adminBearerContext, { limit: 20 }))[0].tenantId, adminTenantId);
+  assert.equal((await api.administration.groups.list(adminTenantContext, { offset: 5 }))[0].groupId, adminGroupId);
+  assert.equal((await api.administration.policies.list(adminTenantContext))[0].policyId, adminPolicyId);
 });
 
 test("bounded administration list methods reject invalid paging before transport", async () => {
   let calls = 0;
   const api = client(async () => { calls++; return json([]); });
-  await assert.rejects(api.listUsers(adminBearerContext, { offset: -1 }), code("configuration"));
-  await assert.rejects(api.listTenants(adminBearerContext, { limit: 0 }), code("configuration"));
-  await assert.rejects(api.listGroups(adminTenantContext, { limit: 201 }), code("configuration"));
+  await assert.rejects(api.administration.users.list(adminBearerContext, { offset: -1 }), code("configuration"));
+  await assert.rejects(api.administration.tenants.list(adminBearerContext, { limit: 0 }), code("configuration"));
+  await assert.rejects(api.administration.groups.list(adminTenantContext, { limit: 201 }), code("configuration"));
   assert.equal(calls, 0);
+});
+
+test("MFA administration stays provider-neutral and class-based", async () => {
+  const requests = [];
+  const api = client(async (url, init) => {
+    requests.push({ url, init });
+    if (url.endsWith("/mfa/providers")) {
+      return json([
+        { key: "totp", displayName: "Authenticator app", capabilities: ["enrollment", "verification"] },
+        { key: "webauthn", displayName: "Passkey", capabilities: ["enrollment", "verification"] },
+      ]);
+    }
+    if (url.endsWith("/mfa/policy")) {
+      return json({ mode: 2, allowedProviders: ["totp", "webauthn"], version: 3 });
+    }
+    throw new Error(`unexpected url ${url}`);
+  });
+  const context = { identityScopeId: scopeId, applicationKey: "app-a", credential: bearer };
+
+  const providers = await api.administration.mfa.listProviders(context);
+  const policy = await api.administration.mfa.getPolicy(context);
+
+  assert.deepEqual(providers.map((item) => item.key), ["totp", "webauthn"]);
+  assert.deepEqual(policy, { mode: 2, allowedProviders: ["totp", "webauthn"], version: 3 });
+  assert.equal(typeof api.administration.mfa.createPolicy, "function");
+  assert.equal(typeof api.administration.mfa.listAuthenticators, "function");
+  assert.equal(requests.every((request) => request.init.headers.Authorization === "Bearer header.payload.signature"), true);
 });

@@ -1,3 +1,79 @@
+# 0.43.2 - MFA provider registration assembly-boundary correction
+
+- Preserved the authentication infrastructure assembly boundary by keeping `AuthenticationServiceCollectionExtensions` as the only exported infrastructure registration type.
+- Moved the public `AddIdentityAccessAuthenticationFactorProvider<TProvider>(...)` extension onto the existing authentication registration surface so external provider packages remain registerable without exporting an additional infrastructure type.
+- Internalized `AuthenticationFactorProviderServiceCollectionExtensions` so it owns only the provider-neutral registry bootstrap helper.
+- Added MFA source-consistency checks that pin the public provider-registration method to the existing registration surface and reject re-exporting the internal helper type.
+- Formalized the nullable PostgreSQL authenticator timestamp reader correction for `confirmed_at`, `last_used_at`, and `revoked_at` by using explicit `DateTimeOffset?` locals.
+- Changed no MFA policy semantics, provider contracts, PostgreSQL schema, migration sequence, RBAC behavior, TypeScript contract, Next.js administration UI, OIDC behavior, or local-development bootstrap semantics.
+
+# 0.43.1 - MFA semantic audit writer contract correction
+
+- Corrected the generic MFA administration service to use the existing best-effort semantic-audit contract `ISecurityAuditWriter.TryWriteAsync(...)` instead of calling a non-existent `WriteAsync(...)` method.
+- Preserved the existing semantic-audit behavior: MFA persistence mutations remain authoritative through the transactional security-mutation ledger, while semantic audit enrichment remains best-effort and does not replace successful primary operations.
+- Added an MFA source-consistency regression gate that requires `TryWriteAsync` and rejects reintroduction of the invalid `WriteAsync` call.
+- Changed no MFA provider model, PostgreSQL schema, migration sequence, RBAC capability semantics, TypeScript contract, Next.js administration UI, OIDC behavior, or local-development bootstrap semantics.
+
+# 0.43.0 - Generic MFA provider foundation
+
+- Added a provider-neutral MFA core with `MfaPolicy`, generic user-authenticator lifecycle metadata, stable provider keys, and a pluggable authentication-factor provider registry.
+- Added the `IAuthenticationFactorProvider` base contract and immutable provider descriptors with Enrollment, Verification, and Recovery capability declarations; duplicate provider keys fail closed during registry construction.
+- Added migration `0014_mfa_provider_foundation.sql` with normalized MFA policy/provider allow-list tables and generic authenticator metadata, all covered by the transactional security-mutation ledger.
+- Kept provider-owned material out of the generic schema: no TOTP secret, WebAuthn provider payload, recovery-code material, private key, or arbitrary provider blob is stored by the core.
+- Added protected MFA administration endpoints for provider discovery, policy create/update/read, authenticator listing, and optimistic-concurrency revocation.
+- Added dedicated `identity-access / mfa-policy / read|write` and `identity-access / mfa-authenticator / read|write` administration capabilities.
+- Added `IdentityAccessMfaClient` under the class-composed TypeScript administration client and a provider-neutral `/identity/mfa` Next.js administration page.
+- Added MFA source-consistency and model/schema regression gates that preserve the generic/provider boundary and prevent concrete TOTP/WebAuthn/recovery implementations from leaking into the core.
+- Extended the local development administrator capability bootstrap for MFA policy and authenticator administration.
+- Kept TOTP, recovery-code generation/verification, and WebAuthn/passkey enrollment/authentication out of this foundation release; those remain dedicated provider releases.
+
+# 0.42.17 - ASP.NET Core record validation metadata correction
+
+- Corrected password request DTO validation metadata for positional records so ASP.NET Core MVC reads `DataType(DataType.Password)` from primary-constructor parameters instead of generated record properties.
+- Updated `PasswordLoginRequest`, `CreatePasswordCredentialRequest`, and `ChangePasswordRequest` to use constructor-parameter attribute targeting and prevent request binding from throwing before controller execution.
+- Added regression coverage that requires password validation metadata to remain on the constructor parameter and rejects validation metadata on the generated `Password` property.
+- Changed no authentication credential semantics, password hashing, local administrator bootstrap data, OIDC protocol behavior, PostgreSQL schema, migration sequence, RBAC semantics, TypeScript client contract, or Next.js administration design.
+
+# 0.42.16 - Development OIDC signing-key runtime compatibility correction
+
+- Moved local development OIDC RSA key generation out of the Windows PowerShell cryptography runtime and into a dedicated .NET 10 development tool.
+- Added `IdentityAccess.DevOidcSigningKey`, which generates the requested RSA key size and writes a PKCS#8 PEM private key using the same modern .NET runtime family as the application.
+- Updated `create-dev-oidc-signing-key.ps1` to build and invoke the .NET tool instead of calling `RSACng.ExportPkcs8PrivateKey`, which is unavailable under some Windows PowerShell/.NET Framework combinations.
+- Added OIDC source-consistency gates that require the .NET 10 signing-key tool, require PKCS#8 PEM export in the tool, and reject reintroduction of PowerShell-host RSA/export APIs.
+- Changed no OIDC protocol behavior, production signing-key loading contract, PostgreSQL schema, migration sequence, RBAC semantics, TypeScript client contract, Next.js administration design, or administrator bootstrap semantics.
+
+# 0.42.15 - Development OIDC signing-key generation correction
+
+- Corrected the local development RSA signing-key generator for .NET RSA implementations where `KeySize` is read-only after construction.
+- Replaced post-construction `rsa.KeySize` mutation with `RSA.Create(keySize)` so the requested development signing-key size is selected at creation time.
+- Added an OIDC source-consistency regression gate that requires constructor-based RSA sizing and rejects reintroduction of direct `KeySize` assignment in the PowerShell generator.
+- Changed no OIDC protocol behavior, signing-key loading contract, production key configuration, PostgreSQL schema, migration sequence, RBAC semantics, TypeScript client contract, or Next.js administration design.
+
+# 0.42.14 - Local development administrator bootstrap
+
+- Added an explicit local-development administrator bootstrap for the runnable Next.js administration host without introducing a production default account.
+- Added `bootstrap-dev-admin.ps1`, which securely prompts for a 12-256 character password and creates or repairs the local administrator user, tenant membership, ASP.NET Identity-compatible password credential, application security model, concrete administration capabilities, identity-scope authority, and tenant administration grants.
+- Added a dedicated .NET development password-hasher tool that reads the password from standard input and emits only the ASP.NET Core Identity hash bound to the configured identity-scope/user subject key.
+- Added a deterministic `admin-web` routing fixture matching the runnable Next.js host identity scope, tenant, application, authentication context, and public OIDC client identifiers.
+- Added `run-dev-admin-api.ps1` to start the API with process-local routing, PostgreSQL, local authentication, OIDC Authorization Code + PKCE, Bearer validation, and external RBAC configuration; development signing material remains under the ignored `secrets/` directory.
+- Added local bootstrap documentation and Next.js environment generation so the administration host can be exercised end-to-end with login `admin` and a user-supplied password.
+- Preserved the production account lifecycle boundary: no administrator password is committed, printed, written to browser configuration, or embedded in application source.
+- Changed no PostgreSQL schema or migration sequence; migration `0013` remains the latest migration.
+- Changed no TypeScript client contract, Next.js premium design, OIDC protocol semantics, refresh-token behavior, or RBAC decision semantics.
+
+# 0.42.13 - TypeScript client responsibility decomposition
+
+- Replaced the monolithic TypeScript `IdentityAccessClient` implementation with a lightweight composition facade under `clients/typescript/src/client/`.
+- Separated system diagnostics, local authentication, OIDC/PKCE, authorization, HTTP transport, cryptographic helpers, path construction, scalar validation, protocol decoding, and administration decoding into focused classes.
+- Added `IdentityAccessAdministrationClient` as a class-based administration composition root with dedicated users, tenants, memberships, groups, policies, resource scopes, security-model scope types, session revocation, and identity-scope authority clients.
+- Moved all administration operations out of the root client; consuming code now uses explicit responsibility paths such as `client.administration.users.list(...)`, `client.authentication.passwordLogin(...)`, `client.oidc.authorize(...)`, and `client.authorization.evaluate(...)`.
+- Kept `clients/typescript/src/client.ts` as a compatibility re-export only; runtime implementation is required to remain under the `src/client/` directory.
+- Updated `IdentityAuthorizationContext` to delegate through `IdentityAccessAuthorizationClient` while preserving `_auth.IsAllowed(...)` semantics and the existing server-side .NET/RBAC authority boundary.
+- Updated the runnable Next.js administration host and copyable connector example to consume the composed client responsibilities without changing UI design, OIDC semantics, authorization behavior, or server-side credential handling.
+- Added source-consistency gates that require the responsibility classes, forbid the former root-level runtime methods, and keep the class-composed directory structure permanent.
+- Expanded the TypeScript SDK suite to 55 passing tests, including a regression test proving that the root client no longer exposes monolithic `info`, `passwordLogin`, or `listUsers` methods.
+- Changed no PostgreSQL schema, migration sequence, .NET authorization behavior, RBAC semantics, OIDC protocol semantics, refresh-token rotation behavior, MFA scope, or premium administration CSS ownership.
+
 # 0.42.12 - Runnable Next.js request-time configuration correction
 
 - Corrected protected Next.js host rendering so request-bound cookie state is established before Identity Access runtime environment configuration is read.

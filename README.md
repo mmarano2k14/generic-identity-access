@@ -17,11 +17,12 @@ The repository is application-agnostic. Consuming systems define their own resou
 - Persistent whole-segment wildcard capability patterns.
 - Neutral RBAC adapter boundary with external wildcard evaluation.
 - Local password credential management, lockout, opaque sessions, and registered redirect URIs.
-- Class-based TypeScript / Next.js connector with local session authentication, OIDC Authorization Code + PKCE, refresh-token rotation, server-delegated capability evaluation, typed administration, bounded core collection reads, and a premium multi-page server-first administration control center.
+- Provider-neutral MFA policy and authenticator lifecycle foundation with pluggable authentication-factor providers.
+- Class-composed TypeScript / Next.js connector with separated system, authentication, OIDC, authorization, and administration responsibility classes, bounded core collection reads, and a premium multi-page server-first administration control center.
 
 ## Next.js Administration Module
 
-`examples/nextjs/admin` contains a copyable App Router administration structure with separate pages for users, tenants, memberships, groups, policies, resource scopes, sessions, and identity-scope authority. Protected data loading, bearer provenance, validation, and API mutations stay server-side. Client Components are limited to presentation interaction and framework UI state. `IdentityAccessAdminUiBuilder` supplies permission-filtered route metadata but never replaces server-side authorization.
+`examples/nextjs/admin` contains a copyable App Router administration structure with separate pages for users, tenants, memberships, groups, policies, resource scopes, MFA, sessions, and identity-scope authority. Protected data loading, bearer provenance, validation, and API mutations stay server-side. Client Components are limited to presentation interaction and framework UI state. `IdentityAccessAdminUiBuilder` supplies permission-filtered route metadata but never replaces server-side authorization.
 
 Functional administration includes server-confirmed create flows, loading/error/empty states, dialogs, path revalidation after successful mutations, explicit confirmation for destructive session revocation, a real `/identity` overview, structured record details, automatic light/dark presentation, and responsive workspace composition. Framework-required Server Action functions remain thin adapters over the class-based `IdentityAccessAdminMutationService`.
 
@@ -39,6 +40,23 @@ npm run dev
 ```
 
 Then open `http://127.0.0.1:3000/login`. The configured redirect URI must exactly match the URI registered by the Identity Access API.
+
+For a complete local administration root-of-trust setup, create the development administrator first:
+
+```powershell
+$env:PGPASSWORD = "<local-postgres-password>"
+.\scripts\authentication\bootstrap-dev-admin.ps1
+```
+
+The bootstrap uses login `admin`, securely prompts for the password, creates the required local user/tenant/credential/security-model/authority records, and writes the non-secret Next.js `.env.local` values. Start the API with the matching local authentication/OIDC/RBAC profile:
+
+```powershell
+$env:IDENTITY_ACCESS_POSTGRES_DEFAULT = "Host=127.0.0.1;Port=5432;Database=generic_identity_access_default;Username=postgres;Password=<password>"
+$env:IDENTITY_ACCESS_RBAC_REFERENCE_DIRECTORY = "<path-to-external-rbac-release-directory>"
+.\scripts\authentication\run-dev-admin-api.ps1
+```
+
+See [`docs/DEVELOPMENT_ADMIN_BOOTSTRAP.md`](docs/DEVELOPMENT_ADMIN_BOOTSTRAP.md).
 
 ## Architecture
 
@@ -66,6 +84,8 @@ PostgreSQL         External RBAC       PostgreSQL
 Identity, database placement, authentication, authorization, and application resource hierarchy remain separate concerns.
 
 See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the architectural contracts and invariants.
+
+See [`docs/MFA_PROVIDER_ARCHITECTURE.md`](docs/MFA_PROVIDER_ARCHITECTURE.md) for the generic MFA/provider boundary and forward provider roadmap.
 
 ## Repository Structure
 
@@ -211,7 +231,7 @@ The service currently provides a local authentication foundation with:
 - session validation and logout;
 - registered login and post-logout redirect URIs.
 
-OAuth 2.0 / OpenID Connect Authorization Code + PKCE, rotating refresh tokens, process-pinned multi-key RSA signing-key rotation, and Bearer access-token validation for protected administration APIs are implemented for registered public clients. Bearer authentication revalidates the referenced local session and current active user before entering the existing RBAC pipeline. MFA, TOTP, passkeys/WebAuthn, recovery codes, and step-up authentication remain optional later work.
+OAuth 2.0 / OpenID Connect Authorization Code + PKCE, rotating refresh tokens, process-pinned multi-key RSA signing-key rotation, and Bearer access-token validation for protected administration APIs are implemented for registered public clients. Bearer authentication revalidates the referenced local session and current active user before entering the existing RBAC pipeline. The provider-neutral MFA policy/authenticator foundation is implemented. Concrete TOTP, recovery-code, passkey/WebAuthn, and step-up provider flows remain optional later work.
 
 See [`docs/LOCAL_AUTHENTICATION_FOUNDATION.md`](docs/LOCAL_AUTHENTICATION_FOUNDATION.md).
 

@@ -6,6 +6,7 @@ export type AdminIconName =
   | "groups"
   | "policies"
   | "resource-scopes"
+  | "mfa"
   | "sessions"
   | "scope-authority"
   | "search"
@@ -43,6 +44,8 @@ export function AdminIcon({ name, className = "ia-icon" }: { readonly name: Admi
       return <svg {...common}><path d="M6 3h9l3 3v15H6z"/><path d="M14 3v4h4"/><path d="M9 12h6"/><path d="M9 16h6"/><path d="M9 8h1"/></svg>;
     case "resource-scopes":
       return <svg {...common}><circle cx="12" cy="5" r="2"/><circle cx="6" cy="18" r="2"/><circle cx="18" cy="18" r="2"/><path d="M12 7v4"/><path d="M6 16v-2h12v2"/></svg>;
+    case "mfa":
+      return <svg {...common}><path d="M12 3l7 3v5c0 4.9-3 8.2-7 10-4-1.8-7-5.1-7-10V6z"/><circle cx="12" cy="11" r="2"/><path d="M12 13v3"/></svg>;
     case "sessions":
       return <svg {...common}><rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8"/><path d="M12 17v4"/><path d="M8 9h8"/><path d="M8 12h5"/></svg>;
     case "scope-authority":

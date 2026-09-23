@@ -29,7 +29,8 @@ $databaseGates = @(
     "verify-transactional-security-audit.ps1",
     "verify-atomic-mutations.ps1",
     "verify-oidc-authorization-code.ps1",
-    "verify-oidc-refresh-token.ps1"
+    "verify-oidc-refresh-token.ps1",
+    "verify-mfa-provider-foundation.ps1"
 )
 
 Write-Host "Running repository build, architecture, and unit/integration test gates..."

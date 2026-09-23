@@ -9,7 +9,7 @@ import { createTenantMembershipAction } from "../actions";
 export default async function MembershipsPage({ searchParams }: { readonly searchParams: Promise<{ readonly userId?: string }> }) {
   const request = await IdentityAccessAdminRequest.fromCurrentRequest();
   const { userId } = await searchParams;
-  const membership = userId ? await request.client.findTenantMembershipByUser(request.tenantContext(), userId) : null;
+  const membership = userId ? await request.client.administration.memberships.findByUser(request.tenantContext(), userId) : null;
   const create = (
     <AdminMutationDialog title="Add tenant membership" description="Attach an existing identity-scope user to the configured tenant." triggerLabel="Add membership" submitLabel="Add membership" action={createTenantMembershipAction}>
       <AdminField label="User ID" name="userId" required autoComplete="off" hint="Use the stable user UUID from the Users page." />

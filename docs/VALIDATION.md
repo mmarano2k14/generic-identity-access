@@ -287,3 +287,23 @@ Backup/restore can also be run independently:
 
 See `docs/PRODUCTION_QUALIFICATION.md` for prerequisites, cleanup behavior, restart/secret
 operations, and the distinction between repository qualification and deployment-specific evidence.
+
+## Generic MFA provider foundation
+
+Static provider-boundary validation is included in the primary repository gate:
+
+```powershell
+.\scripts\verify-mfa-source-consistency.ps1
+```
+
+Migration `0014_mfa_provider_foundation.sql` must remain provider-neutral and transactionally audited.
+The generic schema must not acquire TOTP secrets, WebAuthn provider payloads, recovery-code material,
+private keys, or arbitrary provider blobs. Concrete provider releases add their own validation.
+
+After applying the schema, validate the live PostgreSQL foundation with:
+
+```powershell
+$env:PGPASSWORD = "<password>"
+.\scripts\postgresql\verify-mfa-provider-foundation.ps1
+Remove-Item Env:PGPASSWORD
+```

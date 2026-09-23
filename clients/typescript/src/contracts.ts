@@ -107,6 +107,7 @@ export type IdentityAccessAdminUiSection =
   | "groups"
   | "policies"
   | "resource-scopes"
+  | "mfa"
   | "sessions"
   | "scope-authority";
 

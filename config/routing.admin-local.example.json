@@ -1,0 +1,32 @@
+{
+  "schemaVersion": "1",
+  "revision": 1,
+  "routingProvider": "configuration",
+  "placementGranularity": "identity-scope",
+  "destinations": [
+    {
+      "key": "identity-admin-local",
+      "provider": "postgresql",
+      "connectionSecretRef": "env:IDENTITY_ACCESS_POSTGRES_DEFAULT",
+      "state": "active"
+    }
+  ],
+  "routes": [
+    {
+      "applicationKey": "admin-web",
+      "identityScopeId": "00000000-0000-0000-0000-000000000001",
+      "dataSet": "identity-directory",
+      "destinationKey": "identity-admin-local",
+      "version": 1,
+      "state": "active"
+    }
+  ],
+  "authenticationContexts": [
+    {
+      "key": "admin-web-primary",
+      "applicationKey": "admin-web",
+      "identityScopeId": "00000000-0000-0000-0000-000000000001",
+      "state": "active"
+    }
+  ]
+}

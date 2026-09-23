@@ -218,3 +218,45 @@ export interface IdentityScopeAuthorityPolicyBindingRecord {
   readonly groupId: string;
   readonly policyId: string;
 }
+
+export type IdentityMfaPolicyMode = 1 | 2 | 3;
+
+export type IdentityAuthenticatorStatus = 1 | 2 | 3;
+
+export type IdentityMfaProviderCapability = "enrollment" | "verification" | "recovery";
+
+export interface IdentityMfaProviderRecord {
+  readonly key: string;
+  readonly displayName: string;
+  readonly capabilities: readonly IdentityMfaProviderCapability[];
+}
+
+export interface IdentityMfaPolicyRecord {
+  readonly mode: IdentityMfaPolicyMode;
+  readonly allowedProviders: readonly string[];
+  readonly version: number;
+}
+
+export interface IdentityCreateMfaPolicyRequest {
+  readonly mode: IdentityMfaPolicyMode;
+  readonly allowedProviders: readonly string[];
+}
+
+export interface IdentityUpdateMfaPolicyRequest {
+  readonly mode: IdentityMfaPolicyMode;
+  readonly allowedProviders: readonly string[];
+  readonly expectedVersion: number;
+}
+
+export interface IdentityUserAuthenticatorRecord {
+  readonly authenticatorId: string;
+  readonly userId: string;
+  readonly providerKey: string;
+  readonly displayName: string;
+  readonly status: IdentityAuthenticatorStatus;
+  readonly createdAt: string;
+  readonly confirmedAt?: string;
+  readonly lastUsedAt?: string;
+  readonly revokedAt?: string;
+  readonly version: number;
+}

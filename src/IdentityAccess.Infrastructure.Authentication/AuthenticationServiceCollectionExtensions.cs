@@ -1,4 +1,5 @@
 using IdentityAccess.Application.Authentication;
+using IdentityAccess.Application.Authentication.Mfa;
 using IdentityAccess.Application.Routing;
 using IdentityAccess.Application.Security;
 using IdentityAccess.Application.Storage;
@@ -28,6 +29,21 @@ namespace IdentityAccess.Infrastructure.Authentication
                 services,
                 section,
                 AppContext.BaseDirectory);
+
+        /// <summary>
+        /// Adds one pluggable authentication-factor provider to the generic provider registry.
+        /// </summary>
+        /// <typeparam name="TProvider">The provider implementation type.</typeparam>
+        /// <param name="services">The server service collection.</param>
+        /// <returns>The original service collection.</returns>
+        public static IServiceCollection AddIdentityAccessAuthenticationFactorProvider<TProvider>(
+            this IServiceCollection services)
+            where TProvider : class, IAuthenticationFactorProvider
+        {
+            ArgumentNullException.ThrowIfNull(services);
+            services.AddSingleton<IAuthenticationFactorProvider, TProvider>();
+            return services;
+        }
 
         /// <summary>
         /// Adds local authentication and optional OIDC services when explicitly enabled.
@@ -129,6 +145,7 @@ namespace IdentityAccess.Infrastructure.Authentication
             services.AddSingleton<ILocalAuthenticationService, LocalAuthenticationService>();
             services.AddSingleton<ICredentialAdministrationService, CredentialAdministrationService>();
             services.AddSingleton<ISessionAdministrationService, SessionAdministrationService>();
+            AddMfaAdministration(services);
 
             AddOidc(
                 services,
@@ -311,6 +328,29 @@ namespace IdentityAccess.Infrastructure.Authentication
 
             return parsed;
         }
+
+
+        private static void AddMfaAdministration(IServiceCollection services)
+        {
+            services.AddIdentityAccessAuthenticationFactorProviderRegistry();
+
+            var hasPolicyStore = HasService<IMfaPolicyStore>(services);
+            var hasAuthenticatorStore = HasService<IUserAuthenticatorStore>(services);
+
+            if (hasPolicyStore != hasAuthenticatorStore)
+            {
+                throw new InvalidOperationException(
+                    "MFA administration requires both generic MFA persistence stores when either is registered.");
+            }
+
+            if (hasPolicyStore)
+            {
+                services.AddSingleton<IMfaAdministrationService, MfaAdministrationService>();
+            }
+        }
+
+        private static bool HasService<TService>(IServiceCollection services) =>
+            services.Any(descriptor => descriptor.ServiceType == typeof(TService));
 
         private static void RequireService<TService>(
             IServiceCollection services)

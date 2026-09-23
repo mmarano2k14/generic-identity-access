@@ -1,6 +1,7 @@
 using IdentityAccess.Api.Features;
 using IdentityAccess.Application.Administration;
 using IdentityAccess.Application.Authentication;
+using IdentityAccess.Application.Authentication.Mfa;
 using IdentityAccess.Application.Routing;
 using IdentityAccess.Application.Storage;
 
@@ -28,6 +29,7 @@ namespace IdentityAccess.Api
             Register<ILocalAuthenticationService>(builder.Services);
             Register<ICredentialAdministrationService>(builder.Services);
             Register<ISessionAdministrationService>(builder.Services);
+            Register<IMfaAdministrationService>(builder.Services);
             Register<IOidcAuthorizationService>(builder.Services);
         }
 
