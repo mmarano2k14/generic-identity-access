@@ -307,3 +307,9 @@ $env:PGPASSWORD = "<password>"
 .\scripts\postgresql\verify-mfa-provider-foundation.ps1
 Remove-Item Env:PGPASSWORD
 ```
+
+## TOTP provider validation
+
+Version `0.44.0` adds `scripts/verify-totp-source-consistency.ps1` to the primary repository verification chain. It pins the concrete provider project, RFC 6238 implementation markers, provider-owned migration `0015_totp_provider.sql`, row-lock replay boundary, API host registration, and focused tests.
+
+After applying PostgreSQL migrations, `scripts/postgresql/verify-totp-provider.ps1` checks the provider table, protected-secret storage type, generic-schema separation, and transactional mutation-trigger coverage.

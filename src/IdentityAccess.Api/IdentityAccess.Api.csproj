@@ -14,6 +14,10 @@
     <ProjectReference Include="../IdentityAccess.Rbac.MultiplexedAdapter/IdentityAccess.Rbac.MultiplexedAdapter.csproj" ReferenceOutputAssembly="true" />
   </ItemGroup>
 
+  <ItemGroup Label="Providers">
+    <ProjectReference Include="../IdentityAccess.Mfa.Totp/IdentityAccess.Mfa.Totp.csproj" />
+  </ItemGroup>
+
   <ItemGroup Label="Infrastructure">
     <ProjectReference Include="../IdentityAccess.Infrastructure.Authentication/IdentityAccess.Infrastructure.Authentication.csproj" />
     <ProjectReference Include="../IdentityAccess.Infrastructure.ConfigurationRouting/IdentityAccess.Infrastructure.ConfigurationRouting.csproj" />

@@ -17,6 +17,9 @@ try {
     & (Join-Path $root "scripts/verify-mfa-source-consistency.ps1")
     if (-not $?) { throw "MFA source consistency validation failed." }
 
+    & (Join-Path $root "scripts/verify-totp-source-consistency.ps1")
+    if (-not $?) { throw "TOTP source consistency validation failed." }
+
     & (Join-Path $root "scripts/verify-typescript-source-consistency.ps1")
     if (-not $?) { throw "TypeScript source consistency validation failed." }
 

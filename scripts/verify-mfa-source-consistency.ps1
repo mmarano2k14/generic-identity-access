@@ -130,7 +130,10 @@ $productionMfaSources = Get-ChildItem `
     (Join-Path $repositoryRoot "src") `
     -Filter "*.cs" `
     -Recurse `
-    -File | Where-Object { $_.FullName -notmatch '[\\/](bin|obj)[\\/]' }
+    -File | Where-Object {
+        $_.FullName -notmatch '[\\/](bin|obj)[\\/]' -and
+        $_.FullName -notmatch '[\\/]IdentityAccess\.Mfa\.[^\\/]+[\\/]'
+    }
 
 foreach ($sourceFile in $productionMfaSources) {
     $source = Get-Content $sourceFile.FullName -Raw

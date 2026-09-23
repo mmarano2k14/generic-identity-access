@@ -160,7 +160,7 @@ The root `IdentityAccessClient` remains a composition facade.
 
 ```text
 0.43.x  generic MFA foundation + provider registry
-0.44.x  TOTP provider
+0.44.0  TOTP provider implemented as a separate provider project
 0.45.x  recovery provider
 0.46.x  WebAuthn/passkey registration provider work
 0.47.x  WebAuthn/passkey authentication provider work
@@ -168,3 +168,7 @@ The root `IdentityAccessClient` remains a composition facade.
 ```
 
 The provider releases extend the generic foundation rather than modifying its ownership model.
+
+## Concrete provider status
+
+The TOTP provider is documented separately in `TOTP_PROVIDER.md`. Its provider-owned encrypted secret storage and replay state do not alter the generic authenticator schema.

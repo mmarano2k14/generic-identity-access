@@ -1,3 +1,18 @@
+# 0.44.0 - TOTP authentication-factor provider
+
+- Added the first concrete MFA provider as the separate `IdentityAccess.Mfa.Totp` project while preserving the provider-neutral generic MFA core.
+- Implemented RFC 6238 TOTP using HMAC-SHA1 with the initial fixed profile of 6 decimal digits, a 30-second period, and cryptographically random 20-byte enrollment secrets.
+- Added unpadded RFC 4648 Base32 enrollment output and standard `otpauth://` provisioning URIs for authenticator applications.
+- Added provider-owned `identity_access.totp_authenticators` persistence in migration `0015_totp_provider.sql`; the generic `user_authenticators` row remains free of provider secret material.
+- Protected durable TOTP secrets through ASP.NET Core Data Protection with a provider-specific cryptographic purpose; plaintext secrets are retained only for the trusted enrollment response and in-memory verification window.
+- Added Pending-to-Active first-code confirmation and active-authenticator verification through `ITotpAuthenticationFactorService`.
+- Added PostgreSQL row locking and atomic accepted-time-step mutation so the same TOTP time step cannot succeed concurrently more than once.
+- Pinned provider parameters per authenticator and added a configurable 0-2-step verification window, defaulting to one adjacent step.
+- Added provider-neutral security audit event categories for enrollment start, enrollment confirmation, factor verification success, invalid proofs, and replay detection.
+- Added repository source-consistency gates, PostgreSQL schema validation, RFC 6238 vectors, Base32 vectors, provider metadata tests, and enrollment/confirmation/verification/replay service tests.
+- Wired the provider into the API host behind `IdentityAccess:Mfa:Totp`; it remains disabled by default and requires an explicit issuer when enabled.
+- Did not integrate TOTP into password login, OIDC session issuance, recovery-code flows, or step-up policy enforcement in this increment; those remain later integration work.
+
 # 0.43.2 - MFA provider registration assembly-boundary correction
 
 - Preserved the authentication infrastructure assembly boundary by keeping `AuthenticationServiceCollectionExtensions` as the only exported infrastructure registration type.

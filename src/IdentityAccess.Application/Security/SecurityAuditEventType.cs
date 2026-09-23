@@ -94,6 +94,14 @@ namespace IdentityAccess.Application.Security
         /// <summary>An MFA policy was updated.</summary>
         MfaPolicyUpdated = 45,
         /// <summary>A user authenticator was revoked.</summary>
-        UserAuthenticatorRevoked = 46
+        UserAuthenticatorRevoked = 46,
+        /// <summary>An authentication-factor enrollment was started.</summary>
+        UserAuthenticatorEnrollmentStarted = 47,
+        /// <summary>An authentication-factor enrollment was confirmed.</summary>
+        UserAuthenticatorEnrollmentConfirmed = 48,
+        /// <summary>An authentication-factor proof was verified successfully.</summary>
+        AuthenticationFactorVerificationSucceeded = 49,
+        /// <summary>An authentication-factor proof was rejected.</summary>
+        AuthenticationFactorVerificationFailed = 50
     }
 }

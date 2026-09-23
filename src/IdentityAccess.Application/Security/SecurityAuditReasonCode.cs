@@ -8,6 +8,10 @@ namespace IdentityAccess.Application.Security
         /// <summary>The identity directory was unavailable.</summary>
         DirectoryUnavailable = 2,
         /// <summary>The supplied session was invalid.</summary>
-        InvalidSession = 3
+        InvalidSession = 3,
+        /// <summary>The supplied authentication-factor proof was invalid.</summary>
+        InvalidAuthenticationFactorProof = 4,
+        /// <summary>An authentication-factor proof reused an already consumed replay boundary.</summary>
+        AuthenticationFactorReplayDetected = 5
     }
 }

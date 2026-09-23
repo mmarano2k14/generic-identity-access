@@ -24,12 +24,18 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IdentityAccess.Authorizatio
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IdentityAccess.Infrastructure.Authentication", "src\IdentityAccess.Infrastructure.Authentication\IdentityAccess.Infrastructure.Authentication.csproj", "{D4F7E879-4F0A-4C8A-9EF9-7FA1E01D8D71}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IdentityAccess.Mfa.Totp", "src\IdentityAccess.Mfa.Totp\IdentityAccess.Mfa.Totp.csproj", "{90197501-4435-5757-A8C0-5511D899293F}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{90197501-4435-5757-A8C0-5511D899293F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{90197501-4435-5757-A8C0-5511D899293F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{90197501-4435-5757-A8C0-5511D899293F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{90197501-4435-5757-A8C0-5511D899293F}.Release|Any CPU.Build.0 = Release|Any CPU
 		{D4F7E879-4F0A-4C8A-9EF9-7FA1E01D8D71}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{D4F7E879-4F0A-4C8A-9EF9-7FA1E01D8D71}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D4F7E879-4F0A-4C8A-9EF9-7FA1E01D8D71}.Release|Any CPU.ActiveCfg = Release|Any CPU

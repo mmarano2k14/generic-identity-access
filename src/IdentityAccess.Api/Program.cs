@@ -6,6 +6,7 @@ using IdentityAccess.Api.Security;
 using IdentityAccess.Infrastructure.Authentication;
 using IdentityAccess.Infrastructure.ConfigurationRouting;
 using IdentityAccess.Infrastructure.PostgreSql;
+using IdentityAccess.Mfa.Totp;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -38,6 +39,8 @@ builder.AddIdentityAdministration();
 builder.Services.AddIdentityAccessAuthentication(
     builder.Configuration.GetSection("IdentityAccess:Authentication"),
     builder.Environment.ContentRootPath);
+builder.Services.AddIdentityAccessTotpProvider(
+    builder.Configuration.GetSection("IdentityAccess:Mfa:Totp"));
 builder.AddIdentityAdministrationAuthorization();
 builder.AddIdentityApiFeatures();
 builder.AddIdentityAdministrationSecurity();
