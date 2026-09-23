@@ -31,6 +31,34 @@ namespace IdentityAccess.Infrastructure.PostgreSql.Directory
             return new VersionedRecord<Tenant>(value, reader.GetInt64(2));
         }
 
+        /// <summary>Lists a bounded window of tenant records in the resolved database route.</summary>
+        public async Task<IReadOnlyList<VersionedRecord<Tenant>>> ListAsync(ResolvedDatabaseRoute route,
+            Guid identityScopeId, int offset, int limit, CancellationToken cancellationToken)
+        {
+            PostgreSqlDirectoryGuard.EnsureScope(route, identityScopeId);
+            await using var connection = (NpgsqlConnection)await connectionFactory.OpenAsync(route, cancellationToken)
+                .ConfigureAwait(false);
+            await using var command = new NpgsqlCommand("""
+                SELECT tenant_id, display_name, status, row_version
+                FROM identity_access.tenants
+                WHERE identity_scope_id = @scope
+                ORDER BY tenant_id
+                LIMIT @limit OFFSET @offset;
+                """, connection);
+            command.Parameters.AddWithValue("scope", identityScopeId);
+            command.Parameters.AddWithValue("limit", limit);
+            command.Parameters.AddWithValue("offset", offset);
+            var records = new List<VersionedRecord<Tenant>>();
+            await using var reader = await command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
+            while (await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
+            {
+                var reference = new TenantReference(identityScopeId, reader.GetGuid(0));
+                var tenant = new Tenant(reference, reader.GetString(1), (TenantStatus)reader.GetInt16(2));
+                records.Add(new VersionedRecord<Tenant>(tenant, reader.GetInt64(3)));
+            }
+            return records;
+        }
+
         /// <summary>Creates a tenant record in the resolved database route.</summary>
         public async Task<VersionedRecord<Tenant>> CreateAsync(ResolvedDatabaseRoute route, Tenant tenant,
             CancellationToken cancellationToken)

@@ -33,3 +33,9 @@ export class IdentityAccessServerConnector {
 //   redirectUri: session.redirectUri,
 // });
 // const tokens = await identity.client.exchangeAuthorizationCode(authorization);
+
+// const user = await identity.client.createUser({
+//   identityScopeId,
+//   applicationKey: "admin-app",
+//   credential: { kind: "bearer", accessToken: tokens.accessToken },
+// }, { displayName: "Alice" });

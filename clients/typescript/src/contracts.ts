@@ -113,8 +113,17 @@ export type IdentityAccessAdminUiSection =
 export interface IdentityAccessAdminUiEntry {
   readonly section: IdentityAccessAdminUiSection;
   readonly requirement: IdentityCapabilityRequirement;
+  readonly href: string;
+  readonly label: string;
+  readonly description: string;
+  readonly tenantScoped: boolean;
 }
 
 export interface IdentityAccessAdminUiDefinition {
+  readonly basePath: string;
   readonly entries: readonly IdentityAccessAdminUiEntry[];
+}
+
+export interface IdentityAccessAdminUiBuilderOptions {
+  readonly basePath?: string;
 }

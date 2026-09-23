@@ -1,4 +1,5 @@
 import type {
+  IdentityAccessAdminUiBuilderOptions,
   IdentityAccessAdminUiDefinition,
   IdentityAccessAdminUiEntry,
   IdentityAccessAdminUiSection,
@@ -13,49 +14,78 @@ import { IdentityAccessClientError } from "./errors.js";
  */
 export class IdentityAccessAdminUiBuilder {
   readonly #authorization: IdentityAuthorizationContext;
+  readonly #basePath: string;
   readonly #entries = new Map<IdentityAccessAdminUiSection, IdentityAccessAdminUiEntry>();
+  #tenantAuthorization: IdentityAuthorizationContext | undefined;
 
-  public constructor(authorization: IdentityAuthorizationContext) {
+  public constructor(
+    authorization: IdentityAuthorizationContext,
+    options: IdentityAccessAdminUiBuilderOptions = {},
+  ) {
     if (!(authorization instanceof IdentityAuthorizationContext)) {
       throw new IdentityAccessClientError("configuration");
     }
     this.#authorization = authorization;
+    this.#basePath = IdentityAccessAdminUiBuilder.basePath(options.basePath ?? "/identity");
+  }
+
+  /** Supplies the tenant-scoped authorization context used for tenant-bound UI sections. */
+  public withTenantAuthorization(authorization: IdentityAuthorizationContext): this {
+    if (!(authorization instanceof IdentityAuthorizationContext)) {
+      throw new IdentityAccessClientError("configuration");
+    }
+    this.#tenantAuthorization = authorization;
+    return this;
   }
 
   public withUsers(): this {
-    return this.#with("users", "user");
+    return this.#with("users", "user", "Users", "Manage identities and account lifecycle.", false);
   }
 
   public withTenants(): this {
-    return this.#with("tenants", "tenant");
+    return this.#with("tenants", "tenant", "Tenants", "Manage tenant security boundaries.", false);
   }
 
   public withMemberships(): this {
-    return this.#with("memberships", "tenant-membership");
+    return this.#with("memberships", "tenant-membership", "Memberships", "Manage user membership within a tenant.", true);
   }
 
   public withGroups(): this {
-    return this.#with("groups", "group");
+    return this.#with("groups", "group", "Groups", "Manage tenant-scoped authorization groups.", true);
   }
 
   public withPolicies(): this {
-    return this.#with("policies", "policy");
+    return this.#with("policies", "policy", "Policies", "Manage permission policies and capability statements.", true);
   }
 
   public withResourceScopes(): this {
-    return this.#with("resource-scopes", "resource-scope");
+    return this.#with("resource-scopes", "resource-scope", "Resource scopes", "Manage application-defined resource hierarchy.", true);
   }
 
   public withSessions(): this {
-    return this.#with("sessions", "session");
+    return this.#with("sessions", "session", "Sessions", "Revoke active user or client sessions.", false);
   }
 
   public withScopeAuthority(): this {
-    return this.#with("scope-authority", "scope-authority-group");
+    return this.#with("scope-authority", "scope-authority-group", "Scope authority", "Manage identity-scope administration authority.", false);
+  }
+
+  /** Adds every currently supported administration section in stable navigation order. */
+  public withAll(): this {
+    return this
+      .withUsers()
+      .withTenants()
+      .withMemberships()
+      .withGroups()
+      .withPolicies()
+      .withResourceScopes()
+      .withSessions()
+      .withScopeAuthority();
   }
 
   public build(): IdentityAccessAdminUiDefinition {
     return Object.freeze({
+      basePath: this.#basePath,
       entries: Object.freeze(Array.from(this.#entries.values())),
     });
   }
@@ -67,22 +97,44 @@ export class IdentityAccessAdminUiBuilder {
   public async buildVisible(signal?: AbortSignal): Promise<IdentityAccessAdminUiDefinition> {
     const visible: IdentityAccessAdminUiEntry[] = [];
     for (const entry of this.#entries.values()) {
-      if (await this.#authorization.isAllowedRequirement(entry.requirement, signal)) {
+      const authorization = entry.tenantScoped ? this.#tenantAuthorization : this.#authorization;
+      if (authorization !== undefined && await authorization.isAllowedRequirement(entry.requirement, signal)) {
         visible.push(entry);
       }
     }
 
-    return Object.freeze({ entries: Object.freeze(visible) });
+    return Object.freeze({ basePath: this.#basePath, entries: Object.freeze(visible) });
   }
 
-  #with(section: IdentityAccessAdminUiSection, feature: string): this {
+  #with(
+    section: IdentityAccessAdminUiSection,
+    feature: string,
+    label: string,
+    description: string,
+    tenantScoped: boolean,
+  ): this {
     const requirement: IdentityCapabilityRequirement = Object.freeze({
       resource: "identity-access",
       feature,
       action: "read",
     });
 
-    this.#entries.set(section, Object.freeze({ section, requirement }));
+    this.#entries.set(section, Object.freeze({
+      section,
+      requirement,
+      href: `${this.#basePath}/${section}`,
+      label,
+      description,
+      tenantScoped,
+    }));
     return this;
+  }
+
+  static basePath(value: string): string {
+    if (!/^\/[A-Za-z0-9/_-]*$/.test(value) || value.includes("//")) {
+      throw new IdentityAccessClientError("configuration");
+    }
+    if (value.length > 1 && value.endsWith("/")) return value.slice(0, -1);
+    return value;
   }
 }

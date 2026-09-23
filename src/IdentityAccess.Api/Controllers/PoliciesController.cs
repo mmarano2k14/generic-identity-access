@@ -14,6 +14,21 @@ namespace IdentityAccess.Api.Controllers
     [Produces("application/json")]
     public sealed class PoliciesController(OptionalFeature<IPolicyAdministrationService> feature) : ControllerBase
     {
+        /// <summary>Lists policies in a bounded deterministic window.</summary>
+        [HttpGet]
+        [RequireAdministrationCapability(IdentityAccessAdministrationCapabilities.Resource, IdentityAccessAdministrationCapabilities.Policies, IdentityAccessAdministrationCapabilities.Read)]
+        public async Task<ActionResult<IReadOnlyList<PolicyResponse>>> List(Guid identityScopeId, Guid tenantId,
+            string applicationKey, [FromQuery] int? offset, [FromQuery] int? limit, CancellationToken cancellationToken)
+        {
+            var resolvedOffset = offset ?? 0;
+            var resolvedLimit = limit ?? AdministrationPaging.DefaultLimit;
+            if (!AdministrationPaging.IsValid(resolvedOffset, resolvedLimit)) return BadRequest();
+            if (!feature.TryGet(out var service)) return ApiProblems.PolicyAdministrationUnavailable();
+            var records = await service.ListPoliciesAsync(identityScopeId, tenantId, new ApplicationKey(applicationKey),
+                resolvedOffset, resolvedLimit, cancellationToken);
+            return Ok(records.Select(PolicyResponse.From).ToArray());
+        }
+
         /// <summary>Gets the requested policies.</summary>
         [HttpGet("{policyId:guid}")]
         [RequireAdministrationCapability(IdentityAccessAdministrationCapabilities.Resource, IdentityAccessAdministrationCapabilities.Policies, IdentityAccessAdministrationCapabilities.Read)]

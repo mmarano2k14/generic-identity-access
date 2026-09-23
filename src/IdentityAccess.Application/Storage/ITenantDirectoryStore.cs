@@ -11,6 +11,10 @@ namespace IdentityAccess.Application.Storage
         Task<VersionedRecord<Tenant>?> GetAsync(ResolvedDatabaseRoute route, TenantReference tenant,
             CancellationToken cancellationToken);
 
+        /// <summary>Lists a bounded window of tenants in the resolved identity scope.</summary>
+        Task<IReadOnlyList<VersionedRecord<Tenant>>> ListAsync(ResolvedDatabaseRoute route, Guid identityScopeId,
+            int offset, int limit, CancellationToken cancellationToken);
+
         /// <summary>Creates a tenant record in the resolved database route.</summary>
         Task<VersionedRecord<Tenant>> CreateAsync(ResolvedDatabaseRoute route, Tenant tenant,
             CancellationToken cancellationToken);

@@ -31,6 +31,10 @@ npm run typecheck
 The TypeScript build output under `clients/typescript/dist` is generated content and is not
 part of the source manifest.
 
+The TypeScript source-consistency gate also pins the class-only runtime architecture, typed administration method set, bounded core list APIs, route-aware `IdentityAccessAdminUiBuilder`, explicit tenant authorization context, and the copyable Next.js administration module structure. It rejects reintroduction of a functional client factory, a parallel administration runtime client class, or client-secret support.
+
+For the Next.js administration module it additionally requires server-only class-based mutation orchestration, thin Server Action adapters, destructive session-revocation confirmation, loading/error state files, and exactly one custom stylesheet at `examples/nextjs/admin/styles/identity-access-admin.css`. CSS Modules, component-local style blocks, and React inline style objects are rejected.
+
 ## External RBAC Compatibility
 
 Build the supported external RBAC distribution first, then run:

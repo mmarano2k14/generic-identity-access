@@ -14,6 +14,21 @@ namespace IdentityAccess.Api.Controllers
     [Produces("application/json")]
     public sealed class GroupsController(OptionalFeature<IDirectoryAdministrationService> feature) : ControllerBase
     {
+        /// <summary>Lists groups in a bounded deterministic window.</summary>
+        [HttpGet]
+        [RequireAdministrationCapability(IdentityAccessAdministrationCapabilities.Resource, IdentityAccessAdministrationCapabilities.Groups, IdentityAccessAdministrationCapabilities.Read)]
+        public async Task<ActionResult<IReadOnlyList<GroupRecordResponse>>> List(Guid identityScopeId, Guid tenantId,
+            string applicationKey, [FromQuery] int? offset, [FromQuery] int? limit, CancellationToken cancellationToken)
+        {
+            var resolvedOffset = offset ?? 0;
+            var resolvedLimit = limit ?? AdministrationPaging.DefaultLimit;
+            if (!AdministrationPaging.IsValid(resolvedOffset, resolvedLimit)) return BadRequest();
+            if (!feature.TryGet(out var service)) return ApiProblems.DirectoryAdministrationUnavailable();
+            var records = await service.ListGroupsAsync(identityScopeId, tenantId, new ApplicationKey(applicationKey),
+                resolvedOffset, resolvedLimit, cancellationToken);
+            return Ok(records.Select(GroupRecordResponse.From).ToArray());
+        }
+
         /// <summary>Gets the requested groups.</summary>
         [HttpGet("{groupId:guid}")]
         [RequireAdministrationCapability(IdentityAccessAdministrationCapabilities.Resource, IdentityAccessAdministrationCapabilities.Groups, IdentityAccessAdministrationCapabilities.Read)]

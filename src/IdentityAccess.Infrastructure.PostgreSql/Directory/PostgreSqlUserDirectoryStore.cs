@@ -58,6 +58,43 @@ namespace IdentityAccess.Infrastructure.PostgreSql.Directory
         }
 
         /// <inheritdoc />
+        public async Task<IReadOnlyList<VersionedRecord<User>>> ListAsync(
+            ResolvedDatabaseRoute route,
+            Guid identityScopeId,
+            int offset,
+            int limit,
+            CancellationToken cancellationToken)
+        {
+            PostgreSqlDirectoryGuard.EnsureScope(route, identityScopeId);
+
+            await using var connection = (NpgsqlConnection)await connectionFactory
+                .OpenAsync(route, cancellationToken)
+                .ConfigureAwait(false);
+
+            await using var command = new NpgsqlCommand("""
+                SELECT user_id, display_name, status, row_version
+                FROM identity_access.users
+                WHERE identity_scope_id = @scope
+                ORDER BY user_id
+                LIMIT @limit OFFSET @offset;
+                """, connection);
+            command.Parameters.AddWithValue("scope", identityScopeId);
+            command.Parameters.AddWithValue("limit", limit);
+            command.Parameters.AddWithValue("offset", offset);
+
+            var records = new List<VersionedRecord<User>>();
+            await using var reader = await command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
+            while (await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
+            {
+                var subject = new SubjectReference(identityScopeId, reader.GetGuid(0));
+                var user = new User(subject, reader.GetString(1), (UserStatus)reader.GetInt16(2));
+                records.Add(new VersionedRecord<User>(user, reader.GetInt64(3)));
+            }
+
+            return records;
+        }
+
+        /// <inheritdoc />
         public async Task<VersionedRecord<User>> CreateAsync(
             ResolvedDatabaseRoute route,
             User user,

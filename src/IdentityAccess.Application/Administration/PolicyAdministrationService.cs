@@ -24,6 +24,16 @@ namespace IdentityAccess.Application.Administration
                 cancellationToken);
         }
 
+        /// <summary>Lists permission policies in a bounded deterministic window.</summary>
+        public async Task<IReadOnlyList<VersionedRecord<PermissionPolicy>>> ListPoliciesAsync(Guid identityScopeId,
+            Guid tenantId, ApplicationKey application, int offset, int limit, CancellationToken cancellationToken)
+        {
+            AdministrationPaging.EnsureValid(offset, limit);
+            var route = await ResolveAsync(identityScopeId, application, cancellationToken);
+            return await policies.ListAsync(route, new TenantReference(identityScopeId, tenantId), application,
+                offset, limit, cancellationToken);
+        }
+
         /// <summary>Creates a permission policy.</summary>
         public async Task<VersionedRecord<PermissionPolicy>> CreatePolicyAsync(Guid identityScopeId, Guid tenantId,
             ApplicationKey application, Guid policyId, string displayName, PolicyStatus status,

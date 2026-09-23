@@ -243,28 +243,46 @@ test("RequireCapability metadata evaluates through IdentityAuthorizationContext"
   assert.equal(await auth.isAllowedFor(handler, "run"), true);
 });
 
-test("admin UI builder is class-based and visibility uses the same authorization context", async () => {
+test("admin UI builder is class-based, route-aware, and uses scope-correct authorization contexts", async () => {
   const seen = [];
-  const transport = async (_url, init) => {
+  const transport = async (url, init) => {
     const capability = JSON.parse(init.body);
-    seen.push(capability.feature);
+    seen.push({ feature: capability.feature, tenant: url.includes(`/tenants/${tenantId}/`) });
     return json({ allowed: capability.feature !== "policy" });
   };
 
-  const auth = new IdentityAuthorizationContext(client(transport), {
+  const api = client(transport);
+  const scopeAuth = new IdentityAuthorizationContext(api, {
     identityScopeId: scopeId,
     applicationKey: "app-a",
     credential: bearer,
   });
+  const tenantAuth = new IdentityAuthorizationContext(api, {
+    identityScopeId: scopeId,
+    applicationKey: "app-a",
+    tenantId,
+    credential: bearer,
+  });
 
-  const builder = new IdentityAccessAdminUiBuilder(auth)
+  const builder = new IdentityAccessAdminUiBuilder(scopeAuth, { basePath: "/identity-admin/" })
+    .withTenantAuthorization(tenantAuth)
     .withUsers()
     .withGroups()
     .withPolicies();
 
-  assert.deepEqual(builder.build().entries.map((entry) => entry.section), ["users", "groups", "policies"]);
+  const built = builder.build();
+  assert.equal(built.basePath, "/identity-admin");
+  assert.deepEqual(built.entries.map((entry) => entry.href), [
+    "/identity-admin/users",
+    "/identity-admin/groups",
+    "/identity-admin/policies",
+  ]);
   assert.deepEqual((await builder.buildVisible()).entries.map((entry) => entry.section), ["users", "groups"]);
-  assert.deepEqual(seen, ["user", "group", "policy"]);
+  assert.deepEqual(seen, [
+    { feature: "user", tenant: false },
+    { feature: "group", tenant: true },
+    { feature: "policy", tenant: true },
+  ]);
 });
 
 test("native fetch interoperates with a local HTTP fixture, not a .NET server", async () => {
@@ -529,4 +547,362 @@ test("OIDC redirect validation rejects redirect target substitution", async () =
     state: "state-423-fixed-value",
     nonce: "nonce-423-fixed-value",
   }), code("protocol"));
+});
+
+const adminScopeId = "42411111-1111-1111-1111-111111111111";
+const adminTenantId = "42422222-2222-2222-2222-222222222222";
+const adminUserId = "42433333-3333-3333-3333-333333333333";
+const adminMembershipId = "42444444-4444-4444-4444-444444444444";
+const adminGroupId = "42455555-5555-5555-5555-555555555555";
+const adminPolicyId = "42466666-6666-6666-6666-666666666666";
+const adminStatementId = "42477777-7777-7777-7777-777777777777";
+const adminResourceScopeId = "42488888-8888-8888-8888-888888888888";
+const adminBearerContext = {
+  identityScopeId: adminScopeId,
+  applicationKey: "admin-app",
+  credential: bearer,
+};
+const adminTenantContext = { ...adminBearerContext, tenantId: adminTenantId };
+
+
+test("typed user administration sends trusted Bearer provenance and optimistic concurrency", async () => {
+  let call = 0;
+  const api = client(async (url, init) => {
+    call++;
+    assert.equal(init.headers.Authorization, "Bearer header.payload.signature");
+    if (call === 1) {
+      assert.equal(url, `https://identity.example.test/api/v1/identity-scopes/${adminScopeId}/applications/admin-app/users`);
+      assert.equal(init.method, "POST");
+      assert.deepEqual(JSON.parse(init.body), {
+        userId: "00000000-0000-0000-0000-000000000000",
+        displayName: "Alice",
+        status: 1,
+      });
+      return json({ userId: adminUserId, displayName: "Alice", status: 1, version: 1 }, 201);
+    }
+
+    assert.equal(url, `https://identity.example.test/api/v1/identity-scopes/${adminScopeId}/applications/admin-app/users/${adminUserId}`);
+    assert.equal(init.method, "PUT");
+    assert.deepEqual(JSON.parse(init.body), { displayName: "Alice Updated", status: 2, expectedVersion: 1 });
+    return json({ userId: adminUserId, displayName: "Alice Updated", status: 2, version: 2 });
+  });
+
+  assert.deepEqual(await api.createUser(adminBearerContext, { displayName: "Alice" }), {
+    userId: adminUserId, displayName: "Alice", status: 1, version: 1,
+  });
+  assert.deepEqual(await api.updateUser(adminBearerContext, adminUserId, {
+    displayName: "Alice Updated", status: 2, expectedVersion: 1,
+  }), {
+    userId: adminUserId, displayName: "Alice Updated", status: 2, version: 2,
+  });
+});
+
+
+test("typed nullable administration GET returns null on 404 without parsing an empty body", async () => {
+  const api = client(async (_url, init) => {
+    assert.equal(init.method, "GET");
+    return new Response(null, { status: 404 });
+  });
+  assert.equal(await api.getUser(adminBearerContext, adminUserId), null);
+  assert.equal(await api.getTenant(adminBearerContext, adminTenantId), null);
+});
+
+
+test("tenant membership administration preserves the API route shape and IdentitySession headers", async () => {
+  const context = {
+    identityScopeId: adminScopeId,
+    applicationKey: "admin-app",
+    tenantId: adminTenantId,
+    credential: session,
+  };
+  const api = client(async (url, init) => {
+    assert.equal(url, `https://identity.example.test/api/v1/identity-scopes/${adminScopeId}/applications/admin-app/tenants/${adminTenantId}/memberships/by-user/${adminUserId}`);
+    assert.equal(init.headers.Authorization, "IdentitySession opaque-session-token");
+    assert.equal(init.headers["X-Identity-Access-Client"], "admin-web");
+    assert.equal(init.headers["X-Identity-Access-Session"], sessionId);
+    return json({ membershipId: adminMembershipId, tenantId: adminTenantId, userId: adminUserId, status: 1, version: 3 });
+  });
+
+  assert.deepEqual(await api.findTenantMembershipByUser(context, adminUserId), {
+    membershipId: adminMembershipId, tenantId: adminTenantId, userId: adminUserId, status: 1, version: 3,
+  });
+});
+
+
+test("group membership administration supports list, add, and idempotent not-found remove result", async () => {
+  let call = 0;
+  const api = client(async (url, init) => {
+    call++;
+    const base = `https://identity.example.test/api/v1/identity-scopes/${adminScopeId}/tenants/${adminTenantId}/applications/admin-app/groups/${adminGroupId}/members`;
+    if (call === 1) {
+      assert.equal(url, base);
+      assert.equal(init.method, "GET");
+      return json([{ tenantMembershipId: adminMembershipId, userId: adminUserId }]);
+    }
+    if (call === 2) {
+      assert.equal(url, base);
+      assert.equal(init.method, "POST");
+      assert.deepEqual(JSON.parse(init.body), { tenantMembershipId: adminMembershipId });
+      return json({ tenantMembershipId: adminMembershipId, userId: adminUserId }, 201);
+    }
+    assert.equal(url, `${base}/${adminMembershipId}`);
+    assert.equal(init.method, "DELETE");
+    return new Response(null, { status: 404 });
+  });
+
+  assert.deepEqual(await api.listGroupMembers(adminTenantContext, adminGroupId), [
+    { tenantMembershipId: adminMembershipId, userId: adminUserId },
+  ]);
+  assert.deepEqual(await api.addGroupMember(adminTenantContext, adminGroupId, adminMembershipId), {
+    tenantMembershipId: adminMembershipId, userId: adminUserId,
+  });
+  assert.equal(await api.removeGroupMember(adminTenantContext, adminGroupId, adminMembershipId), false);
+});
+
+
+test("policy statement administration preserves supported whole-segment wildcard patterns", async () => {
+  const api = client(async (url, init) => {
+    assert.equal(url, `https://identity.example.test/api/v1/identity-scopes/${adminScopeId}/tenants/${adminTenantId}/applications/admin-app/policies/${adminPolicyId}/statements`);
+    assert.equal(init.method, "POST");
+    assert.deepEqual(JSON.parse(init.body), {
+      statementId: adminStatementId,
+      modelVersion: 2,
+      resource: "billing",
+      feature: "*",
+      action: "refund",
+    });
+    return json({
+      statementId: adminStatementId,
+      modelVersion: 2,
+      resource: "billing",
+      feature: "*",
+      action: "refund",
+    }, 201);
+  });
+
+  assert.deepEqual(await api.addPolicyStatement(adminTenantContext, adminPolicyId, {
+    statementId: adminStatementId,
+    modelVersion: 2,
+    resource: "billing",
+    feature: "*",
+    action: "refund",
+  }), {
+    statementId: adminStatementId, modelVersion: 2, resource: "billing", feature: "*", action: "refund",
+  });
+});
+
+
+test("policy binding administration preserves optional resource scope and descendant semantics", async () => {
+  let call = 0;
+  const api = client(async (url, init) => {
+    call++;
+    const base = `https://identity.example.test/api/v1/identity-scopes/${adminScopeId}/tenants/${adminTenantId}/applications/admin-app/groups/${adminGroupId}/policy-bindings`;
+    if (call === 1) {
+      assert.equal(url, base);
+      assert.deepEqual(JSON.parse(init.body), {
+        policyId: adminPolicyId,
+        resourceScopeId: adminResourceScopeId,
+        includeDescendants: true,
+      });
+      return json({ groupId: adminGroupId, policyId: adminPolicyId, resourceScopeId: adminResourceScopeId, includeDescendants: true }, 201);
+    }
+    assert.equal(url, `${base}/${adminPolicyId}?resourceScopeId=${adminResourceScopeId}`);
+    assert.equal(init.method, "DELETE");
+    return new Response(null, { status: 204 });
+  });
+
+  assert.deepEqual(await api.addPolicyBinding(adminTenantContext, adminGroupId, {
+    policyId: adminPolicyId,
+    resourceScopeId: adminResourceScopeId,
+    includeDescendants: true,
+  }), {
+    groupId: adminGroupId, policyId: adminPolicyId, resourceScopeId: adminResourceScopeId, includeDescendants: true,
+  });
+  assert.equal(await api.removePolicyBinding(adminTenantContext, adminGroupId, adminPolicyId, adminResourceScopeId), true);
+});
+
+
+test("resource-scope administration decodes hierarchy metadata and sends nullable parent explicitly", async () => {
+  let call = 0;
+  const api = client(async (url, init) => {
+    call++;
+    const base = `https://identity.example.test/api/v1/identity-scopes/${adminScopeId}/tenants/${adminTenantId}/applications/admin-app/resource-scopes`;
+    assert.equal(url, base);
+    if (call === 1) {
+      assert.equal(init.method, "GET");
+      return json([{
+        resourceScopeId: adminResourceScopeId,
+        modelVersion: 4,
+        scopeType: "business",
+        externalResourceId: "business-42",
+        displayName: "Business 42",
+        parentResourceScopeId: null,
+        status: 1,
+        version: 5,
+      }]);
+    }
+    assert.equal(init.method, "POST");
+    assert.deepEqual(JSON.parse(init.body), {
+      resourceScopeId: "00000000-0000-0000-0000-000000000000",
+      modelVersion: 4,
+      scopeType: "business",
+      externalResourceId: "business-43",
+      displayName: "Business 43",
+      parentResourceScopeId: null,
+      status: 1,
+    });
+    return json({
+      resourceScopeId: adminResourceScopeId,
+      modelVersion: 4,
+      scopeType: "business",
+      externalResourceId: "business-43",
+      displayName: "Business 43",
+      parentResourceScopeId: null,
+      status: 1,
+      version: 1,
+    }, 201);
+  });
+
+  assert.deepEqual(await api.listResourceScopes(adminTenantContext), [{
+    resourceScopeId: adminResourceScopeId,
+    modelVersion: 4,
+    scopeType: "business",
+    externalResourceId: "business-42",
+    displayName: "Business 42",
+    status: 1,
+    version: 5,
+  }]);
+  assert.equal((await api.createResourceScope(adminTenantContext, {
+    modelVersion: 4,
+    scopeType: "business",
+    externalResourceId: "business-43",
+    displayName: "Business 43",
+  })).version, 1);
+});
+
+
+test("scope-type administration is typed against the existing security-model version route", async () => {
+  const api = client(async (url, init) => {
+    assert.equal(url, `https://identity.example.test/api/v1/identity-scopes/${adminScopeId}/applications/admin-app/security-models/7/scope-types`);
+    assert.equal(init.method, "POST");
+    assert.deepEqual(JSON.parse(init.body), {
+      key: "business",
+      displayName: "Business",
+      parentKey: null,
+      canAttachToTenant: true,
+    });
+    return json({ key: "business", displayName: "Business", parentKey: null, canAttachToTenant: true }, 201);
+  });
+  assert.deepEqual(await api.addScopeType(adminBearerContext, 7, {
+    key: "business", displayName: "Business", canAttachToTenant: true,
+  }), { key: "business", displayName: "Business", canAttachToTenant: true });
+});
+
+
+test("session administration exposes bulk revocation as a typed result", async () => {
+  let call = 0;
+  const api = client(async (url, init) => {
+    call++;
+    assert.equal(init.method, "DELETE");
+    if (call === 1) {
+      assert.equal(url, `https://identity.example.test/api/v1/identity-scopes/${adminScopeId}/applications/admin-app/sessions/users/${adminUserId}`);
+      return json({ revokedCount: 3 });
+    }
+    assert.equal(url, `https://identity.example.test/api/v1/identity-scopes/${adminScopeId}/applications/admin-app/sessions/clients/admin-web`);
+    return json({ revokedCount: 2 });
+  });
+  assert.deepEqual(await api.revokeUserSessions(adminBearerContext, adminUserId), { revokedCount: 3 });
+  assert.deepEqual(await api.revokeClientSessions(adminBearerContext, "admin-web"), { revokedCount: 2 });
+});
+
+
+test("identity-scope authority administration stays tenant-free and typed", async () => {
+  let call = 0;
+  const api = client(async (url, init) => {
+    call++;
+    const authority = `https://identity.example.test/api/v1/identity-scopes/${adminScopeId}/applications/admin-app/scope-authority`;
+    if (call === 1) {
+      assert.equal(url, `${authority}/groups/${adminGroupId}/members`);
+      assert.equal(init.method, "POST");
+      assert.deepEqual(JSON.parse(init.body), { userId: adminUserId });
+      return json({ groupId: adminGroupId, userId: adminUserId }, 201);
+    }
+    if (call === 2) {
+      assert.equal(url, `${authority}/policies/${adminPolicyId}/statements`);
+      assert.equal(init.method, "POST");
+      return json({ statementId: adminStatementId, modelVersion: 2, resource: "*", feature: "*", action: "read" }, 201);
+    }
+    assert.equal(url, `${authority}/groups/${adminGroupId}/policy-bindings`);
+    assert.equal(init.method, "POST");
+    assert.deepEqual(JSON.parse(init.body), { policyId: adminPolicyId });
+    return json({ groupId: adminGroupId, policyId: adminPolicyId }, 201);
+  });
+
+  assert.deepEqual(await api.addScopeAuthorityMember(adminBearerContext, adminGroupId, adminUserId), {
+    groupId: adminGroupId, userId: adminUserId,
+  });
+  assert.equal((await api.addScopeAuthorityPolicyStatement(adminBearerContext, adminPolicyId, {
+    statementId: adminStatementId,
+    modelVersion: 2,
+    resource: "*",
+    feature: "*",
+    action: "read",
+  })).resource, "*");
+  assert.deepEqual(await api.addScopeAuthorityPolicyBinding(adminBearerContext, adminGroupId, adminPolicyId), {
+    groupId: adminGroupId, policyId: adminPolicyId,
+  });
+});
+
+
+test("typed administration rejects invalid lifecycle and optimistic-concurrency input before transport", async () => {
+  let calls = 0;
+  const api = client(async () => { calls++; return json({}); });
+  await assert.rejects(api.updateUser(adminBearerContext, adminUserId, {
+    displayName: "Alice",
+    status: 3,
+    expectedVersion: 1,
+  }), code("configuration"));
+  await assert.rejects(api.updateTenant(adminBearerContext, adminTenantId, {
+    displayName: "Tenant",
+    status: 1,
+    expectedVersion: 0,
+  }), code("configuration"));
+  assert.equal(calls, 0);
+});
+
+
+test("bounded administration list methods preserve explicit paging and typed records", async () => {
+  let call = 0;
+  const api = client(async (url, init) => {
+    call++;
+    assert.equal(init.method, "GET");
+    if (call === 1) {
+      assert.equal(url, `https://identity.example.test/api/v1/identity-scopes/${adminScopeId}/applications/admin-app/users?offset=10&limit=25`);
+      return json([{ userId: adminUserId, displayName: "Alice", status: 1, version: 3 }]);
+    }
+    if (call === 2) {
+      assert.equal(url, `https://identity.example.test/api/v1/identity-scopes/${adminScopeId}/applications/admin-app/tenants?limit=20`);
+      return json([{ tenantId: adminTenantId, displayName: "Tenant", status: 1, version: 2 }]);
+    }
+    if (call === 3) {
+      assert.equal(url, `https://identity.example.test/api/v1/identity-scopes/${adminScopeId}/tenants/${adminTenantId}/applications/admin-app/groups?offset=5`);
+      return json([{ groupId: adminGroupId, displayName: "Operators", status: 1, version: 4 }]);
+    }
+    assert.equal(url, `https://identity.example.test/api/v1/identity-scopes/${adminScopeId}/tenants/${adminTenantId}/applications/admin-app/policies`);
+    return json([{ policyId: adminPolicyId, displayName: "Operators", status: 1, version: 7 }]);
+  });
+
+  assert.equal((await api.listUsers(adminBearerContext, { offset: 10, limit: 25 }))[0].displayName, "Alice");
+  assert.equal((await api.listTenants(adminBearerContext, { limit: 20 }))[0].tenantId, adminTenantId);
+  assert.equal((await api.listGroups(adminTenantContext, { offset: 5 }))[0].groupId, adminGroupId);
+  assert.equal((await api.listPolicies(adminTenantContext))[0].policyId, adminPolicyId);
+});
+
+test("bounded administration list methods reject invalid paging before transport", async () => {
+  let calls = 0;
+  const api = client(async () => { calls++; return json([]); });
+  await assert.rejects(api.listUsers(adminBearerContext, { offset: -1 }), code("configuration"));
+  await assert.rejects(api.listTenants(adminBearerContext, { limit: 0 }), code("configuration"));
+  await assert.rejects(api.listGroups(adminTenantContext, { limit: 201 }), code("configuration"));
+  assert.equal(calls, 0);
 });

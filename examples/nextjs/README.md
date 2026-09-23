@@ -15,7 +15,7 @@ npm pack
 Install the generated archive together with `server-only`:
 
 ```powershell
-npm install "<path-to>/identity-access-client-0.4.0.tgz" server-only
+npm install "<path-to>/identity-access-client-0.5.0.tgz" server-only
 ```
 
 Configure only server-side deployment state:
@@ -33,4 +33,19 @@ const identity = new IdentityAccessServerConnector();
 const info = await identity.client.info();
 ```
 
-The connector is class-based. `IdentityAccessClient` now supports password login, local-session validation/logout, OIDC Authorization Code + PKCE, token exchange, and refresh-token rotation. Keep password/session/token handling in server-only code. The complete typed administration CRUD surface remains a later `0.42.x` increment.
+The connector is class-based. `IdentityAccessClient` supports password login, local-session validation/logout, OIDC Authorization Code + PKCE, token exchange, refresh-token rotation, server-delegated authorization, and the typed administration routes currently exposed by the .NET API. Keep password/session/token handling in server-only code.
+
+## Administration module foundation
+
+A multi-page App Router foundation is available under `examples/nextjs/admin`.
+
+It demonstrates:
+
+- permission-filtered navigation from `IdentityAccessAdminUiBuilder`;
+- Server Components for protected data loading;
+- a Client Component for local presentation filtering;
+- per-request server-only credential handling through a class;
+- separate user, tenant, membership, group, policy, resource-scope, session, and scope-authority pages;
+- no browser exposure of Bearer credentials or routing/storage internals.
+
+The administration example intentionally uses minimal markup. Visual design, responsive layout, forms, dialogs, skeletons, and polished interaction states are a later UI-design increment so presentation can evolve without changing the security boundary.

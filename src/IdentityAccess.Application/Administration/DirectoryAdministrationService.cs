@@ -25,6 +25,15 @@ namespace IdentityAccess.Application.Administration
             return await users.GetAsync(route, new SubjectReference(identityScopeId, userId), cancellationToken);
         }
 
+        /// <summary>Lists users in a bounded deterministic window.</summary>
+        public async Task<IReadOnlyList<VersionedRecord<User>>> ListUsersAsync(Guid identityScopeId,
+            ApplicationKey application, int offset, int limit, CancellationToken cancellationToken)
+        {
+            AdministrationPaging.EnsureValid(offset, limit);
+            var route = await ResolveAsync(identityScopeId, application, cancellationToken);
+            return await users.ListAsync(route, identityScopeId, offset, limit, cancellationToken);
+        }
+
         /// <summary>Creates a user.</summary>
         public async Task<VersionedRecord<User>> CreateUserAsync(Guid identityScopeId, ApplicationKey application,
             Guid userId, string displayName, UserStatus status, CancellationToken cancellationToken)
@@ -55,6 +64,15 @@ namespace IdentityAccess.Application.Administration
         {
             var route = await ResolveAsync(identityScopeId, application, cancellationToken);
             return await tenants.GetAsync(route, new TenantReference(identityScopeId, tenantId), cancellationToken);
+        }
+
+        /// <summary>Lists tenants in a bounded deterministic window.</summary>
+        public async Task<IReadOnlyList<VersionedRecord<Tenant>>> ListTenantsAsync(Guid identityScopeId,
+            ApplicationKey application, int offset, int limit, CancellationToken cancellationToken)
+        {
+            AdministrationPaging.EnsureValid(offset, limit);
+            var route = await ResolveAsync(identityScopeId, application, cancellationToken);
+            return await tenants.ListAsync(route, identityScopeId, offset, limit, cancellationToken);
         }
 
         /// <summary>Creates a tenant.</summary>
@@ -137,6 +155,16 @@ namespace IdentityAccess.Application.Administration
         {
             var route = await ResolveAsync(identityScopeId, application, cancellationToken);
             return await groups.GetAsync(route, Group(identityScopeId, tenantId, application, groupId), cancellationToken);
+        }
+
+        /// <summary>Lists user groups in a bounded deterministic window.</summary>
+        public async Task<IReadOnlyList<VersionedRecord<UserGroup>>> ListGroupsAsync(Guid identityScopeId,
+            Guid tenantId, ApplicationKey application, int offset, int limit, CancellationToken cancellationToken)
+        {
+            AdministrationPaging.EnsureValid(offset, limit);
+            var route = await ResolveAsync(identityScopeId, application, cancellationToken);
+            return await groups.ListAsync(route, new TenantReference(identityScopeId, tenantId), application, offset,
+                limit, cancellationToken);
         }
 
         /// <summary>Creates a user group.</summary>

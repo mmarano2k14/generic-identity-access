@@ -10,6 +10,9 @@ namespace IdentityAccess.Application.Administration
         /// <summary>Gets the requested user.</summary>
         Task<VersionedRecord<User>?> GetUserAsync(Guid identityScopeId, ApplicationKey application,
             Guid userId, CancellationToken cancellationToken);
+        /// <summary>Lists users in a bounded deterministic window.</summary>
+        Task<IReadOnlyList<VersionedRecord<User>>> ListUsersAsync(Guid identityScopeId, ApplicationKey application,
+            int offset, int limit, CancellationToken cancellationToken);
         /// <summary>Creates a user.</summary>
         Task<VersionedRecord<User>> CreateUserAsync(Guid identityScopeId, ApplicationKey application,
             Guid userId, string displayName, UserStatus status, CancellationToken cancellationToken);
@@ -20,6 +23,9 @@ namespace IdentityAccess.Application.Administration
         /// <summary>Gets the requested tenant.</summary>
         Task<VersionedRecord<Tenant>?> GetTenantAsync(Guid identityScopeId, ApplicationKey application,
             Guid tenantId, CancellationToken cancellationToken);
+        /// <summary>Lists tenants in a bounded deterministic window.</summary>
+        Task<IReadOnlyList<VersionedRecord<Tenant>>> ListTenantsAsync(Guid identityScopeId, ApplicationKey application,
+            int offset, int limit, CancellationToken cancellationToken);
         /// <summary>Creates a tenant.</summary>
         Task<VersionedRecord<Tenant>> CreateTenantAsync(Guid identityScopeId, ApplicationKey application,
             Guid tenantId, string displayName, TenantStatus status, CancellationToken cancellationToken);
@@ -45,6 +51,9 @@ namespace IdentityAccess.Application.Administration
         /// <summary>Gets the requested user group.</summary>
         Task<VersionedRecord<UserGroup>?> GetGroupAsync(Guid identityScopeId, Guid tenantId,
             ApplicationKey application, Guid groupId, CancellationToken cancellationToken);
+        /// <summary>Lists user groups in a bounded deterministic window.</summary>
+        Task<IReadOnlyList<VersionedRecord<UserGroup>>> ListGroupsAsync(Guid identityScopeId, Guid tenantId,
+            ApplicationKey application, int offset, int limit, CancellationToken cancellationToken);
         /// <summary>Creates a user group.</summary>
         Task<VersionedRecord<UserGroup>> CreateGroupAsync(Guid identityScopeId, Guid tenantId,
             ApplicationKey application, Guid groupId, string displayName, GroupStatus status,

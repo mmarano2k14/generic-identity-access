@@ -17,7 +17,15 @@ The repository is application-agnostic. Consuming systems define their own resou
 - Persistent whole-segment wildcard capability patterns.
 - Neutral RBAC adapter boundary with external wildcard evaluation.
 - Local password credential management, lockout, opaque sessions, and registered redirect URIs.
-- Class-based TypeScript / Next.js connector with local session authentication, OIDC Authorization Code + PKCE, refresh-token rotation, and server-delegated capability evaluation.
+- Class-based TypeScript / Next.js connector with local session authentication, OIDC Authorization Code + PKCE, refresh-token rotation, server-delegated capability evaluation, typed administration, bounded core collection reads, and a multi-page server-first administration module with hardened forms, dialogs, loading/error/empty states, and server-confirmed mutations.
+
+## Next.js Administration Module
+
+`examples/nextjs/admin` contains a copyable App Router administration structure with separate pages for users, tenants, memberships, groups, policies, resource scopes, sessions, and identity-scope authority. Protected data loading, bearer provenance, validation, and API mutations stay server-side. Client Components are limited to presentation interaction and framework UI state. `IdentityAccessAdminUiBuilder` supplies permission-filtered route metadata but never replaces server-side authorization.
+
+Functional administration now includes server-confirmed create flows, loading/error/empty states, dialogs, path revalidation after successful mutations, and explicit confirmation for destructive session revocation. Framework-required Server Action functions remain thin adapters over the class-based `IdentityAccessAdminMutationService`.
+
+All custom administration CSS is owned by one file: `examples/nextjs/admin/styles/identity-access-admin.css`. Do not introduce `*.module.css`, component-local stylesheet files, or inline style objects. The next UI increment will evolve this same stylesheet into the premium visual system without changing connector or authorization contracts.
 
 ## Architecture
 

@@ -1,33 +1,45 @@
-Generic Identity Access 0.42.3 TypeScript authentication and OIDC/PKCE client lifecycle delta
-Baseline: 0.42.2
+Generic Identity Access delta manifest
+Version: 0.42.6
+Baseline: 0.42.5
+Content: Next.js administration functional hardening + single-file CSS ownership
 
-Changed files:
+Added files: 9
+Modified files: 21
+Deleted files: 0
+
+[ADDED]
+examples/nextjs/admin/app/identity/actions.ts
+examples/nextjs/admin/app/identity/error.tsx
+examples/nextjs/admin/app/identity/loading.tsx
+examples/nextjs/admin/components/AdminEmptyState.tsx
+examples/nextjs/admin/components/AdminField.tsx
+examples/nextjs/admin/components/AdminMutationDialog.tsx
+examples/nextjs/admin/contracts/AdminActionState.ts
+examples/nextjs/admin/server/IdentityAccessAdminMutationService.ts
+examples/nextjs/admin/styles/identity-access-admin.css
+
+[MODIFIED]
 CHANGELOG.md
 Directory.Build.props
 README.md
+SOURCE_MANIFEST.sha256
 clients/typescript/README.md
 clients/typescript/package.json
-clients/typescript/src/client.ts
-clients/typescript/src/contracts.ts
-clients/typescript/src/errors.ts
-clients/typescript/src/index.ts
-clients/typescript/test/client.test.mjs
-docs/DEPENDENCIES.md
-examples/nextjs/README.md
-examples/nextjs/identity-access.ts
+docs/VALIDATION.md
+examples/nextjs/admin/README.md
+examples/nextjs/admin/app/identity/authority/page.tsx
+examples/nextjs/admin/app/identity/groups/page.tsx
+examples/nextjs/admin/app/identity/layout.tsx
+examples/nextjs/admin/app/identity/memberships/page.tsx
+examples/nextjs/admin/app/identity/policies/page.tsx
+examples/nextjs/admin/app/identity/resource-scopes/page.tsx
+examples/nextjs/admin/app/identity/sessions/page.tsx
+examples/nextjs/admin/app/identity/tenants/page.tsx
+examples/nextjs/admin/app/identity/users/page.tsx
+examples/nextjs/admin/components/AdminEntityTable.tsx
+examples/nextjs/admin/components/AdminNavigation.tsx
+examples/nextjs/admin/components/AdminPageHeader.tsx
 scripts/verify-typescript-source-consistency.ps1
 
-Added files:
-None
-
-Deleted files:
-None
-
-Runtime changes:
-TypeScript connector only. No .NET runtime behavior changes.
-
-Database changes:
-None
-
-Migration changes:
-None
+[DELETED]
+(none)

@@ -10,6 +10,9 @@ namespace IdentityAccess.Application.Administration
         /// <summary>Gets the requested permission policy.</summary>
         Task<VersionedRecord<PermissionPolicy>?> GetPolicyAsync(Guid identityScopeId, Guid tenantId,
             ApplicationKey application, Guid policyId, CancellationToken cancellationToken);
+        /// <summary>Lists permission policies in a bounded deterministic window.</summary>
+        Task<IReadOnlyList<VersionedRecord<PermissionPolicy>>> ListPoliciesAsync(Guid identityScopeId, Guid tenantId,
+            ApplicationKey application, int offset, int limit, CancellationToken cancellationToken);
         /// <summary>Creates a permission policy.</summary>
         Task<VersionedRecord<PermissionPolicy>> CreatePolicyAsync(Guid identityScopeId, Guid tenantId,
             ApplicationKey application, Guid policyId, string displayName, PolicyStatus status,

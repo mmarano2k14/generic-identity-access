@@ -33,6 +33,40 @@ namespace IdentityAccess.Infrastructure.PostgreSql.Directory
             return new VersionedRecord<PermissionPolicy>(value, reader.GetInt64(2));
         }
 
+        /// <summary>Lists a bounded window of permission policies in the resolved database route.</summary>
+        public async Task<IReadOnlyList<VersionedRecord<PermissionPolicy>>> ListAsync(ResolvedDatabaseRoute route,
+            TenantReference tenant, ApplicationKey application, int offset, int limit,
+            CancellationToken cancellationToken)
+        {
+            ArgumentNullException.ThrowIfNull(tenant);
+            PostgreSqlDirectoryGuard.EnsureScope(route, tenant.IdentityScopeId);
+            await using var connection = (NpgsqlConnection)await connectionFactory.OpenAsync(route, cancellationToken)
+                .ConfigureAwait(false);
+            await using var command = new NpgsqlCommand("""
+                SELECT policy_id, display_name, status, row_version
+                FROM identity_access.permission_policies
+                WHERE identity_scope_id = @scope
+                  AND tenant_id = @tenant_id
+                  AND application_key = @application_key
+                ORDER BY policy_id
+                LIMIT @limit OFFSET @offset;
+                """, connection);
+            command.Parameters.AddWithValue("scope", tenant.IdentityScopeId);
+            command.Parameters.AddWithValue("tenant_id", tenant.TenantId);
+            command.Parameters.AddWithValue("application_key", application.Value);
+            command.Parameters.AddWithValue("limit", limit);
+            command.Parameters.AddWithValue("offset", offset);
+            var records = new List<VersionedRecord<PermissionPolicy>>();
+            await using var reader = await command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
+            while (await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
+            {
+                var reference = new PermissionPolicyReference(tenant, application, reader.GetGuid(0));
+                var policy = new PermissionPolicy(reference, reader.GetString(1), (PolicyStatus)reader.GetInt16(2));
+                records.Add(new VersionedRecord<PermissionPolicy>(policy, reader.GetInt64(3)));
+            }
+            return records;
+        }
+
         /// <summary>Creates a permission policy record in the resolved database route.</summary>
         public async Task<VersionedRecord<PermissionPolicy>> CreateAsync(ResolvedDatabaseRoute route,
             PermissionPolicy policy, CancellationToken cancellationToken)

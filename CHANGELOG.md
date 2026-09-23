@@ -1,3 +1,47 @@
+# 0.42.6 - Next.js administration functional hardening
+
+- Added server-side administration mutations for users, tenants, tenant memberships, groups, policies, resource scopes, identity-scope authority groups/policies, and security-sensitive session revocation.
+- Kept all mutation orchestration in the class-based `IdentityAccessAdminMutationService`; Next.js Server Action functions are thin framework adapters only.
+- Added form validation before API calls, safe public mutation-error projection, and server-confirmed path revalidation without optimistic mutation assumptions.
+- Added explicit `REVOKE` confirmation for destructive user/client session revocation and preserved the existing backend authorization boundary as the final authority.
+- Added reusable Client Components for mutation dialogs and presentation filtering while keeping credentials, administration contexts, and API execution server-side.
+- Added loading, error, empty, success, and failure states for the multi-page administration module.
+- Added functional create flows to users, tenants, memberships, groups, policies, resource scopes, and identity-scope authority pages.
+- Added responsive structural styling in a single required `examples/nextjs/admin/styles/identity-access-admin.css` file. CSS Modules, component-local stylesheet files, and inline style objects are prohibited by the source-consistency gate.
+- Extended TypeScript source-consistency validation to pin server-only mutation architecture, single-file CSS ownership, framework-required Server Action boundaries, security confirmation semantics, and the functional UI state files.
+- Changed no PostgreSQL schema, migration sequence, OIDC protocol behavior, refresh-token semantics, external RBAC behavior, or core authorization semantics.
+- Kept premium visual design as the next dedicated UI increment; MFA, TOTP, recovery codes, and passkeys/WebAuthn remain later optional work.
+
+# 0.42.5 - Next.js administration module foundation
+
+- Added bounded list reads for users, tenants, groups, and policies so administration pages no longer require manually entered record identifiers for core collection views.
+- Added server-side pagination bounds with a default of 50 and a maximum of 200 records per request, deterministic identifier ordering, and no PostgreSQL schema or migration change.
+- Extended `IdentityAccessClient` with typed `listUsers`, `listTenants`, `listGroups`, and `listPolicies` methods and strict client-side paging validation.
+- Extended `IdentityAccessAdminUiBuilder` with stable route metadata, section labels/descriptions, tenant-scope metadata, `withAll()`, configurable base paths, and explicit tenant authorization for tenant-bound navigation entries.
+- Added a copyable multi-page Next.js App Router administration foundation covering users, tenants, memberships, groups, policies, resource scopes, sessions, and identity-scope authority.
+- Kept protected reads and credential handling in Server Components/server-only classes while limiting Client Components to presentation interaction such as local table filtering.
+- Added a per-request `IdentityAccessAdminRequest` class for server-only Bearer provenance without global mutable user/session state or browser exposure of access tokens.
+- Expanded TypeScript validation from 52 to 54 passing tests with strict type checking in the generation environment.
+- Added administration paging regression coverage and extended source-consistency validation for list APIs, route-aware UI definitions, scope-correct navigation authorization, and the Next.js module structure.
+- Kept visual design intentionally minimal; premium layout, responsive composition, dialogs, forms, loading states, and final design-system work remain separate follow-up increments.
+- Changed no OIDC protocol semantics, refresh-token behavior, external RBAC behavior, authorization semantics, PostgreSQL schema, or migration sequence.
+- Kept MFA, TOTP, recovery codes, and passkeys/WebAuthn outside this increment as later optional work.
+
+# 0.42.4 - TypeScript typed administration API surface
+
+- Extended the class-based `IdentityAccessClient` with typed administration methods for every administration route currently exposed by the .NET API.
+- Added explicit administration boundary contracts carrying identity scope, application, optional tenant, and Bearer or `IdentitySession` credential provenance per operation; no global mutable administration context was introduced.
+- Added typed user, tenant, tenant-membership, group, group-membership, policy, policy-statement, scoped policy-binding, resource-scope, scope-type, session-revocation, and identity-scope authority operations.
+- Preserved optimistic concurrency through explicit `expectedVersion` inputs for mutable directory, group, policy, and resource-scope records.
+- Added nullable typed reads for API 404 responses and boolean remove results that distinguish successful 204 removal from 404 not-found without collapsing security failures.
+- Preserved whole-segment wildcard capability patterns in typed policy-statement administration without implementing wildcard evaluation in TypeScript.
+- Kept `IdentityAccessClient`, `IdentityAuthorizationContext`, and `IdentityAccessAdminUiBuilder` as the only primary TypeScript runtime classes; no parallel administration client class was introduced.
+- Extended TypeScript source-consistency validation to pin the typed administration method set, administration contracts, wildcard-pattern preservation, and class-only administration architecture.
+- Expanded the TypeScript validation suite from 41 to 52 passing tests with strict type checking in the generation environment.
+- Documented that application security-model and capability persistence exists server-side but direct MVC administration routes are not currently exposed; the TypeScript client does not invent unsupported endpoints.
+- Changed no .NET runtime semantics, PostgreSQL schema, migration sequence, OIDC protocol behavior, external RBAC behavior, or multi-database routing behavior.
+- Kept MFA, TOTP, recovery codes, and passkeys/WebAuthn outside this increment as later optional work.
+
 # 0.42.3 - TypeScript authentication and OIDC/PKCE client lifecycle
 
 - Extended the class-based `IdentityAccessClient` with password login, local-session validation, and explicit logout against registered authentication clients.

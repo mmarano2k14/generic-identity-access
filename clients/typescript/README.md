@@ -1,6 +1,6 @@
 # Identity & Access TypeScript Client
 
-Version 0.4.0 extends the class-based connector with local authentication and the OIDC Authorization Code + PKCE token lifecycle.
+Version 0.7.0 keeps the class-based connector stable while hardening the copyable Next.js administration module with server-confirmed mutations, dialogs, functional states, and single-file CSS ownership.
 
 Runtime components remain class-based. The primary runtime classes are:
 
@@ -161,6 +161,68 @@ const definition = await new IdentityAccessAdminUiBuilder(auth)
 
 Visibility filtering is presentation behavior only. Every real administration operation remains protected server-side.
 
+## Typed administration API
+
+Administration remains on the primary `IdentityAccessClient`; no parallel runtime client class is introduced.
+Every administration operation receives an explicit trusted boundary and credential instead of reading global mutable state.
+
+```typescript
+const context = {
+  identityScopeId,
+  applicationKey: "admin-app",
+  credential: { kind: "bearer", accessToken },
+};
+
+const user = await client.createUser(context, {
+  displayName: "Alice",
+});
+
+const updated = await client.updateUser(context, user.userId, {
+  displayName: "Alice Updated",
+  status: 1,
+  expectedVersion: user.version,
+});
+```
+
+Tenant-scoped operations receive the tenant explicitly:
+
+```typescript
+const tenantContext = {
+  ...context,
+  tenantId,
+};
+
+const group = await client.createGroup(tenantContext, {
+  displayName: "Billing Team",
+});
+
+await client.addPolicyStatement(tenantContext, policyId, {
+  modelVersion: 3,
+  resource: "billing",
+  feature: "*",
+  action: "refund",
+});
+```
+
+The typed surface covers the administration routes currently exposed by the backend:
+
+```text
+users
+ tenants
+ tenant memberships
+ groups + group memberships
+ policies + statements + scoped bindings
+ resource scopes + scope types
+ bulk session revocation
+ identity-scope authority groups/members/policies/statements/bindings
+```
+
+`GET` operations that map to an API `404` return `null`. Remove operations return `true` for `204` and `false` for `404`. Mutable records preserve explicit `expectedVersion` optimistic concurrency.
+
+Whole-segment capability wildcard patterns remain supported exactly where the backend policy model supports them. TypeScript does not evaluate wildcard authority locally.
+
+The backend currently has persistence contracts for application security-model versions and declared capabilities, but it does not yet expose direct MVC administration routes for creating/listing those objects. This client therefore does not invent such endpoints. Existing scope-type routes under a security-model version are typed.
+
 ## Validation
 
 ```sh
@@ -174,4 +236,33 @@ The repository-level `scripts/verify.ps1` performs dependency bootstrap automati
 
 Runtime code has no third-party npm runtime dependency. HTTPS is required except exact loopback development hosts. Requests are non-cacheable and bounded by timeout/cancellation. Authorization redirects are handled manually and validated. Raw passwords, session tokens, authorization codes, PKCE verifiers, access tokens, ID tokens, and refresh tokens are never retained in public errors.
 
-The complete typed administration CRUD API remains a follow-up increment in the `0.42.x` connector line. MFA, TOTP, recovery codes, and passkeys/WebAuthn remain later optional work.
+Direct administration routes for application security-model versions/capability declarations remain a follow-up backend/API decision because they are not currently exposed by the .NET API. MFA, TOTP, recovery codes, and passkeys/WebAuthn remain later optional work.
+
+## Administration UI composition
+
+`IdentityAccessAdminUiBuilder` now produces stable route metadata for the reusable administration sections. Scope-level and tenant-level visibility are evaluated through separate `IdentityAuthorizationContext` instances when required. UI filtering remains presentation-only; every HTTP operation is still authorized by the .NET API.
+
+Core collection pages can use bounded reads:
+
+```typescript
+const users = await client.listUsers(context, { offset: 0, limit: 50 });
+const tenants = await client.listTenants(context, { limit: 50 });
+const groups = await client.listGroups(tenantContext, { limit: 50 });
+const policies = await client.listPolicies(tenantContext, { limit: 50 });
+```
+
+The server accepts a maximum list size of 200 records per request.
+
+## Next.js functional administration hardening
+
+The copyable `examples/nextjs/admin` module keeps protected reads and mutations on the server. Framework-required Server Action functions are thin adapters over the class-based `IdentityAccessAdminMutationService`; they do not call `IdentityAccessClient` directly.
+
+Implemented functional flows include users, tenants, tenant memberships, groups, policies, resource scopes, identity-scope authority creation, and explicit user/client session revocation. Destructive revocation requires the confirmation text `REVOKE`. Paths are revalidated only after the API confirms success.
+
+The module owns exactly one custom stylesheet:
+
+```text
+examples/nextjs/admin/styles/identity-access-admin.css
+```
+
+CSS Modules, component-local style files, `<style>` blocks, and React inline style objects are rejected by the source-consistency gate. The premium design increment must evolve the same file.

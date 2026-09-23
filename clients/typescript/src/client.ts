@@ -15,6 +15,42 @@ import type {
   ReadinessResponse,
   ServiceInfoResponse,
 } from "./contracts.js";
+import type {
+  IdentityAddGroupPolicyBindingRequest,
+  IdentityAddPolicyStatementRequest,
+  IdentityAddScopeTypeRequest,
+  IdentityAdministrationContext,
+  IdentityAdministrationListOptions,
+  IdentityCreateGroupRequest,
+  IdentityCreatePolicyRequest,
+  IdentityCreateResourceScopeRequest,
+  IdentityCreateTenantMembershipRequest,
+  IdentityCreateTenantRequest,
+  IdentityCreateUserRequest,
+  IdentityGroupMemberRecord,
+  IdentityGroupPolicyBindingRecord,
+  IdentityGroupRecord,
+  IdentityPolicyRecord,
+  IdentityPolicyStatementRecord,
+  IdentityResourceScopeRecord,
+  IdentityScopeAuthorityGroupRecord,
+  IdentityScopeAuthorityMemberRecord,
+  IdentityScopeAuthorityPolicyBindingRecord,
+  IdentityScopeAuthorityPolicyRecord,
+  IdentityScopeAuthorityPolicyStatementRecord,
+  IdentityScopeTypeRecord,
+  IdentitySessionRevocationResult,
+  IdentityTenantAdministrationContext,
+  IdentityTenantMembershipRecord,
+  IdentityTenantRecord,
+  IdentityUpdateGroupRequest,
+  IdentityUpdatePolicyRequest,
+  IdentityUpdateResourceScopeRequest,
+  IdentityUpdateTenantMembershipRequest,
+  IdentityUpdateTenantRequest,
+  IdentityUpdateUserRequest,
+  IdentityUserRecord,
+} from "./admin-contracts.js";
 import { IdentityAccessClientError } from "./errors.js";
 
 export type FetchTransport = (url: string, init: RequestInit) => Promise<Response>;
@@ -30,7 +66,7 @@ export interface IdentityAccessClientOptions {
 type JsonObject = Record<string, unknown>;
 
 type RequestOptions = {
-  readonly method: "GET" | "POST";
+  readonly method: "GET" | "POST" | "PUT" | "DELETE";
   readonly acceptedStatuses: readonly number[];
   readonly headers?: Readonly<Record<string, string>>;
   readonly body?: string;
@@ -333,6 +369,741 @@ export class IdentityAccessClient {
     return result;
   }
 
+  /** Lists users through a bounded protected administration collection read. */
+  public async listUsers(
+    context: IdentityAdministrationContext,
+    options?: IdentityAdministrationListOptions,
+    signal?: AbortSignal,
+  ): Promise<readonly IdentityUserRecord[]> {
+    const base = IdentityAccessClient.administrationBasePath(context);
+    return this.#requestJson(
+      `${base}/users${IdentityAccessClient.administrationListQuery(options)}`,
+      IdentityAccessClient.administrationRequest("GET", context, signal),
+      (value) => IdentityAccessClient.array(value, IdentityAccessClient.userRecord),
+    );
+  }
+
+  /** Gets one user through the protected administration API. */
+  public async getUser(
+    context: IdentityAdministrationContext,
+    userIdValue: string,
+    signal?: AbortSignal,
+  ): Promise<IdentityUserRecord | null> {
+    const base = IdentityAccessClient.administrationBasePath(context);
+    const userId = IdentityAccessClient.uuid(userIdValue);
+    return this.#requestNullableJson(
+      `${base}/users/${userId}`,
+      IdentityAccessClient.administrationRequest("GET", context, signal),
+      IdentityAccessClient.userRecord,
+    );
+  }
+
+  /** Creates one user. Omit userId to let the server generate it. */
+  public async createUser(
+    context: IdentityAdministrationContext,
+    request: IdentityCreateUserRequest,
+    signal?: AbortSignal,
+  ): Promise<IdentityUserRecord> {
+    const base = IdentityAccessClient.administrationBasePath(context);
+    return this.#requestJson(
+      `${base}/users`,
+      IdentityAccessClient.administrationJsonRequest("POST", context, {
+        userId: IdentityAccessClient.optionalUuidOrEmpty(request.userId),
+        displayName: IdentityAccessClient.nonEmpty(request.displayName),
+        status: IdentityAccessClient.lifecycleStatus(request.status ?? 1),
+      }, signal, [201]),
+      IdentityAccessClient.userRecord,
+    );
+  }
+
+  /** Updates one user using optimistic row-version concurrency. */
+  public async updateUser(
+    context: IdentityAdministrationContext,
+    userIdValue: string,
+    request: IdentityUpdateUserRequest,
+    signal?: AbortSignal,
+  ): Promise<IdentityUserRecord> {
+    const base = IdentityAccessClient.administrationBasePath(context);
+    const userId = IdentityAccessClient.uuid(userIdValue);
+    return this.#requestJson(
+      `${base}/users/${userId}`,
+      IdentityAccessClient.administrationJsonRequest("PUT", context, {
+        displayName: IdentityAccessClient.nonEmpty(request.displayName),
+        status: IdentityAccessClient.lifecycleStatus(request.status),
+        expectedVersion: IdentityAccessClient.version(request.expectedVersion),
+      }, signal),
+      IdentityAccessClient.userRecord,
+    );
+  }
+
+  public async listTenants(
+    context: IdentityAdministrationContext,
+    options?: IdentityAdministrationListOptions,
+    signal?: AbortSignal,
+  ): Promise<readonly IdentityTenantRecord[]> {
+    const base = IdentityAccessClient.administrationBasePath(context);
+    return this.#requestJson(
+      `${base}/tenants${IdentityAccessClient.administrationListQuery(options)}`,
+      IdentityAccessClient.administrationRequest("GET", context, signal),
+      (value) => IdentityAccessClient.array(value, IdentityAccessClient.tenantRecord),
+    );
+  }
+
+  public async getTenant(
+    context: IdentityAdministrationContext,
+    tenantIdValue: string,
+    signal?: AbortSignal,
+  ): Promise<IdentityTenantRecord | null> {
+    const base = IdentityAccessClient.administrationBasePath(context);
+    const tenantId = IdentityAccessClient.uuid(tenantIdValue);
+    return this.#requestNullableJson(
+      `${base}/tenants/${tenantId}`,
+      IdentityAccessClient.administrationRequest("GET", context, signal),
+      IdentityAccessClient.tenantRecord,
+    );
+  }
+
+  public async createTenant(
+    context: IdentityAdministrationContext,
+    request: IdentityCreateTenantRequest,
+    signal?: AbortSignal,
+  ): Promise<IdentityTenantRecord> {
+    const base = IdentityAccessClient.administrationBasePath(context);
+    return this.#requestJson(
+      `${base}/tenants`,
+      IdentityAccessClient.administrationJsonRequest("POST", context, {
+        tenantId: IdentityAccessClient.optionalUuidOrEmpty(request.tenantId),
+        displayName: IdentityAccessClient.nonEmpty(request.displayName),
+        status: IdentityAccessClient.lifecycleStatus(request.status ?? 1),
+      }, signal, [201]),
+      IdentityAccessClient.tenantRecord,
+    );
+  }
+
+  public async updateTenant(
+    context: IdentityAdministrationContext,
+    tenantIdValue: string,
+    request: IdentityUpdateTenantRequest,
+    signal?: AbortSignal,
+  ): Promise<IdentityTenantRecord> {
+    const base = IdentityAccessClient.administrationBasePath(context);
+    const tenantId = IdentityAccessClient.uuid(tenantIdValue);
+    return this.#requestJson(
+      `${base}/tenants/${tenantId}`,
+      IdentityAccessClient.administrationJsonRequest("PUT", context, {
+        displayName: IdentityAccessClient.nonEmpty(request.displayName),
+        status: IdentityAccessClient.lifecycleStatus(request.status),
+        expectedVersion: IdentityAccessClient.version(request.expectedVersion),
+      }, signal),
+      IdentityAccessClient.tenantRecord,
+    );
+  }
+
+  public async getTenantMembership(
+    context: IdentityTenantAdministrationContext,
+    membershipIdValue: string,
+    signal?: AbortSignal,
+  ): Promise<IdentityTenantMembershipRecord | null> {
+    const base = IdentityAccessClient.tenantMembershipsPath(context);
+    const membershipId = IdentityAccessClient.uuid(membershipIdValue);
+    return this.#requestNullableJson(
+      `${base}/${membershipId}`,
+      IdentityAccessClient.administrationRequest("GET", context, signal),
+      IdentityAccessClient.tenantMembershipRecord,
+    );
+  }
+
+  public async findTenantMembershipByUser(
+    context: IdentityTenantAdministrationContext,
+    userIdValue: string,
+    signal?: AbortSignal,
+  ): Promise<IdentityTenantMembershipRecord | null> {
+    const base = IdentityAccessClient.tenantMembershipsPath(context);
+    const userId = IdentityAccessClient.uuid(userIdValue);
+    return this.#requestNullableJson(
+      `${base}/by-user/${userId}`,
+      IdentityAccessClient.administrationRequest("GET", context, signal),
+      IdentityAccessClient.tenantMembershipRecord,
+    );
+  }
+
+  public async createTenantMembership(
+    context: IdentityTenantAdministrationContext,
+    request: IdentityCreateTenantMembershipRequest,
+    signal?: AbortSignal,
+  ): Promise<IdentityTenantMembershipRecord> {
+    const base = IdentityAccessClient.tenantMembershipsPath(context);
+    return this.#requestJson(
+      base,
+      IdentityAccessClient.administrationJsonRequest("POST", context, {
+        membershipId: IdentityAccessClient.optionalUuidOrEmpty(request.membershipId),
+        userId: IdentityAccessClient.uuid(request.userId),
+        status: IdentityAccessClient.lifecycleStatus(request.status ?? 1),
+      }, signal, [201]),
+      IdentityAccessClient.tenantMembershipRecord,
+    );
+  }
+
+  public async updateTenantMembership(
+    context: IdentityTenantAdministrationContext,
+    membershipIdValue: string,
+    request: IdentityUpdateTenantMembershipRequest,
+    signal?: AbortSignal,
+  ): Promise<IdentityTenantMembershipRecord> {
+    const base = IdentityAccessClient.tenantMembershipsPath(context);
+    const membershipId = IdentityAccessClient.uuid(membershipIdValue);
+    return this.#requestJson(
+      `${base}/${membershipId}`,
+      IdentityAccessClient.administrationJsonRequest("PUT", context, {
+        status: IdentityAccessClient.lifecycleStatus(request.status),
+        expectedVersion: IdentityAccessClient.version(request.expectedVersion),
+      }, signal),
+      IdentityAccessClient.tenantMembershipRecord,
+    );
+  }
+
+  public async listGroups(
+    context: IdentityTenantAdministrationContext,
+    options?: IdentityAdministrationListOptions,
+    signal?: AbortSignal,
+  ): Promise<readonly IdentityGroupRecord[]> {
+    const base = IdentityAccessClient.tenantApplicationPath(context);
+    return this.#requestJson(
+      `${base}/groups${IdentityAccessClient.administrationListQuery(options)}`,
+      IdentityAccessClient.administrationRequest("GET", context, signal),
+      (value) => IdentityAccessClient.array(value, IdentityAccessClient.groupRecord),
+    );
+  }
+
+  public async getGroup(
+    context: IdentityTenantAdministrationContext,
+    groupIdValue: string,
+    signal?: AbortSignal,
+  ): Promise<IdentityGroupRecord | null> {
+    const base = IdentityAccessClient.tenantApplicationPath(context);
+    const groupId = IdentityAccessClient.uuid(groupIdValue);
+    return this.#requestNullableJson(
+      `${base}/groups/${groupId}`,
+      IdentityAccessClient.administrationRequest("GET", context, signal),
+      IdentityAccessClient.groupRecord,
+    );
+  }
+
+  public async createGroup(
+    context: IdentityTenantAdministrationContext,
+    request: IdentityCreateGroupRequest,
+    signal?: AbortSignal,
+  ): Promise<IdentityGroupRecord> {
+    const base = IdentityAccessClient.tenantApplicationPath(context);
+    return this.#requestJson(
+      `${base}/groups`,
+      IdentityAccessClient.administrationJsonRequest("POST", context, {
+        groupId: IdentityAccessClient.optionalUuidOrEmpty(request.groupId),
+        displayName: IdentityAccessClient.nonEmpty(request.displayName),
+        status: IdentityAccessClient.lifecycleStatus(request.status ?? 1),
+      }, signal, [201]),
+      IdentityAccessClient.groupRecord,
+    );
+  }
+
+  public async updateGroup(
+    context: IdentityTenantAdministrationContext,
+    groupIdValue: string,
+    request: IdentityUpdateGroupRequest,
+    signal?: AbortSignal,
+  ): Promise<IdentityGroupRecord> {
+    const base = IdentityAccessClient.tenantApplicationPath(context);
+    const groupId = IdentityAccessClient.uuid(groupIdValue);
+    return this.#requestJson(
+      `${base}/groups/${groupId}`,
+      IdentityAccessClient.administrationJsonRequest("PUT", context, {
+        displayName: IdentityAccessClient.nonEmpty(request.displayName),
+        status: IdentityAccessClient.lifecycleStatus(request.status),
+        expectedVersion: IdentityAccessClient.version(request.expectedVersion),
+      }, signal),
+      IdentityAccessClient.groupRecord,
+    );
+  }
+
+  public async listGroupMembers(
+    context: IdentityTenantAdministrationContext,
+    groupIdValue: string,
+    signal?: AbortSignal,
+  ): Promise<readonly IdentityGroupMemberRecord[]> {
+    const path = `${IdentityAccessClient.tenantApplicationPath(context)}/groups/${IdentityAccessClient.uuid(groupIdValue)}/members`;
+    return this.#requestJson(
+      path,
+      IdentityAccessClient.administrationRequest("GET", context, signal),
+      (value) => IdentityAccessClient.array(value, IdentityAccessClient.groupMemberRecord),
+    );
+  }
+
+  public async addGroupMember(
+    context: IdentityTenantAdministrationContext,
+    groupIdValue: string,
+    tenantMembershipIdValue: string,
+    signal?: AbortSignal,
+  ): Promise<IdentityGroupMemberRecord> {
+    const path = `${IdentityAccessClient.tenantApplicationPath(context)}/groups/${IdentityAccessClient.uuid(groupIdValue)}/members`;
+    return this.#requestJson(
+      path,
+      IdentityAccessClient.administrationJsonRequest("POST", context, {
+        tenantMembershipId: IdentityAccessClient.uuid(tenantMembershipIdValue),
+      }, signal, [201]),
+      IdentityAccessClient.groupMemberRecord,
+    );
+  }
+
+  public async removeGroupMember(
+    context: IdentityTenantAdministrationContext,
+    groupIdValue: string,
+    tenantMembershipIdValue: string,
+    signal?: AbortSignal,
+  ): Promise<boolean> {
+    const path = `${IdentityAccessClient.tenantApplicationPath(context)}/groups/${IdentityAccessClient.uuid(groupIdValue)}/members/${IdentityAccessClient.uuid(tenantMembershipIdValue)}`;
+    return this.#requestNoContent(path, IdentityAccessClient.administrationRequest("DELETE", context, signal));
+  }
+
+  public async listPolicies(
+    context: IdentityTenantAdministrationContext,
+    options?: IdentityAdministrationListOptions,
+    signal?: AbortSignal,
+  ): Promise<readonly IdentityPolicyRecord[]> {
+    const base = IdentityAccessClient.tenantApplicationPath(context);
+    return this.#requestJson(
+      `${base}/policies${IdentityAccessClient.administrationListQuery(options)}`,
+      IdentityAccessClient.administrationRequest("GET", context, signal),
+      (value) => IdentityAccessClient.array(value, IdentityAccessClient.policyRecord),
+    );
+  }
+
+  public async getPolicy(
+    context: IdentityTenantAdministrationContext,
+    policyIdValue: string,
+    signal?: AbortSignal,
+  ): Promise<IdentityPolicyRecord | null> {
+    const path = `${IdentityAccessClient.tenantApplicationPath(context)}/policies/${IdentityAccessClient.uuid(policyIdValue)}`;
+    return this.#requestNullableJson(path, IdentityAccessClient.administrationRequest("GET", context, signal), IdentityAccessClient.policyRecord);
+  }
+
+  public async createPolicy(
+    context: IdentityTenantAdministrationContext,
+    request: IdentityCreatePolicyRequest,
+    signal?: AbortSignal,
+  ): Promise<IdentityPolicyRecord> {
+    const path = `${IdentityAccessClient.tenantApplicationPath(context)}/policies`;
+    return this.#requestJson(
+      path,
+      IdentityAccessClient.administrationJsonRequest("POST", context, {
+        policyId: IdentityAccessClient.optionalUuidOrEmpty(request.policyId),
+        displayName: IdentityAccessClient.nonEmpty(request.displayName),
+        status: IdentityAccessClient.lifecycleStatus(request.status ?? 1),
+      }, signal, [201]),
+      IdentityAccessClient.policyRecord,
+    );
+  }
+
+  public async updatePolicy(
+    context: IdentityTenantAdministrationContext,
+    policyIdValue: string,
+    request: IdentityUpdatePolicyRequest,
+    signal?: AbortSignal,
+  ): Promise<IdentityPolicyRecord> {
+    const path = `${IdentityAccessClient.tenantApplicationPath(context)}/policies/${IdentityAccessClient.uuid(policyIdValue)}`;
+    return this.#requestJson(
+      path,
+      IdentityAccessClient.administrationJsonRequest("PUT", context, {
+        displayName: IdentityAccessClient.nonEmpty(request.displayName),
+        status: IdentityAccessClient.lifecycleStatus(request.status),
+        expectedVersion: IdentityAccessClient.version(request.expectedVersion),
+      }, signal),
+      IdentityAccessClient.policyRecord,
+    );
+  }
+
+  public async listPolicyStatements(
+    context: IdentityTenantAdministrationContext,
+    policyIdValue: string,
+    signal?: AbortSignal,
+  ): Promise<readonly IdentityPolicyStatementRecord[]> {
+    const path = `${IdentityAccessClient.tenantApplicationPath(context)}/policies/${IdentityAccessClient.uuid(policyIdValue)}/statements`;
+    return this.#requestJson(
+      path,
+      IdentityAccessClient.administrationRequest("GET", context, signal),
+      (value) => IdentityAccessClient.array(value, IdentityAccessClient.policyStatementRecord),
+    );
+  }
+
+  public async addPolicyStatement(
+    context: IdentityTenantAdministrationContext,
+    policyIdValue: string,
+    request: IdentityAddPolicyStatementRequest,
+    signal?: AbortSignal,
+  ): Promise<IdentityPolicyStatementRecord> {
+    const path = `${IdentityAccessClient.tenantApplicationPath(context)}/policies/${IdentityAccessClient.uuid(policyIdValue)}/statements`;
+    return this.#requestJson(
+      path,
+      IdentityAccessClient.administrationJsonRequest("POST", context, IdentityAccessClient.policyStatementBody(request), signal, [201]),
+      IdentityAccessClient.policyStatementRecord,
+    );
+  }
+
+  public async removePolicyStatement(
+    context: IdentityTenantAdministrationContext,
+    policyIdValue: string,
+    statementIdValue: string,
+    signal?: AbortSignal,
+  ): Promise<boolean> {
+    const path = `${IdentityAccessClient.tenantApplicationPath(context)}/policies/${IdentityAccessClient.uuid(policyIdValue)}/statements/${IdentityAccessClient.uuid(statementIdValue)}`;
+    return this.#requestNoContent(path, IdentityAccessClient.administrationRequest("DELETE", context, signal));
+  }
+
+  public async listPolicyBindings(
+    context: IdentityTenantAdministrationContext,
+    groupIdValue: string,
+    signal?: AbortSignal,
+  ): Promise<readonly IdentityGroupPolicyBindingRecord[]> {
+    const path = `${IdentityAccessClient.tenantApplicationPath(context)}/groups/${IdentityAccessClient.uuid(groupIdValue)}/policy-bindings`;
+    return this.#requestJson(
+      path,
+      IdentityAccessClient.administrationRequest("GET", context, signal),
+      (value) => IdentityAccessClient.array(value, IdentityAccessClient.groupPolicyBindingRecord),
+    );
+  }
+
+  public async addPolicyBinding(
+    context: IdentityTenantAdministrationContext,
+    groupIdValue: string,
+    request: IdentityAddGroupPolicyBindingRequest,
+    signal?: AbortSignal,
+  ): Promise<IdentityGroupPolicyBindingRecord> {
+    const path = `${IdentityAccessClient.tenantApplicationPath(context)}/groups/${IdentityAccessClient.uuid(groupIdValue)}/policy-bindings`;
+    return this.#requestJson(
+      path,
+      IdentityAccessClient.administrationJsonRequest("POST", context, {
+        policyId: IdentityAccessClient.uuid(request.policyId),
+        resourceScopeId: request.resourceScopeId === undefined ? null : IdentityAccessClient.uuid(request.resourceScopeId),
+        includeDescendants: request.includeDescendants ?? false,
+      }, signal, [201]),
+      IdentityAccessClient.groupPolicyBindingRecord,
+    );
+  }
+
+  public async removePolicyBinding(
+    context: IdentityTenantAdministrationContext,
+    groupIdValue: string,
+    policyIdValue: string,
+    resourceScopeIdValue?: string,
+    signal?: AbortSignal,
+  ): Promise<boolean> {
+    const groupId = IdentityAccessClient.uuid(groupIdValue);
+    const policyId = IdentityAccessClient.uuid(policyIdValue);
+    const query = resourceScopeIdValue === undefined
+      ? ""
+      : `?resourceScopeId=${encodeURIComponent(IdentityAccessClient.uuid(resourceScopeIdValue))}`;
+    const path = `${IdentityAccessClient.tenantApplicationPath(context)}/groups/${groupId}/policy-bindings/${policyId}${query}`;
+    return this.#requestNoContent(path, IdentityAccessClient.administrationRequest("DELETE", context, signal));
+  }
+
+  public async listResourceScopes(
+    context: IdentityTenantAdministrationContext,
+    signal?: AbortSignal,
+  ): Promise<readonly IdentityResourceScopeRecord[]> {
+    const path = `${IdentityAccessClient.tenantApplicationPath(context)}/resource-scopes`;
+    return this.#requestJson(
+      path,
+      IdentityAccessClient.administrationRequest("GET", context, signal),
+      (value) => IdentityAccessClient.array(value, IdentityAccessClient.resourceScopeRecord),
+    );
+  }
+
+  public async getResourceScope(
+    context: IdentityTenantAdministrationContext,
+    resourceScopeIdValue: string,
+    signal?: AbortSignal,
+  ): Promise<IdentityResourceScopeRecord | null> {
+    const path = `${IdentityAccessClient.tenantApplicationPath(context)}/resource-scopes/${IdentityAccessClient.uuid(resourceScopeIdValue)}`;
+    return this.#requestNullableJson(path, IdentityAccessClient.administrationRequest("GET", context, signal), IdentityAccessClient.resourceScopeRecord);
+  }
+
+  public async createResourceScope(
+    context: IdentityTenantAdministrationContext,
+    request: IdentityCreateResourceScopeRequest,
+    signal?: AbortSignal,
+  ): Promise<IdentityResourceScopeRecord> {
+    const path = `${IdentityAccessClient.tenantApplicationPath(context)}/resource-scopes`;
+    return this.#requestJson(
+      path,
+      IdentityAccessClient.administrationJsonRequest("POST", context, IdentityAccessClient.resourceScopeBody(request, false), signal, [201]),
+      IdentityAccessClient.resourceScopeRecord,
+    );
+  }
+
+  public async updateResourceScope(
+    context: IdentityTenantAdministrationContext,
+    resourceScopeIdValue: string,
+    request: IdentityUpdateResourceScopeRequest,
+    signal?: AbortSignal,
+  ): Promise<IdentityResourceScopeRecord> {
+    const path = `${IdentityAccessClient.tenantApplicationPath(context)}/resource-scopes/${IdentityAccessClient.uuid(resourceScopeIdValue)}`;
+    return this.#requestJson(
+      path,
+      IdentityAccessClient.administrationJsonRequest("PUT", context, IdentityAccessClient.resourceScopeBody(request, true), signal),
+      IdentityAccessClient.resourceScopeRecord,
+    );
+  }
+
+  public async listScopeTypes(
+    context: IdentityAdministrationContext,
+    modelVersionValue: number,
+    signal?: AbortSignal,
+  ): Promise<readonly IdentityScopeTypeRecord[]> {
+    const modelVersion = IdentityAccessClient.positiveInteger(modelVersionValue);
+    const path = `${IdentityAccessClient.administrationBasePath(context)}/security-models/${modelVersion}/scope-types`;
+    return this.#requestJson(
+      path,
+      IdentityAccessClient.administrationRequest("GET", context, signal),
+      (value) => IdentityAccessClient.array(value, IdentityAccessClient.scopeTypeRecord),
+    );
+  }
+
+  public async addScopeType(
+    context: IdentityAdministrationContext,
+    modelVersionValue: number,
+    request: IdentityAddScopeTypeRequest,
+    signal?: AbortSignal,
+  ): Promise<IdentityScopeTypeRecord> {
+    const modelVersion = IdentityAccessClient.positiveInteger(modelVersionValue);
+    const path = `${IdentityAccessClient.administrationBasePath(context)}/security-models/${modelVersion}/scope-types`;
+    return this.#requestJson(
+      path,
+      IdentityAccessClient.administrationJsonRequest("POST", context, {
+        key: IdentityAccessClient.slug(request.key),
+        displayName: IdentityAccessClient.nonEmpty(request.displayName),
+        parentKey: request.parentKey === undefined ? null : IdentityAccessClient.slug(request.parentKey),
+        canAttachToTenant: IdentityAccessClient.boolean(request.canAttachToTenant),
+      }, signal, [201]),
+      IdentityAccessClient.scopeTypeRecord,
+    );
+  }
+
+  public async revokeUserSessions(
+    context: IdentityAdministrationContext,
+    userIdValue: string,
+    signal?: AbortSignal,
+  ): Promise<IdentitySessionRevocationResult> {
+    const path = `${IdentityAccessClient.administrationBasePath(context)}/sessions/users/${IdentityAccessClient.uuid(userIdValue)}`;
+    return this.#requestJson(path, IdentityAccessClient.administrationRequest("DELETE", context, signal), IdentityAccessClient.sessionRevocationResult);
+  }
+
+  public async revokeClientSessions(
+    context: IdentityAdministrationContext,
+    clientIdValue: string,
+    signal?: AbortSignal,
+  ): Promise<IdentitySessionRevocationResult> {
+    const path = `${IdentityAccessClient.administrationBasePath(context)}/sessions/clients/${encodeURIComponent(IdentityAccessClient.clientId(clientIdValue))}`;
+    return this.#requestJson(path, IdentityAccessClient.administrationRequest("DELETE", context, signal), IdentityAccessClient.sessionRevocationResult);
+  }
+
+  public async getScopeAuthorityGroup(
+    context: IdentityAdministrationContext,
+    groupIdValue: string,
+    signal?: AbortSignal,
+  ): Promise<IdentityScopeAuthorityGroupRecord | null> {
+    const path = `${IdentityAccessClient.scopeAuthorityPath(context)}/groups/${IdentityAccessClient.uuid(groupIdValue)}`;
+    return this.#requestNullableJson(path, IdentityAccessClient.administrationRequest("GET", context, signal), IdentityAccessClient.groupRecord);
+  }
+
+  public async createScopeAuthorityGroup(
+    context: IdentityAdministrationContext,
+    request: IdentityCreateGroupRequest,
+    signal?: AbortSignal,
+  ): Promise<IdentityScopeAuthorityGroupRecord> {
+    const path = `${IdentityAccessClient.scopeAuthorityPath(context)}/groups`;
+    return this.#requestJson(
+      path,
+      IdentityAccessClient.administrationJsonRequest("POST", context, {
+        groupId: IdentityAccessClient.optionalUuidOrEmpty(request.groupId),
+        displayName: IdentityAccessClient.nonEmpty(request.displayName),
+        status: IdentityAccessClient.lifecycleStatus(request.status ?? 1),
+      }, signal, [201]),
+      IdentityAccessClient.groupRecord,
+    );
+  }
+
+  public async updateScopeAuthorityGroup(
+    context: IdentityAdministrationContext,
+    groupIdValue: string,
+    request: IdentityUpdateGroupRequest,
+    signal?: AbortSignal,
+  ): Promise<IdentityScopeAuthorityGroupRecord> {
+    const path = `${IdentityAccessClient.scopeAuthorityPath(context)}/groups/${IdentityAccessClient.uuid(groupIdValue)}`;
+    return this.#requestJson(
+      path,
+      IdentityAccessClient.administrationJsonRequest("PUT", context, {
+        displayName: IdentityAccessClient.nonEmpty(request.displayName),
+        status: IdentityAccessClient.lifecycleStatus(request.status),
+        expectedVersion: IdentityAccessClient.version(request.expectedVersion),
+      }, signal),
+      IdentityAccessClient.groupRecord,
+    );
+  }
+
+  public async listScopeAuthorityMembers(
+    context: IdentityAdministrationContext,
+    groupIdValue: string,
+    signal?: AbortSignal,
+  ): Promise<readonly IdentityScopeAuthorityMemberRecord[]> {
+    const path = `${IdentityAccessClient.scopeAuthorityPath(context)}/groups/${IdentityAccessClient.uuid(groupIdValue)}/members`;
+    return this.#requestJson(
+      path,
+      IdentityAccessClient.administrationRequest("GET", context, signal),
+      (value) => IdentityAccessClient.array(value, IdentityAccessClient.scopeAuthorityMemberRecord),
+    );
+  }
+
+  public async addScopeAuthorityMember(
+    context: IdentityAdministrationContext,
+    groupIdValue: string,
+    userIdValue: string,
+    signal?: AbortSignal,
+  ): Promise<IdentityScopeAuthorityMemberRecord> {
+    const path = `${IdentityAccessClient.scopeAuthorityPath(context)}/groups/${IdentityAccessClient.uuid(groupIdValue)}/members`;
+    return this.#requestJson(
+      path,
+      IdentityAccessClient.administrationJsonRequest("POST", context, { userId: IdentityAccessClient.uuid(userIdValue) }, signal, [201]),
+      IdentityAccessClient.scopeAuthorityMemberRecord,
+    );
+  }
+
+  public async removeScopeAuthorityMember(
+    context: IdentityAdministrationContext,
+    groupIdValue: string,
+    userIdValue: string,
+    signal?: AbortSignal,
+  ): Promise<boolean> {
+    const path = `${IdentityAccessClient.scopeAuthorityPath(context)}/groups/${IdentityAccessClient.uuid(groupIdValue)}/members/${IdentityAccessClient.uuid(userIdValue)}`;
+    return this.#requestNoContent(path, IdentityAccessClient.administrationRequest("DELETE", context, signal));
+  }
+
+  public async getScopeAuthorityPolicy(
+    context: IdentityAdministrationContext,
+    policyIdValue: string,
+    signal?: AbortSignal,
+  ): Promise<IdentityScopeAuthorityPolicyRecord | null> {
+    const path = `${IdentityAccessClient.scopeAuthorityPath(context)}/policies/${IdentityAccessClient.uuid(policyIdValue)}`;
+    return this.#requestNullableJson(path, IdentityAccessClient.administrationRequest("GET", context, signal), IdentityAccessClient.policyRecord);
+  }
+
+  public async createScopeAuthorityPolicy(
+    context: IdentityAdministrationContext,
+    request: IdentityCreatePolicyRequest,
+    signal?: AbortSignal,
+  ): Promise<IdentityScopeAuthorityPolicyRecord> {
+    const path = `${IdentityAccessClient.scopeAuthorityPath(context)}/policies`;
+    return this.#requestJson(
+      path,
+      IdentityAccessClient.administrationJsonRequest("POST", context, {
+        policyId: IdentityAccessClient.optionalUuidOrEmpty(request.policyId),
+        displayName: IdentityAccessClient.nonEmpty(request.displayName),
+        status: IdentityAccessClient.lifecycleStatus(request.status ?? 1),
+      }, signal, [201]),
+      IdentityAccessClient.policyRecord,
+    );
+  }
+
+  public async updateScopeAuthorityPolicy(
+    context: IdentityAdministrationContext,
+    policyIdValue: string,
+    request: IdentityUpdatePolicyRequest,
+    signal?: AbortSignal,
+  ): Promise<IdentityScopeAuthorityPolicyRecord> {
+    const path = `${IdentityAccessClient.scopeAuthorityPath(context)}/policies/${IdentityAccessClient.uuid(policyIdValue)}`;
+    return this.#requestJson(
+      path,
+      IdentityAccessClient.administrationJsonRequest("PUT", context, {
+        displayName: IdentityAccessClient.nonEmpty(request.displayName),
+        status: IdentityAccessClient.lifecycleStatus(request.status),
+        expectedVersion: IdentityAccessClient.version(request.expectedVersion),
+      }, signal),
+      IdentityAccessClient.policyRecord,
+    );
+  }
+
+  public async listScopeAuthorityPolicyStatements(
+    context: IdentityAdministrationContext,
+    policyIdValue: string,
+    signal?: AbortSignal,
+  ): Promise<readonly IdentityScopeAuthorityPolicyStatementRecord[]> {
+    const path = `${IdentityAccessClient.scopeAuthorityPath(context)}/policies/${IdentityAccessClient.uuid(policyIdValue)}/statements`;
+    return this.#requestJson(
+      path,
+      IdentityAccessClient.administrationRequest("GET", context, signal),
+      (value) => IdentityAccessClient.array(value, IdentityAccessClient.policyStatementRecord),
+    );
+  }
+
+  public async addScopeAuthorityPolicyStatement(
+    context: IdentityAdministrationContext,
+    policyIdValue: string,
+    request: IdentityAddPolicyStatementRequest,
+    signal?: AbortSignal,
+  ): Promise<IdentityScopeAuthorityPolicyStatementRecord> {
+    const path = `${IdentityAccessClient.scopeAuthorityPath(context)}/policies/${IdentityAccessClient.uuid(policyIdValue)}/statements`;
+    return this.#requestJson(
+      path,
+      IdentityAccessClient.administrationJsonRequest("POST", context, IdentityAccessClient.policyStatementBody(request), signal, [201]),
+      IdentityAccessClient.policyStatementRecord,
+    );
+  }
+
+  public async removeScopeAuthorityPolicyStatement(
+    context: IdentityAdministrationContext,
+    policyIdValue: string,
+    statementIdValue: string,
+    signal?: AbortSignal,
+  ): Promise<boolean> {
+    const path = `${IdentityAccessClient.scopeAuthorityPath(context)}/policies/${IdentityAccessClient.uuid(policyIdValue)}/statements/${IdentityAccessClient.uuid(statementIdValue)}`;
+    return this.#requestNoContent(path, IdentityAccessClient.administrationRequest("DELETE", context, signal));
+  }
+
+  public async listScopeAuthorityPolicyBindings(
+    context: IdentityAdministrationContext,
+    groupIdValue: string,
+    signal?: AbortSignal,
+  ): Promise<readonly IdentityScopeAuthorityPolicyBindingRecord[]> {
+    const path = `${IdentityAccessClient.scopeAuthorityPath(context)}/groups/${IdentityAccessClient.uuid(groupIdValue)}/policy-bindings`;
+    return this.#requestJson(
+      path,
+      IdentityAccessClient.administrationRequest("GET", context, signal),
+      (value) => IdentityAccessClient.array(value, IdentityAccessClient.scopeAuthorityPolicyBindingRecord),
+    );
+  }
+
+  public async addScopeAuthorityPolicyBinding(
+    context: IdentityAdministrationContext,
+    groupIdValue: string,
+    policyIdValue: string,
+    signal?: AbortSignal,
+  ): Promise<IdentityScopeAuthorityPolicyBindingRecord> {
+    const path = `${IdentityAccessClient.scopeAuthorityPath(context)}/groups/${IdentityAccessClient.uuid(groupIdValue)}/policy-bindings`;
+    return this.#requestJson(
+      path,
+      IdentityAccessClient.administrationJsonRequest("POST", context, { policyId: IdentityAccessClient.uuid(policyIdValue) }, signal, [201]),
+      IdentityAccessClient.scopeAuthorityPolicyBindingRecord,
+    );
+  }
+
+  public async removeScopeAuthorityPolicyBinding(
+    context: IdentityAdministrationContext,
+    groupIdValue: string,
+    policyIdValue: string,
+    signal?: AbortSignal,
+  ): Promise<boolean> {
+    const path = `${IdentityAccessClient.scopeAuthorityPath(context)}/groups/${IdentityAccessClient.uuid(groupIdValue)}/policy-bindings/${IdentityAccessClient.uuid(policyIdValue)}`;
+    return this.#requestNoContent(path, IdentityAccessClient.administrationRequest("DELETE", context, signal));
+  }
+
   /**
    * Evaluates one concrete capability through the server-side .NET authorization boundary.
    * A normal RBAC deny resolves to false; authentication, boundary, and technical failures throw.
@@ -406,6 +1177,34 @@ export class IdentityAccessClient {
       "X-Identity-Access-Client": IdentityAccessClient.clientId(credential.clientId),
       "X-Identity-Access-Session": IdentityAccessClient.uuid(credential.sessionId),
     };
+  }
+
+  async #requestNullableJson<T>(
+    path: string,
+    options: RequestOptions,
+    decode: (body: unknown, status: number) => T,
+  ): Promise<T | null> {
+    const accepted = options.acceptedStatuses.includes(404)
+      ? options.acceptedStatuses
+      : [...options.acceptedStatuses, 404];
+    return this.#perform(path, { ...options, acceptedStatuses: accepted }, async (response) => {
+      if (response.status === 404) return null;
+      let body: unknown;
+      try {
+        body = await response.json();
+      } catch {
+        throw new IdentityAccessClientError("protocol");
+      }
+      return decode(body, response.status);
+    });
+  }
+
+  async #requestNoContent(path: string, options: RequestOptions): Promise<boolean> {
+    return this.#perform(
+      path,
+      { ...options, acceptedStatuses: [204, 404] },
+      async (response) => response.status === 204,
+    );
   }
 
   async #tokenRequest(form: URLSearchParams, signal?: AbortSignal): Promise<IdentityOidcTokenSet> {
@@ -518,6 +1317,286 @@ export class IdentityAccessClient {
       clearTimeout(timer);
       options.signal?.removeEventListener("abort", onAbort);
     }
+  }
+
+  static administrationRequest(
+    method: "GET" | "DELETE",
+    context: IdentityAdministrationContext,
+    signal?: AbortSignal,
+  ): RequestOptions {
+    return {
+      method,
+      acceptedStatuses: [200],
+      headers: IdentityAccessClient.credentialHeaders(context.credential),
+      ...(signal === undefined ? {} : { signal }),
+    };
+  }
+
+  static administrationJsonRequest(
+    method: "POST" | "PUT",
+    context: IdentityAdministrationContext,
+    body: JsonObject,
+    signal?: AbortSignal,
+    acceptedStatuses: readonly number[] = [200],
+  ): RequestOptions {
+    return {
+      method,
+      acceptedStatuses,
+      headers: {
+        ...IdentityAccessClient.credentialHeaders(context.credential),
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(body),
+      ...(signal === undefined ? {} : { signal }),
+    };
+  }
+
+  static administrationBasePath(context: IdentityAdministrationContext): string {
+    const scope = IdentityAccessClient.uuid(context.identityScopeId);
+    const application = IdentityAccessClient.slug(context.applicationKey);
+    IdentityAccessClient.credentialHeaders(context.credential);
+    return `api/v1/identity-scopes/${scope}/applications/${application}`;
+  }
+
+  static tenantApplicationPath(context: IdentityTenantAdministrationContext): string {
+    const scope = IdentityAccessClient.uuid(context.identityScopeId);
+    const tenant = IdentityAccessClient.uuid(context.tenantId);
+    const application = IdentityAccessClient.slug(context.applicationKey);
+    IdentityAccessClient.credentialHeaders(context.credential);
+    return `api/v1/identity-scopes/${scope}/tenants/${tenant}/applications/${application}`;
+  }
+
+  static tenantMembershipsPath(context: IdentityTenantAdministrationContext): string {
+    const scope = IdentityAccessClient.uuid(context.identityScopeId);
+    const tenant = IdentityAccessClient.uuid(context.tenantId);
+    const application = IdentityAccessClient.slug(context.applicationKey);
+    IdentityAccessClient.credentialHeaders(context.credential);
+    return `api/v1/identity-scopes/${scope}/applications/${application}/tenants/${tenant}/memberships`;
+  }
+
+  static scopeAuthorityPath(context: IdentityAdministrationContext): string {
+    return `${IdentityAccessClient.administrationBasePath(context)}/scope-authority`;
+  }
+
+  static administrationListQuery(options: IdentityAdministrationListOptions | undefined): string {
+    if (options === undefined) return "";
+
+    const query = new URLSearchParams();
+    if (options.offset !== undefined) {
+      if (!Number.isSafeInteger(options.offset) || options.offset < 0) {
+        throw new IdentityAccessClientError("configuration");
+      }
+      query.set("offset", String(options.offset));
+    }
+    if (options.limit !== undefined) {
+      if (!Number.isSafeInteger(options.limit) || options.limit < 1 || options.limit > 200) {
+        throw new IdentityAccessClientError("configuration");
+      }
+      query.set("limit", String(options.limit));
+    }
+
+    const value = query.toString();
+    return value.length === 0 ? "" : `?${value}`;
+  }
+
+  static optionalUuidOrEmpty(value: string | undefined): string {
+    return value === undefined ? "00000000-0000-0000-0000-000000000000" : IdentityAccessClient.uuid(value);
+  }
+
+  static lifecycleStatus(value: unknown): 1 | 2 {
+    if (value !== 1 && value !== 2) throw new IdentityAccessClientError("configuration");
+    return value;
+  }
+
+  static version(value: unknown): number {
+    if (typeof value !== "number" || !Number.isSafeInteger(value) || value < 1) {
+      throw new IdentityAccessClientError("configuration");
+    }
+    return value;
+  }
+
+  static boolean(value: unknown): boolean {
+    if (typeof value !== "boolean") throw new IdentityAccessClientError("configuration");
+    return value;
+  }
+
+  static nullableUuid(value: unknown): string | undefined {
+    if (value === null || value === undefined) return undefined;
+    return IdentityAccessClient.uuid(IdentityAccessClient.text(value));
+  }
+
+  static array<T>(value: unknown, decode: (entry: unknown) => T): readonly T[] {
+    if (!Array.isArray(value)) throw new IdentityAccessClientError("protocol");
+    return value.map(decode);
+  }
+
+  static userRecord(value: unknown): IdentityUserRecord {
+    const data = IdentityAccessClient.object(value);
+    return {
+      userId: IdentityAccessClient.uuid(IdentityAccessClient.text(data.userId)),
+      displayName: IdentityAccessClient.text(data.displayName),
+      status: IdentityAccessClient.lifecycleStatus(data.status),
+      version: IdentityAccessClient.version(data.version),
+    };
+  }
+
+  static tenantRecord(value: unknown): IdentityTenantRecord {
+    const data = IdentityAccessClient.object(value);
+    return {
+      tenantId: IdentityAccessClient.uuid(IdentityAccessClient.text(data.tenantId)),
+      displayName: IdentityAccessClient.text(data.displayName),
+      status: IdentityAccessClient.lifecycleStatus(data.status),
+      version: IdentityAccessClient.version(data.version),
+    };
+  }
+
+  static tenantMembershipRecord(value: unknown): IdentityTenantMembershipRecord {
+    const data = IdentityAccessClient.object(value);
+    return {
+      membershipId: IdentityAccessClient.uuid(IdentityAccessClient.text(data.membershipId)),
+      tenantId: IdentityAccessClient.uuid(IdentityAccessClient.text(data.tenantId)),
+      userId: IdentityAccessClient.uuid(IdentityAccessClient.text(data.userId)),
+      status: IdentityAccessClient.lifecycleStatus(data.status),
+      version: IdentityAccessClient.version(data.version),
+    };
+  }
+
+  static groupRecord(value: unknown): IdentityGroupRecord {
+    const data = IdentityAccessClient.object(value);
+    return {
+      groupId: IdentityAccessClient.uuid(IdentityAccessClient.text(data.groupId)),
+      displayName: IdentityAccessClient.text(data.displayName),
+      status: IdentityAccessClient.lifecycleStatus(data.status),
+      version: IdentityAccessClient.version(data.version),
+    };
+  }
+
+  static groupMemberRecord(value: unknown): IdentityGroupMemberRecord {
+    const data = IdentityAccessClient.object(value);
+    return {
+      tenantMembershipId: IdentityAccessClient.uuid(IdentityAccessClient.text(data.tenantMembershipId)),
+      userId: IdentityAccessClient.uuid(IdentityAccessClient.text(data.userId)),
+    };
+  }
+
+  static policyRecord(value: unknown): IdentityPolicyRecord {
+    const data = IdentityAccessClient.object(value);
+    return {
+      policyId: IdentityAccessClient.uuid(IdentityAccessClient.text(data.policyId)),
+      displayName: IdentityAccessClient.text(data.displayName),
+      status: IdentityAccessClient.lifecycleStatus(data.status),
+      version: IdentityAccessClient.version(data.version),
+    };
+  }
+
+  static policyStatementRecord(value: unknown): IdentityPolicyStatementRecord {
+    const data = IdentityAccessClient.object(value);
+    return {
+      statementId: IdentityAccessClient.uuid(IdentityAccessClient.text(data.statementId)),
+      modelVersion: IdentityAccessClient.positiveInteger(data.modelVersion),
+      resource: IdentityAccessClient.capabilityPatternSegment(IdentityAccessClient.text(data.resource)),
+      feature: IdentityAccessClient.capabilityPatternSegment(IdentityAccessClient.text(data.feature)),
+      action: IdentityAccessClient.capabilityPatternSegment(IdentityAccessClient.text(data.action)),
+    };
+  }
+
+  static groupPolicyBindingRecord(value: unknown): IdentityGroupPolicyBindingRecord {
+    const data = IdentityAccessClient.object(value);
+    const resourceScopeId = IdentityAccessClient.nullableUuid(data.resourceScopeId);
+    return {
+      groupId: IdentityAccessClient.uuid(IdentityAccessClient.text(data.groupId)),
+      policyId: IdentityAccessClient.uuid(IdentityAccessClient.text(data.policyId)),
+      ...(resourceScopeId === undefined ? {} : { resourceScopeId }),
+      includeDescendants: IdentityAccessClient.flag(data.includeDescendants),
+    };
+  }
+
+  static resourceScopeRecord(value: unknown): IdentityResourceScopeRecord {
+    const data = IdentityAccessClient.object(value);
+    const parentResourceScopeId = IdentityAccessClient.nullableUuid(data.parentResourceScopeId);
+    return {
+      resourceScopeId: IdentityAccessClient.uuid(IdentityAccessClient.text(data.resourceScopeId)),
+      modelVersion: IdentityAccessClient.positiveInteger(data.modelVersion),
+      scopeType: IdentityAccessClient.slug(IdentityAccessClient.text(data.scopeType)),
+      externalResourceId: IdentityAccessClient.nonEmpty(IdentityAccessClient.text(data.externalResourceId)),
+      displayName: IdentityAccessClient.text(data.displayName),
+      ...(parentResourceScopeId === undefined ? {} : { parentResourceScopeId }),
+      status: IdentityAccessClient.lifecycleStatus(data.status),
+      version: IdentityAccessClient.version(data.version),
+    };
+  }
+
+  static scopeTypeRecord(value: unknown): IdentityScopeTypeRecord {
+    const data = IdentityAccessClient.object(value);
+    const parentKey = data.parentKey === null || data.parentKey === undefined
+      ? undefined
+      : IdentityAccessClient.slug(IdentityAccessClient.text(data.parentKey));
+    return {
+      key: IdentityAccessClient.slug(IdentityAccessClient.text(data.key)),
+      displayName: IdentityAccessClient.text(data.displayName),
+      ...(parentKey === undefined ? {} : { parentKey }),
+      canAttachToTenant: IdentityAccessClient.flag(data.canAttachToTenant),
+    };
+  }
+
+  static sessionRevocationResult(value: unknown): IdentitySessionRevocationResult {
+    const data = IdentityAccessClient.object(value);
+    if (typeof data.revokedCount !== "number" || !Number.isSafeInteger(data.revokedCount) || data.revokedCount < 0) {
+      throw new IdentityAccessClientError("protocol");
+    }
+    return { revokedCount: data.revokedCount };
+  }
+
+  static scopeAuthorityMemberRecord(value: unknown): IdentityScopeAuthorityMemberRecord {
+    const data = IdentityAccessClient.object(value);
+    return {
+      groupId: IdentityAccessClient.uuid(IdentityAccessClient.text(data.groupId)),
+      userId: IdentityAccessClient.uuid(IdentityAccessClient.text(data.userId)),
+    };
+  }
+
+  static scopeAuthorityPolicyBindingRecord(value: unknown): IdentityScopeAuthorityPolicyBindingRecord {
+    const data = IdentityAccessClient.object(value);
+    return {
+      groupId: IdentityAccessClient.uuid(IdentityAccessClient.text(data.groupId)),
+      policyId: IdentityAccessClient.uuid(IdentityAccessClient.text(data.policyId)),
+    };
+  }
+
+  static policyStatementBody(request: IdentityAddPolicyStatementRequest): JsonObject {
+    return {
+      statementId: IdentityAccessClient.optionalUuidOrEmpty(request.statementId),
+      modelVersion: IdentityAccessClient.positiveInteger(request.modelVersion),
+      resource: IdentityAccessClient.capabilityPatternSegment(request.resource),
+      feature: IdentityAccessClient.capabilityPatternSegment(request.feature),
+      action: IdentityAccessClient.capabilityPatternSegment(request.action),
+    };
+  }
+
+  static resourceScopeBody(
+    request: IdentityCreateResourceScopeRequest | IdentityUpdateResourceScopeRequest,
+    update: boolean,
+  ): JsonObject {
+    const body: JsonObject = {
+      modelVersion: IdentityAccessClient.positiveInteger(request.modelVersion),
+      scopeType: IdentityAccessClient.slug(request.scopeType),
+      externalResourceId: IdentityAccessClient.nonEmpty(request.externalResourceId),
+      displayName: IdentityAccessClient.nonEmpty(request.displayName),
+      parentResourceScopeId: request.parentResourceScopeId === undefined
+        ? null
+        : IdentityAccessClient.uuid(request.parentResourceScopeId),
+      status: IdentityAccessClient.lifecycleStatus(request.status ?? 1),
+    };
+
+    if (update) {
+      const updated = request as IdentityUpdateResourceScopeRequest;
+      body.expectedVersion = IdentityAccessClient.version(updated.expectedVersion);
+    } else {
+      const created = request as IdentityCreateResourceScopeRequest;
+      body.resourceScopeId = IdentityAccessClient.optionalUuidOrEmpty(created.resourceScopeId);
+    }
+
+    return body;
   }
 
   static statusError(status: number): IdentityAccessClientError {
@@ -746,6 +1825,15 @@ export class IdentityAccessClient {
   static clientId(value: string): string {
     const normalized = IdentityAccessClient.nonEmpty(value);
     if (!/^[a-z][a-z0-9_-]{0,127}$/u.test(normalized)) {
+      throw new IdentityAccessClientError("configuration");
+    }
+    return normalized;
+  }
+
+  static capabilityPatternSegment(value: string): string {
+    const normalized = IdentityAccessClient.nonEmpty(value).toLowerCase();
+    if (normalized === "*") return normalized;
+    if (!/^[a-z][a-z0-9-]{0,63}$/u.test(normalized)) {
       throw new IdentityAccessClientError("configuration");
     }
     return normalized;
