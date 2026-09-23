@@ -1,45 +1,17 @@
 Generic Identity Access delta manifest
-Version: 0.42.6
-Baseline: 0.42.5
-Content: Next.js administration functional hardening + single-file CSS ownership
+Version: 0.42.12
+Baseline: 0.42.11
+Content: Runnable Next.js request-time configuration correction
 
-Added files: 9
-Modified files: 21
+Added files: 0
+Modified files: 7
 Deleted files: 0
-
-[ADDED]
-examples/nextjs/admin/app/identity/actions.ts
-examples/nextjs/admin/app/identity/error.tsx
-examples/nextjs/admin/app/identity/loading.tsx
-examples/nextjs/admin/components/AdminEmptyState.tsx
-examples/nextjs/admin/components/AdminField.tsx
-examples/nextjs/admin/components/AdminMutationDialog.tsx
-examples/nextjs/admin/contracts/AdminActionState.ts
-examples/nextjs/admin/server/IdentityAccessAdminMutationService.ts
-examples/nextjs/admin/styles/identity-access-admin.css
 
 [MODIFIED]
 CHANGELOG.md
 Directory.Build.props
-README.md
 SOURCE_MANIFEST.sha256
-clients/typescript/README.md
-clients/typescript/package.json
-docs/VALIDATION.md
 examples/nextjs/admin/README.md
-examples/nextjs/admin/app/identity/authority/page.tsx
-examples/nextjs/admin/app/identity/groups/page.tsx
-examples/nextjs/admin/app/identity/layout.tsx
-examples/nextjs/admin/app/identity/memberships/page.tsx
-examples/nextjs/admin/app/identity/policies/page.tsx
-examples/nextjs/admin/app/identity/resource-scopes/page.tsx
-examples/nextjs/admin/app/identity/sessions/page.tsx
-examples/nextjs/admin/app/identity/tenants/page.tsx
-examples/nextjs/admin/app/identity/users/page.tsx
-examples/nextjs/admin/components/AdminEntityTable.tsx
-examples/nextjs/admin/components/AdminNavigation.tsx
-examples/nextjs/admin/components/AdminPageHeader.tsx
+examples/nextjs/admin/package.json
+examples/nextjs/admin/server/IdentityAccessHostSessionService.ts
 scripts/verify-typescript-source-consistency.ps1
-
-[DELETED]
-(none)

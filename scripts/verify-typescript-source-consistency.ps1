@@ -108,14 +108,21 @@ $nextAdmin = Join-Path $root "examples/nextjs/admin"
 $requiredNextFiles = @(
     "server/IdentityAccessAdminRequest.ts",
     "server/IdentityAccessAdminMutationService.ts",
+    "server/IdentityAccessServerConnector.ts",
     "contracts/AdminActionState.ts",
     "components/AdminNavigation.tsx",
+    "components/AdminIcon.tsx",
+    "components/AdminMetricCard.tsx",
+    "components/AdminFeatureCard.tsx",
+    "components/AdminDetailCard.tsx",
+    "components/AdminSecurityBanner.tsx",
     "components/AdminEntityTable.tsx",
     "components/AdminMutationDialog.tsx",
     "components/AdminField.tsx",
     "components/AdminEmptyState.tsx",
     "app/identity/actions.ts",
     "app/identity/layout.tsx",
+    "app/identity/page.tsx",
     "app/identity/loading.tsx",
     "app/identity/error.tsx",
     "app/identity/users/page.tsx",
@@ -126,7 +133,20 @@ $requiredNextFiles = @(
     "app/identity/resource-scopes/page.tsx",
     "app/identity/sessions/page.tsx",
     "app/identity/authority/page.tsx",
-    "styles/identity-access-admin.css"
+    "app/layout.tsx",
+    "app/page.tsx",
+    "app/login/page.tsx",
+    "app/login/LoginForm.tsx",
+    "app/login/actions.ts",
+    "app/auth/callback/page.tsx",
+    "server/IdentityAccessHostSessionService.ts",
+    "contracts/LoginActionState.ts",
+    "styles/identity-access-admin.css",
+    "package.json",
+    "tsconfig.json",
+    "next.config.ts",
+    "scripts/build-local-client.mjs",
+    ".env.local.example"
 )
 foreach ($relative in $requiredNextFiles) {
     if (-not (Test-Path (Join-Path $nextAdmin $relative) -PathType Leaf)) {
@@ -137,18 +157,97 @@ $mutationService = Get-Content (Join-Path $nextAdmin "server/IdentityAccessAdmin
 $actions = Get-Content (Join-Path $nextAdmin "app/identity/actions.ts") -Raw
 $layout = Get-Content (Join-Path $nextAdmin "app/identity/layout.tsx") -Raw
 $sessionsPage = Get-Content (Join-Path $nextAdmin "app/identity/sessions/page.tsx") -Raw
+$overviewPage = Get-Content (Join-Path $nextAdmin "app/identity/page.tsx") -Raw
+$adminCss = Get-Content (Join-Path $nextAdmin "styles/identity-access-admin.css") -Raw
+$detailCard = Get-Content (Join-Path $nextAdmin "components/AdminDetailCard.tsx") -Raw
+$adminField = Get-Content (Join-Path $nextAdmin "components/AdminField.tsx") -Raw
+$localClientBuild = Get-Content (Join-Path $nextAdmin "scripts/build-local-client.mjs") -Raw
+function Get-NextAdminOwnedFiles {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string[]]$Extensions
+    )
+
+    $excludedDirectories = @(
+        "node_modules",
+        ".next",
+        "dist",
+        "coverage",
+        ".turbo",
+        "out"
+    )
+
+    Get-ChildItem $nextAdmin -Recurse -File | Where-Object {
+        $relativePath = $_.FullName.Substring($nextAdmin.Length).TrimStart([char[]]@("\", "/"))
+        $segments = $relativePath -split "[\\/]"
+        $excluded = $false
+        foreach ($segment in $segments) {
+            if ($excludedDirectories -contains $segment) {
+                $excluded = $true
+                break
+            }
+        }
+
+        (-not $excluded) -and ($Extensions -contains $_.Extension.ToLowerInvariant())
+    }
+}
+
+$nextTypeScriptSource = (Get-NextAdminOwnedFiles -Extensions @(".ts", ".tsx") | ForEach-Object { Get-Content $_.FullName -Raw }) -join "`n"
 if ($mutationService -notmatch 'export\s+class\s+IdentityAccessAdminMutationService\b') { throw "Next.js administration mutation orchestration must remain class-based." }
 if ($actions -notmatch '^"use server";') { throw "Next.js administration actions must be explicit server actions." }
 if ($actions -match '\.client\.') { throw "Next.js Server Action adapters must delegate through IdentityAccessAdminMutationService instead of calling IdentityAccessClient directly." }
 if ($mutationService -notmatch 'requireConfirmation') { throw "Security-sensitive administration mutations must retain explicit confirmation validation." }
 if ($sessionsPage -notmatch 'confirmation' -or $sessionsPage -notmatch 'dangerous') { throw "Session revocation UI must retain explicit destructive confirmation." }
-if ($layout -notmatch 'styles/identity-access-admin\.css') { throw "The administration layout must import the single shared CSS file." }
-$cssFiles = @(Get-ChildItem $nextAdmin -Recurse -File -Include *.css)
+$rootLayout = Get-Content (Join-Path $nextAdmin "app/layout.tsx") -Raw
+$hostSession = Get-Content (Join-Path $nextAdmin "server/IdentityAccessHostSessionService.ts") -Raw
+$hostConnector = Get-Content (Join-Path $nextAdmin "server/IdentityAccessServerConnector.ts") -Raw
+$loginActions = Get-Content (Join-Path $nextAdmin "app/login/actions.ts") -Raw
+$loginPage = Get-Content (Join-Path $nextAdmin "app/login/page.tsx") -Raw
+$hostPackage = Get-Content (Join-Path $nextAdmin "package.json") -Raw
+$hostEnvironment = Get-Content (Join-Path $nextAdmin ".env.local.example") -Raw
+if ($rootLayout -notmatch 'styles/identity-access-admin\.css') { throw "The runnable host root layout must import the single shared CSS file." }
+if ($layout -match 'styles/identity-access-admin\.css') { throw "Global administration CSS must be owned by the runnable root layout only." }
+if ($hostSession -notmatch 'export\s+class\s+IdentityAccessHostSessionService\b') { throw "Runnable host session orchestration must remain class-based." }
+if ($hostConnector -notmatch 'export\s+class\s+IdentityAccessServerConnector\b' -or $hostConnector -notmatch '@identity-access/client') { throw "Runnable host server connector must remain host-local and consume the packaged class-based client." }
+if ($hostSession -match '\.\./\.\./identity-access' -or $nextTypeScriptSource -match 'from\s+["'']\.\./\.\./identity-access["'']') { throw "Runnable host must not import its server connector from outside the Next.js package root." }
+if ($hostSession -notmatch 'passwordLogin' -or $hostSession -notmatch 'authorizeOidc' -or $hostSession -notmatch 'exchangeAuthorizationCode') { throw "Runnable host sign-in must use local authentication plus OIDC Authorization Code/PKCE." }
+$requestCookieIndex = $hostSession.IndexOf('const cookieStore = await cookies();', [System.StringComparison]::Ordinal)
+$runtimeEnvironmentIndex = $hostSession.IndexOf('requiredEnvironment("IDENTITY_ACCESS_BEARER_COOKIE_NAME")', [System.StringComparison]::Ordinal)
+if ($requestCookieIndex -lt 0 -or $runtimeEnvironmentIndex -lt 0 -or $requestCookieIndex -gt $runtimeEnvironmentIndex) {
+    throw "Runnable host must establish request-time context before reading Identity Access runtime environment configuration."
+}
+if ($hostSession -notmatch 'httpOnly\s*:\s*true' -or $hostSession -notmatch 'sameSite\s*:\s*"lax"') { throw "Runnable host authentication cookies must remain HTTP-only and SameSite=Lax." }
+if ($hostSession -match 'NEXT_PUBLIC_') { throw "Runnable host security configuration must remain server-only." }
+if ($loginActions -notmatch '^"use server";' -or $loginActions -match '\.client\.') { throw "Login/logout Server Actions must remain thin adapters over IdentityAccessHostSessionService." }
+if ($loginPage -notmatch 'LoginForm') { throw "Runnable host login page must render the dedicated login form." }
+if ($hostPackage -notmatch '"@identity-access/client"\s*:\s*"file:\.\./\.\./\.\./clients/typescript"') { throw "Runnable host must consume the local class-based TypeScript client package." }
+if ($hostPackage -notmatch '"next"\s*:\s*"16\.3\.6"') { throw "Runnable host must pin the qualified Next.js Active LTS security release." }
+if ($hostPackage -notmatch '"react"\s*:\s*"19\.3\.0"' -or $hostPackage -notmatch '"react-dom"\s*:\s*"19\.3\.0"') { throw "Runnable host React runtime versions are not pinned." }
+foreach ($name in @("IDENTITY_ACCESS_API_BASE_URL", "IDENTITY_ACCESS_OIDC_CLIENT_ID", "IDENTITY_ACCESS_OIDC_REDIRECT_URI", "IDENTITY_ACCESS_BEARER_COOKIE_NAME")) {
+    if ($hostEnvironment -notmatch [regex]::Escape($name)) { throw "Runnable host environment example is missing $name." }
+}
+if ($hostEnvironment -match 'NEXT_PUBLIC_') { throw "Runnable host environment must not expose Identity Access security configuration through NEXT_PUBLIC_." }
+if ($overviewPage -match 'redirect\s*\(') { throw "The premium administration overview must be a real dashboard page instead of redirecting immediately." }
+if ($overviewPage -notmatch 'AdminMetricCard' -or $overviewPage -notmatch 'AdminFeatureCard') { throw "The premium overview must retain metric and workspace cards." }
+if ($detailCard -notmatch 'export\s+function\s+AdminDetailCard\b') { throw "Structured administration details must use the shared AdminDetailCard component." }
+if ($adminField -notmatch 'export\s+function\s+AdminField\b') { throw "Shared administration text input must export AdminField." }
+if ($mutationService -match 'error\.kind\b') { throw "IdentityAccessClientError must be inspected through its public code property." }
+if ($nextTypeScriptSource -match '\bprivate\s+(?:async\s+)?#') { throw "TypeScript private identifiers must not be combined with a private accessibility modifier." }
+if ($localClientBuild -notmatch 'node_modules/@identity-access/client' -or $localClientBuild -notmatch 'cpSync\(clientDist') { throw "Runnable host local client bootstrap must synchronize the freshly built package into node_modules." }
+if ($localClientBuild -match 'realpathSync' -or $localClientBuild -match 'linkedToSource') { throw "Runnable host must materialize the local client package instead of preserving an external symlink/junction." }
+if ($localClientBuild -notmatch 'lstatSync' -or $localClientBuild -notmatch 'isSymbolicLink\(\)' -or $localClientBuild -notmatch 'unlinkSync') { throw "Runnable host local client bootstrap must remove npm symlink/junction layouts before materialization." }
+if ($localClientBuild -notmatch 'dist/index\.js' -or $localClientBuild -notmatch 'dist/index\.d\.ts') { throw "Runnable host local client bootstrap must verify runtime and declaration entry points after materialization." }
+if ($adminCss -notmatch '--ia-accent' -or $adminCss -notmatch '\.ia-overview-hero') { throw "The premium administration design tokens and overview surface are missing." }
+if ($adminCss -notmatch '@media\s*\(prefers-color-scheme:\s*dark\)') { throw "The premium administration stylesheet must retain automatic dark-mode support." }
+if ($adminCss -notmatch '@media\s*\(prefers-reduced-motion:\s*reduce\)') { throw "The premium administration stylesheet must respect reduced-motion preferences." }
+if ($adminCss -notmatch '\.ia-login-shell' -or $adminCss -notmatch '\.ia-login-card') { throw "The runnable administration host login surface is missing from the single shared stylesheet." }
+$cssFiles = @(Get-NextAdminOwnedFiles -Extensions @(".css"))
 if ($cssFiles.Count -ne 1) { throw "Next.js administration must own exactly one CSS file; found $($cssFiles.Count)." }
 if ($cssFiles[0].Name -ne 'identity-access-admin.css') { throw "The single administration CSS file must be identity-access-admin.css." }
-$tsxSource = (Get-ChildItem $nextAdmin -Recurse -File -Include *.tsx | ForEach-Object { Get-Content $_.FullName -Raw }) -join "`n"
+$tsxSource = (Get-NextAdminOwnedFiles -Extensions @(".tsx") | ForEach-Object { Get-Content $_.FullName -Raw }) -join "`n"
+if ($tsxSource -match 'JSON\.stringify\s*\(') { throw "Premium administration pages must render structured record details instead of raw JSON dumps." }
 if ($tsxSource -match 'style\s*=\s*\{') { throw "Inline React style objects are not allowed in the administration module; use the single shared CSS file." }
 if ($tsxSource -match '<style[ >]') { throw "Component-local style blocks are not allowed in the administration module." }
-$moduleCss = @(Get-ChildItem $nextAdmin -Recurse -File -Filter *.module.css)
+$moduleCss = @(Get-NextAdminOwnedFiles -Extensions @(".css") | Where-Object { $_.Name -like "*.module.css" })
 if ($moduleCss.Count -ne 0) { throw "CSS Modules are not allowed in the administration module." }
 Write-Host "TypeScript source consistency validation passed."

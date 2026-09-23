@@ -1,3 +1,5 @@
+import { AdminIcon } from "./AdminIcon";
+
 export interface AdminEmptyStateProps {
   readonly title: string;
   readonly description: string;
@@ -7,7 +9,7 @@ export interface AdminEmptyStateProps {
 export function AdminEmptyState({ title, description }: AdminEmptyStateProps) {
   return (
     <div className="ia-empty-state">
-      <span aria-hidden="true" className="ia-empty-state-mark">◇</span>
+      <span aria-hidden="true" className="ia-empty-state-mark"><AdminIcon name="spark" /></span>
       <h3>{title}</h3>
       <p>{description}</p>
     </div>

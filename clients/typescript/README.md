@@ -1,6 +1,6 @@
 # Identity & Access TypeScript Client
 
-Version 0.7.0 keeps the class-based connector stable while hardening the copyable Next.js administration module with server-confirmed mutations, dialogs, functional states, and single-file CSS ownership.
+Version 0.8.0 keeps the class-based connector stable while adding the premium server-first Next.js administration design system. The UI retains one centrally owned stylesheet, structured record details, automatic dark mode, responsive composition, and reduced-motion support without changing authorization contracts.
 
 Runtime components remain class-based. The primary runtime classes are:
 
@@ -266,3 +266,15 @@ examples/nextjs/admin/styles/identity-access-admin.css
 ```
 
 CSS Modules, component-local style files, `<style>` blocks, and React inline style objects are rejected by the source-consistency gate. The premium design increment must evolve the same file.
+
+## Premium Next.js administration design system
+
+The copyable `examples/nextjs/admin` module now provides a premium server-first control center with a real `/identity` overview, grouped security navigation, bounded collection snapshots, structured record details, responsive tables, hardened dialogs, automatic light/dark presentation, and reduced-motion support.
+
+All custom UI styling remains centralized in exactly one file:
+
+```text
+examples/nextjs/admin/styles/identity-access-admin.css
+```
+
+React Server/Client Components remain framework components; durable connector, authorization, request, and mutation orchestration remains class-based. UI visibility never substitutes for backend authorization.

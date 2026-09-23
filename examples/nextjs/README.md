@@ -1,51 +1,43 @@
-# Next.js Server Integration Example
+# Next.js Integration and Runnable Administration Host
 
-This example demonstrates server-only use of the class-based TypeScript connector from a consuming Next.js application.
+The Next.js example demonstrates server-only use of the class-based TypeScript connector and now includes a runnable administration host under `examples/nextjs/admin`.
 
-The Next.js server calls the Identity Access HTTP API. It never connects directly to PostgreSQL and never receives routing secrets.
+The Next.js server calls the Identity Access HTTP API. It never connects directly to PostgreSQL and never receives routing secrets from the browser.
 
-Build the package from `clients/typescript`:
+## Class-based integration
+
+`identity-access.ts` exposes `IdentityAccessServerConnector`, a server-only holder for `IdentityAccessClient`.
+
+The reusable connector supports password login, local-session validation/logout, OIDC Authorization Code + PKCE, token exchange, refresh-token rotation, server-delegated authorization, and typed administration routes.
+
+Keep password/session/token handling in server-only code.
+
+## Runnable administration host
+
+`examples/nextjs/admin` now contains its own pinned `package.json`, TypeScript/Next.js configuration, root layout, login route, OIDC callback target, HTTP-only cookie lifecycle, and the premium multi-page administration workspace.
+
+From the repository root, start the API first:
 
 ```powershell
-npm test
-npm run typecheck
-npm pack
+dotnet run --project src\IdentityAccess.Api --launch-profile http
 ```
 
-Install the generated archive together with `server-only`:
+Then:
 
 ```powershell
-npm install "<path-to>/identity-access-client-0.5.0.tgz" server-only
+cd examples\nextjs\admin
+Copy-Item .env.local.example .env.local
+# set real registered Identity Access values in .env.local
+npm install --package-lock=false
+npm run dev
 ```
 
-Configure only server-side deployment state:
+Open `http://127.0.0.1:3000/login`.
 
-```text
-IDENTITY_ACCESS_API_BASE_URL=http://127.0.0.1:5080
-```
+The configured server-side authentication client must register `http://127.0.0.1:3000/auth/callback` exactly (or the exact alternate URI configured in `.env.local`) and allow OIDC scope `openid`.
 
-Never expose this through a `NEXT_PUBLIC_` variable.
+## Security boundary
 
-Example:
+The runnable host performs password login, OIDC Authorization Code + PKCE, and token exchange only on the Next.js server. The browser receives only HTTP-only session cookies. Access/refresh/local-session tokens are never passed to Client Components.
 
-```typescript
-const identity = new IdentityAccessServerConnector();
-const info = await identity.client.info();
-```
-
-The connector is class-based. `IdentityAccessClient` supports password login, local-session validation/logout, OIDC Authorization Code + PKCE, token exchange, refresh-token rotation, server-delegated authorization, and the typed administration routes currently exposed by the .NET API. Keep password/session/token handling in server-only code.
-
-## Administration module foundation
-
-A multi-page App Router foundation is available under `examples/nextjs/admin`.
-
-It demonstrates:
-
-- permission-filtered navigation from `IdentityAccessAdminUiBuilder`;
-- Server Components for protected data loading;
-- a Client Component for local presentation filtering;
-- per-request server-only credential handling through a class;
-- separate user, tenant, membership, group, policy, resource-scope, session, and scope-authority pages;
-- no browser exposure of Bearer credentials or routing/storage internals.
-
-The administration example intentionally uses minimal markup. Visual design, responsive layout, forms, dialogs, skeletons, and polished interaction states are a later UI-design increment so presentation can evolve without changing the security boundary.
+Permission-filtered navigation from `IdentityAccessAdminUiBuilder` is presentation only; every protected API call is still authorized server-side.

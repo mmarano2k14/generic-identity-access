@@ -44,6 +44,35 @@ try {
         Pop-Location
     }
 
+    $nextAdminRoot = Join-Path $root "examples/nextjs/admin"
+    $nextBinary = Join-Path $nextAdminRoot "node_modules/.bin/next.cmd"
+    $nextBinaryUnix = Join-Path $nextAdminRoot "node_modules/.bin/next"
+    $hostTypeScriptCompiler = Join-Path $nextAdminRoot "node_modules/typescript/bin/tsc"
+    $hostDependenciesReady = (
+        ((Test-Path $nextBinary -PathType Leaf) -or (Test-Path $nextBinaryUnix -PathType Leaf)) -and
+        (Test-Path $hostTypeScriptCompiler -PathType Leaf)
+    )
+    if (-not $hostDependenciesReady) {
+        Write-Host "Installing pinned Next.js administration host dependencies..."
+        Push-Location $nextAdminRoot
+        try {
+            & npm install --ignore-scripts --no-audit --no-fund --package-lock=false
+            if ($LASTEXITCODE -ne 0) { throw "Next.js administration host dependency restore failed." }
+        } finally {
+            Pop-Location
+        }
+    }
+
+    Push-Location $nextAdminRoot
+    try {
+        & npm run typecheck
+        if ($LASTEXITCODE -ne 0) { throw "Next.js administration host typecheck failed." }
+        & npm run build
+        if ($LASTEXITCODE -ne 0) { throw "Next.js administration host build failed." }
+    } finally {
+        Pop-Location
+    }
+
     & dotnet --info
     if ($LASTEXITCODE -ne 0) { throw "SDK check failed." }
     & dotnet restore IdentityAccess.sln

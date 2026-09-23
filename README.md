@@ -17,15 +17,28 @@ The repository is application-agnostic. Consuming systems define their own resou
 - Persistent whole-segment wildcard capability patterns.
 - Neutral RBAC adapter boundary with external wildcard evaluation.
 - Local password credential management, lockout, opaque sessions, and registered redirect URIs.
-- Class-based TypeScript / Next.js connector with local session authentication, OIDC Authorization Code + PKCE, refresh-token rotation, server-delegated capability evaluation, typed administration, bounded core collection reads, and a multi-page server-first administration module with hardened forms, dialogs, loading/error/empty states, and server-confirmed mutations.
+- Class-based TypeScript / Next.js connector with local session authentication, OIDC Authorization Code + PKCE, refresh-token rotation, server-delegated capability evaluation, typed administration, bounded core collection reads, and a premium multi-page server-first administration control center.
 
 ## Next.js Administration Module
 
 `examples/nextjs/admin` contains a copyable App Router administration structure with separate pages for users, tenants, memberships, groups, policies, resource scopes, sessions, and identity-scope authority. Protected data loading, bearer provenance, validation, and API mutations stay server-side. Client Components are limited to presentation interaction and framework UI state. `IdentityAccessAdminUiBuilder` supplies permission-filtered route metadata but never replaces server-side authorization.
 
-Functional administration now includes server-confirmed create flows, loading/error/empty states, dialogs, path revalidation after successful mutations, and explicit confirmation for destructive session revocation. Framework-required Server Action functions remain thin adapters over the class-based `IdentityAccessAdminMutationService`.
+Functional administration includes server-confirmed create flows, loading/error/empty states, dialogs, path revalidation after successful mutations, explicit confirmation for destructive session revocation, a real `/identity` overview, structured record details, automatic light/dark presentation, and responsive workspace composition. Framework-required Server Action functions remain thin adapters over the class-based `IdentityAccessAdminMutationService`.
 
-All custom administration CSS is owned by one file: `examples/nextjs/admin/styles/identity-access-admin.css`. Do not introduce `*.module.css`, component-local stylesheet files, or inline style objects. The next UI increment will evolve this same stylesheet into the premium visual system without changing connector or authorization contracts.
+All custom administration CSS is owned by one file: `examples/nextjs/admin/styles/identity-access-admin.css`. Do not introduce `*.module.css`, component-local stylesheet files, or inline style objects. The premium design system, dark-mode tokens, responsive rules, and motion/accessibility treatment all remain centralized in this one stylesheet.
+
+The administration example is also a runnable standalone Next.js host. It contains a real `/login` route, server-side password -> OIDC Authorization Code + PKCE exchange, HTTP-only cookie handling, explicit sign-out, and the protected `/identity` workspace. The host keeps the existing class-based connector and authorization boundaries; it does not move Identity Access tokens or authorization decisions into browser code.
+
+Run it after configuring a real registered public authentication/OIDC client:
+
+```powershell
+cd examples\nextjs\admin
+Copy-Item .env.local.example .env.local
+npm install --package-lock=false
+npm run dev
+```
+
+Then open `http://127.0.0.1:3000/login`. The configured redirect URI must exactly match the URI registered by the Identity Access API.
 
 ## Architecture
 

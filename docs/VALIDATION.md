@@ -8,7 +8,7 @@ Run the complete .NET verification from the repository root:
 .\scripts\verify.ps1
 ```
 
-The script performs TypeScript source-consistency, restores the pinned TypeScript development dependency when the local compiler is absent, runs build/tests/typecheck, then performs .NET restore, Release build, and .NET tests with exit-code checking.
+The script performs TypeScript source-consistency, restores the pinned TypeScript development dependency when the local compiler is absent, runs client build/tests/typecheck, restores the pinned runnable Next.js administration-host dependencies when absent, runs host typecheck plus `next build`, then performs .NET restore, Release build, and .NET tests with exit-code checking.
 
 Equivalent commands:
 
@@ -31,9 +31,9 @@ npm run typecheck
 The TypeScript build output under `clients/typescript/dist` is generated content and is not
 part of the source manifest.
 
-The TypeScript source-consistency gate also pins the class-only runtime architecture, typed administration method set, bounded core list APIs, route-aware `IdentityAccessAdminUiBuilder`, explicit tenant authorization context, and the copyable Next.js administration module structure. It rejects reintroduction of a functional client factory, a parallel administration runtime client class, or client-secret support.
+The TypeScript source-consistency gate also pins the class-only runtime architecture, typed administration method set, bounded core list APIs, route-aware `IdentityAccessAdminUiBuilder`, explicit tenant authorization context, and the runnable Next.js administration host. It verifies the class-based server-only login/OIDC lifecycle, HTTP-only cookie posture, pinned host framework versions, single-file CSS ownership, and the absence of `NEXT_PUBLIC_` security configuration. It rejects reintroduction of a functional client factory, a parallel administration runtime client class, or client-secret support.
 
-For the Next.js administration module it additionally requires server-only class-based mutation orchestration, thin Server Action adapters, destructive session-revocation confirmation, loading/error state files, and exactly one custom stylesheet at `examples/nextjs/admin/styles/identity-access-admin.css`. CSS Modules, component-local style blocks, and React inline style objects are rejected.
+For the Next.js administration module it additionally requires server-only class-based mutation orchestration, thin Server Action adapters, destructive session-revocation confirmation, loading/error state files, a real `/identity` overview, structured record-detail presentation, and exactly one custom stylesheet at `examples/nextjs/admin/styles/identity-access-admin.css`. CSS Modules, component-local style blocks, React inline style objects, and raw JSON record dumps are rejected. The central stylesheet must retain premium design tokens, automatic dark-mode support, and reduced-motion handling.
 
 ## External RBAC Compatibility
 

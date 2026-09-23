@@ -2,6 +2,7 @@
 
 import { useActionState, useEffect, useRef, type ReactNode } from "react";
 import { INITIAL_ADMIN_ACTION_STATE, type AdminActionState } from "../contracts/AdminActionState";
+import { AdminIcon } from "./AdminIcon";
 
 export type AdminServerAction = (state: AdminActionState, formData: FormData) => Promise<AdminActionState>;
 
@@ -35,14 +36,16 @@ export function AdminMutationDialog({
   return (
     <div className="ia-admin-action">
       <button className={dangerous ? "ia-button ia-button-danger" : "ia-button ia-button-primary"} type="button" onClick={() => dialog.current?.showModal()}>
+        <AdminIcon name={dangerous ? "lock" : "plus"} />
         {triggerLabel}
       </button>
       {state.status === "success" && state.message ? <p className="ia-feedback ia-feedback-success" role="status">{state.message}</p> : null}
-      <dialog className="ia-dialog" ref={dialog} onCancel={() => dialog.current?.close()}>
+      <dialog className={`ia-dialog ${dangerous ? "ia-dialog-danger" : ""}`} ref={dialog} onCancel={() => dialog.current?.close()}>
         <form action={formAction} className="ia-form">
           <header className="ia-dialog-header">
-            <div>
-              <p className="ia-eyebrow">Identity Access</p>
+            <span className={`ia-dialog-icon ${dangerous ? "ia-dialog-icon-danger" : ""}`}><AdminIcon name={dangerous ? "lock" : "spark"} /></span>
+            <div className="ia-dialog-title">
+              <p className="ia-eyebrow">{dangerous ? "Security-sensitive change" : "Identity Access"}</p>
               <h2>{title}</h2>
               <p>{description}</p>
             </div>
@@ -51,10 +54,13 @@ export function AdminMutationDialog({
           <div className="ia-form-body">{children}</div>
           {state.status === "error" && state.message ? <p className="ia-feedback ia-feedback-error" role="alert">{state.message}</p> : null}
           <footer className="ia-dialog-footer">
-            <button className="ia-button ia-button-secondary" type="button" onClick={() => dialog.current?.close()} disabled={pending}>Cancel</button>
-            <button className={dangerous ? "ia-button ia-button-danger" : "ia-button ia-button-primary"} type="submit" disabled={pending}>
-              {pending ? "Working…" : submitLabel}
-            </button>
+            <span className="ia-dialog-security"><AdminIcon name="shield" />Server authorization is re-evaluated on submit.</span>
+            <div className="ia-dialog-actions">
+              <button className="ia-button ia-button-secondary" type="button" onClick={() => dialog.current?.close()} disabled={pending}>Cancel</button>
+              <button className={dangerous ? "ia-button ia-button-danger" : "ia-button ia-button-primary"} type="submit" disabled={pending}>
+                {pending ? "Working…" : submitLabel}
+              </button>
+            </div>
           </footer>
         </form>
       </dialog>

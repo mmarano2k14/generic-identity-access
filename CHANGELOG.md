@@ -1,3 +1,68 @@
+# 0.42.12 - Runnable Next.js request-time configuration correction
+
+- Corrected protected Next.js host rendering so request-bound cookie state is established before Identity Access runtime environment configuration is read.
+- Prevented `next build` from evaluating `IDENTITY_ACCESS_*` host configuration while prerendering `/` or `/identity` routes that require a real incoming request.
+- Kept runtime configuration server-only and evaluated at request time without introducing `NEXT_PUBLIC_` settings, build-time credentials, static fallback values, or authentication bypasses.
+- Added source-consistency validation that requires request context to be established before the host reads its Bearer cookie name and OIDC runtime configuration.
+- Changed no backend API behavior, PostgreSQL schema, migration sequence, RBAC semantics, OIDC protocol semantics, TypeScript SDK contract, or premium administration design.
+
+# 0.42.11 - Runnable Next.js local package materialization correction
+
+- Corrected production Next.js module resolution for `@identity-access/client` by materializing the local `file:` dependency as a real package directory inside the administration host before typecheck, build, or development startup.
+- Removed reliance on an npm-created symlink or Windows junction that could point outside the Next.js application root and pass TypeScript resolution while failing the production Next.js bundler.
+- Kept local SDK compilation first, then copied the freshly built `dist`, package metadata, and README into the host-owned `node_modules/@identity-access/client` directory.
+- Added explicit post-materialization checks for the package manifest, runtime entry point, and declaration entry point before the host proceeds.
+- Preserved the class-based client, server-only connector, OIDC/session behavior, RBAC semantics, PostgreSQL schema, migration sequence, and premium administration design without functional changes.
+
+# 0.42.10 - Administration source-ownership verification correction
+
+- Corrected Next.js administration source-consistency validation so dependency and generated-output directories are excluded from source-ownership scans.
+- Preserved the single custom CSS invariant by counting only administration source-owned CSS files instead of CSS shipped by `node_modules` or emitted under `.next`, `dist`, coverage, or other generated-output directories.
+- Applied the same source-ownership boundary to TypeScript and TSX scans so third-party package sources and generated artifacts cannot create false consistency failures.
+- Kept `identity-access-admin.css` as the only custom CSS file owned by the administration source tree; CSS Modules, inline style objects, and component-local style blocks remain prohibited.
+- Changed no runtime TypeScript behavior, Next.js UI behavior, backend API contract, PostgreSQL schema, migration sequence, RBAC semantics, OIDC protocol behavior, or premium design-system output.
+
+# 0.42.9 - Runnable Next.js host typecheck correction
+
+- Corrected the shared administration text-input export so the multi-page host resolves the `AdminField` component used by administration forms.
+- Corrected administration mutation error projection to use the public `IdentityAccessClientError.code` contract.
+- Corrected ECMAScript private-method declarations in the host session service by removing incompatible TypeScript accessibility modifiers from `#` private identifiers.
+- Added a host-local class-based `IdentityAccessServerConnector` so the runnable Next.js package resolves `@identity-access/client` from its own package root instead of importing a connector located outside the host.
+- Hardened local client bootstrap to support both linked and copied `file:` dependency layouts and to synchronize the freshly built client artifact when npm materializes a copy.
+- Hardened repository verification to restore host dependencies when either Next.js or the host-local TypeScript compiler is missing.
+- Extended TypeScript source-consistency validation to reject missing `AdminField` exports, obsolete `error.kind` access, invalid `private #method` declarations, external-root host connector imports, and incomplete local-package synchronization.
+- Changed no backend API behavior, PostgreSQL schema, migration sequence, RBAC semantics, OIDC protocol behavior, or premium design-system structure.
+
+# 0.42.8 - Runnable Next.js administration host
+
+- Turned the premium `examples/nextjs/admin` module into a standalone runnable Next.js administration host without changing backend authorization, persistence, routing, or OIDC protocol contracts.
+- Added a pinned Next.js/React host package, strict TypeScript configuration, root App Router layout, root routing, login route, and registered callback target.
+- Added the class-based `IdentityAccessHostSessionService` to orchestrate server-side password login, local-session establishment, OIDC Authorization Code + PKCE, token exchange, HTTP-only cookie persistence, and explicit logout cleanup.
+- Kept login/logout Server Actions as thin Next.js adapters; passwords and raw access, refresh, and local-session tokens never flow into Client Components.
+- Added HTTP-only, SameSite=Lax host cookies with production Secure enforcement; companion refresh/session cookie names derive from the configured bearer-cookie name.
+- Reused the existing `IdentityAccessServerConnector`, `IdentityAccessClient`, `IdentityAuthorizationContext`, and `IdentityAccessAdminUiBuilder` rather than creating a browser-side authentication or authorization implementation.
+- Added a real premium login surface to the single centrally owned `identity-access-admin.css` file; no CSS Module, component stylesheet, style block, or inline style was introduced.
+- Added a sign-out action to the protected administration shell that attempts local-session revocation before clearing host cookies.
+- Added runnable-host environment documentation and kept every Identity Access configuration value server-only with no `NEXT_PUBLIC_` security settings.
+- Extended repository verification to restore pinned host dependencies when absent, run strict host type checking, and execute a production `next build`.
+- Extended TypeScript source-consistency validation to pin the runnable host structure, class-based authentication lifecycle, server-only cookie rules, exact framework versions, and single-file CSS ownership.
+- Changed no PostgreSQL schema or migration sequence; migration `0013` remains the latest migration.
+- Kept MFA, TOTP, recovery codes, and passkeys/WebAuthn outside this increment as later optional work.
+
+# 0.42.7 - Premium Next.js administration design system
+
+- Reworked the copyable Next.js administration module into a premium multi-page security control center without changing backend authorization, routing, OIDC, or persistence contracts.
+- Replaced the `/identity` redirect with a real server-rendered overview containing bounded directory/access snapshots, security posture messaging, and direct workspace navigation.
+- Added reusable presentation components for dependency-free icons, overview metrics, feature navigation, structured record details, and security guidance while keeping protected data loading server-side.
+- Reorganized administration navigation into Directory, Tenant access, and Security sections with a premium protected-context shell and server-rendered workspace chrome.
+- Replaced raw JSON membership and scope-authority output with structured detail cards suitable for production administration screens.
+- Upgraded entity tables with collection hierarchy, local search presentation, status indicators, record identity treatment, and responsive overflow while retaining server-authoritative data and permissions.
+- Upgraded mutation dialogs, loading, error, empty, and destructive-session states with stronger hierarchy and explicit server-authorization messaging.
+- Evolved the single `identity-access-admin.css` owner into a complete centralized design system with light/dark tokens, responsive layouts, focus states, motion restraint, and `prefers-reduced-motion` support.
+- Extended TypeScript source-consistency validation to pin the real overview page, premium shared components, structured details, automatic dark mode, reduced-motion support, single-file CSS ownership, and the prohibition on raw JSON dumps.
+- Changed no PostgreSQL schema, migration sequence, OIDC protocol semantics, refresh-token behavior, external RBAC behavior, multi-database routing behavior, or administration API contract.
+- Kept MFA, TOTP, recovery codes, and passkeys/WebAuthn outside this increment as later optional work.
+
 # 0.42.6 - Next.js administration functional hardening
 
 - Added server-side administration mutations for users, tenants, tenant memberships, groups, policies, resource scopes, identity-scope authority groups/policies, and security-sensitive session revocation.

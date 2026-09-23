@@ -18,5 +18,10 @@ export default async function ResourceScopesPage() {
       <AdminStatusField name="status" />
     </AdminMutationDialog>
   );
-  return <section className="ia-page"><AdminPageHeader title="Resource scopes" description="Application-defined resource hierarchy used by scoped policy bindings." actions={create} /><AdminEntityTable rows={scopes.map((scope) => ({ id: scope.resourceScopeId, name: scope.displayName, status: scope.status === 1 ? "Active" : "Inactive", version: scope.version }))} /></section>;
+  return (
+    <section className="ia-page">
+      <AdminPageHeader eyebrow="Tenant access" badge="Hierarchy" title="Resource scopes" description="Application-defined resources form explicit hierarchies for scoped policy bindings without leaking business types into the identity core." actions={create} />
+      <AdminEntityTable title="Resource hierarchy" description="Browse resource scopes registered by the consuming application in the current tenant." entityLabel="scopes" rows={scopes.map((scope) => ({ id: scope.resourceScopeId, name: scope.displayName, status: scope.status === 1 ? "Active" : "Inactive", version: scope.version }))} />
+    </section>
+  );
 }

@@ -1,6 +1,8 @@
+import { AdminDetailCard } from "../../../components/AdminDetailCard";
 import { AdminField, AdminStatusField } from "../../../components/AdminField";
 import { AdminMutationDialog } from "../../../components/AdminMutationDialog";
 import { AdminPageHeader } from "../../../components/AdminPageHeader";
+import { AdminSecurityBanner } from "../../../components/AdminSecurityBanner";
 import { IdentityAccessAdminRequest } from "../../../server/IdentityAccessAdminRequest";
 import { createScopeAuthorityGroupAction, createScopeAuthorityPolicyAction } from "../actions";
 
@@ -23,20 +25,36 @@ export default async function AuthorityPage({ searchParams }: { readonly searchP
       </AdminMutationDialog>
     </div>
   );
+
+  const groupFields = group ? [
+    { label: "Group ID", value: group.groupId, mono: true },
+    { label: "Display name", value: group.displayName },
+    { label: "Status", value: group.status === 1 ? "Active" : "Inactive" },
+    { label: "Version", value: `v${group.version}` },
+  ] : [];
+  const policyFields = policy ? [
+    { label: "Policy ID", value: policy.policyId, mono: true },
+    { label: "Display name", value: policy.displayName },
+    { label: "Status", value: policy.status === 1 ? "Active" : "Inactive" },
+    { label: "Version", value: `v${policy.version}` },
+  ] : [];
+
   return (
     <section className="ia-page">
-      <AdminPageHeader title="Scope authority" description="Identity-scope administration groups and policies." actions={actions} />
-      <section className="ia-card">
+      <AdminPageHeader eyebrow="Security" badge="Scope global" title="Scope authority" description="Identity-scope administration groups and policies operate without synthetic tenant records." actions={actions} />
+      <section className="ia-card ia-lookup-card">
+        <div className="ia-card-heading"><div><p className="ia-card-kicker">Authority lookup</p><h2>Inspect global administration objects</h2><p>Load a scope authority group, policy, or both by their stable identifiers.</p></div></div>
         <form className="ia-lookup-grid" method="get">
           <AdminField label="Group ID" name="groupId" defaultValue={groupId ?? ""} />
           <AdminField label="Policy ID" name="policyId" defaultValue={policyId ?? ""} />
-          <button className="ia-button ia-button-secondary" type="submit">Lookup</button>
+          <button className="ia-button ia-button-secondary" type="submit">Lookup authority</button>
         </form>
-        <div className="ia-card-grid">
-          <div><h2>Group result</h2>{group ? <pre className="ia-code-panel">{JSON.stringify(group, null, 2)}</pre> : <p className="ia-muted">No group loaded.</p>}</div>
-          <div><h2>Policy result</h2>{policy ? <pre className="ia-code-panel">{JSON.stringify(policy, null, 2)}</pre> : <p className="ia-muted">No policy loaded.</p>}</div>
-        </div>
       </section>
+      <div className="ia-card-grid">
+        <AdminDetailCard title="Authority group" description="Identity-scope administration group." fields={groupFields} emptyMessage={groupId ? "No authority group matched this identifier." : "Enter a group ID to load authority details."} />
+        <AdminDetailCard title="Authority policy" description="Identity-scope administration policy." fields={policyFields} emptyMessage={policyId ? "No authority policy matched this identifier." : "Enter a policy ID to load authority details."} />
+      </div>
+      <AdminSecurityBanner title="Scope authority is deliberately tenant-free." description="These objects govern administration at the identity-scope boundary and do not rely on synthetic tenant identities." />
     </section>
   );
 }

@@ -94,7 +94,7 @@ export class IdentityAccessAdminMutationService {
 
   public static publicErrorMessage(error: unknown): string {
     if (error instanceof IdentityAccessClientError) {
-      switch (error.kind) {
+      switch (error.code) {
         case "unauthenticated": return "Authentication is required. Sign in again and retry.";
         case "forbidden": return "The current administrator is not allowed to perform this operation.";
         case "unavailable": return "Identity Access is temporarily unavailable. No change was confirmed.";

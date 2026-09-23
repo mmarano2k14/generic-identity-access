@@ -1,5 +1,4 @@
 import "server-only";
-import { cookies } from "next/headers";
 import {
   IdentityAccessAdminUiBuilder,
   IdentityAuthorizationContext,
@@ -7,7 +6,8 @@ import {
   type IdentityBearerCredential,
   type IdentityTenantAdministrationContext,
 } from "@identity-access/client";
-import { IdentityAccessServerConnector } from "../../identity-access";
+import { IdentityAccessServerConnector } from "./IdentityAccessServerConnector";
+import { IdentityAccessHostSessionService } from "./IdentityAccessHostSessionService";
 
 /**
  * Per-request server-only adapter for the reusable administration pages.
@@ -37,18 +37,15 @@ export class IdentityAccessAdminRequest {
   public static async fromCurrentRequest(): Promise<IdentityAccessAdminRequest> {
     const identityScopeId = IdentityAccessAdminRequest.requiredEnvironment("IDENTITY_ACCESS_IDENTITY_SCOPE_ID");
     const applicationKey = IdentityAccessAdminRequest.requiredEnvironment("IDENTITY_ACCESS_APPLICATION_KEY");
-    const cookieName = IdentityAccessAdminRequest.requiredEnvironment("IDENTITY_ACCESS_BEARER_COOKIE_NAME");
     const tenantId = process.env.IDENTITY_ACCESS_TENANT_ID?.trim() || undefined;
-    const cookieStore = await cookies();
-    const accessToken = cookieStore.get(cookieName)?.value;
-    if (!accessToken) throw new Error("An authenticated Identity Access bearer session is required.");
+    const hostSession = await IdentityAccessHostSessionService.fromCurrentRequest();
 
     return new IdentityAccessAdminRequest(
-      new IdentityAccessServerConnector(),
+      hostSession.connector,
       identityScopeId,
       applicationKey,
       tenantId,
-      { kind: "bearer", accessToken },
+      hostSession.requireBearerCredential(),
     );
   }
 
