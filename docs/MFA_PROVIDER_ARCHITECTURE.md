@@ -19,7 +19,7 @@ Generic MFA Core
     |                    |                    |
     v                    v                    v
  TOTP provider       Recovery provider    WebAuthn provider
- later release       later release        later releases
+ implemented         implemented         later releases
 ```
 
 ## Core invariants
@@ -161,7 +161,7 @@ The root `IdentityAccessClient` remains a composition facade.
 ```text
 0.43.x  generic MFA foundation + provider registry
 0.44.0  TOTP provider implemented as a separate provider project
-0.45.x  recovery provider
+0.45.0  recovery provider implemented as a separate provider project
 0.46.x  WebAuthn/passkey registration provider work
 0.47.x  WebAuthn/passkey authentication provider work
 0.48.x  integration / administration / security hardening
@@ -172,3 +172,5 @@ The provider releases extend the generic foundation rather than modifying its ow
 ## Concrete provider status
 
 The TOTP provider is documented separately in `TOTP_PROVIDER.md`. Its provider-owned encrypted secret storage and replay state do not alter the generic authenticator schema.
+
+The recovery-code provider is documented in `RECOVERY_PROVIDER.md`. Raw codes are returned only at generation time; only provider-owned SHA-256 hashes and consumption timestamps are persisted.

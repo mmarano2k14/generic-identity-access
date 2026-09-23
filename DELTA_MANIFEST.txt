@@ -1,41 +1,35 @@
 Generic Identity Access delta
-Version: 0.44.0
-Baseline: 0.43.2 GREEN
+Version: 0.45.0
+Baseline: 0.44.0 GREEN
 
 Added files:
-A docs/TOTP_PROVIDER.md
-A scripts/postgresql/verify-totp-provider.ps1
-A scripts/verify-totp-source-consistency.ps1
-A src/IdentityAccess.Infrastructure.PostgreSql/Migrations/0015_totp_provider.sql
-A src/IdentityAccess.Mfa.Totp/ITotpAuthenticationFactorService.cs
-A src/IdentityAccess.Mfa.Totp/ITotpAuthenticatorStore.cs
-A src/IdentityAccess.Mfa.Totp/ITotpSecretProtector.cs
-A src/IdentityAccess.Mfa.Totp/IdentityAccess.Mfa.Totp.csproj
-A src/IdentityAccess.Mfa.Totp/PostgreSqlTotpAuthenticatorStore.cs
-A src/IdentityAccess.Mfa.Totp/Properties/AssemblyInfo.cs
-A src/IdentityAccess.Mfa.Totp/TotpAuthenticationFactorProvider.cs
-A src/IdentityAccess.Mfa.Totp/TotpAuthenticationFactorProviderKey.cs
-A src/IdentityAccess.Mfa.Totp/TotpAuthenticationFactorService.cs
-A src/IdentityAccess.Mfa.Totp/TotpAuthenticatorState.cs
-A src/IdentityAccess.Mfa.Totp/TotpBase32.cs
-A src/IdentityAccess.Mfa.Totp/TotpCodeGenerator.cs
-A src/IdentityAccess.Mfa.Totp/TotpConfirmationResult.cs
-A src/IdentityAccess.Mfa.Totp/TotpEnrollment.cs
-A src/IdentityAccess.Mfa.Totp/TotpProviderOptions.cs
-A src/IdentityAccess.Mfa.Totp/TotpSecretProtector.cs
-A src/IdentityAccess.Mfa.Totp/TotpServiceCollectionExtensions.cs
-A src/IdentityAccess.Mfa.Totp/TotpStoreMutationResult.cs
-A src/IdentityAccess.Mfa.Totp/TotpVerificationResult.cs
-A tests/IdentityAccess.Tests/Mfa/Totp/TotpAuthenticationFactorProviderTests.cs
-A tests/IdentityAccess.Tests/Mfa/Totp/TotpAuthenticationFactorServiceTests.cs
-A tests/IdentityAccess.Tests/Mfa/Totp/TotpBase32Tests.cs
-A tests/IdentityAccess.Tests/Mfa/Totp/TotpCodeGeneratorTests.cs
-A tests/IdentityAccess.Tests/Mfa/Totp/TotpTestRouteResolver.cs
-A tests/IdentityAccess.Tests/Mfa/Totp/TotpTestSecretProtector.cs
-A tests/IdentityAccess.Tests/Mfa/Totp/TotpTestSecurityAuditWriter.cs
-A tests/IdentityAccess.Tests/Mfa/Totp/TotpTestStore.cs
-A tests/IdentityAccess.Tests/Mfa/Totp/TotpTestTimeProvider.cs
-A tests/IdentityAccess.Tests/PostgreSql/PostgreSqlTotpSchemaTests.cs
+A docs/RECOVERY_PROVIDER.md
+A scripts/postgresql/verify-recovery-provider.ps1
+A scripts/verify-recovery-source-consistency.ps1
+A src/IdentityAccess.Infrastructure.PostgreSql/Migrations/0016_recovery_provider.sql
+A src/IdentityAccess.Mfa.Recovery/IRecoveryAuthenticationFactorService.cs
+A src/IdentityAccess.Mfa.Recovery/IRecoveryCodeStore.cs
+A src/IdentityAccess.Mfa.Recovery/IdentityAccess.Mfa.Recovery.csproj
+A src/IdentityAccess.Mfa.Recovery/PostgreSqlRecoveryCodeStore.cs
+A src/IdentityAccess.Mfa.Recovery/Properties/AssemblyInfo.cs
+A src/IdentityAccess.Mfa.Recovery/RecoveryAuthenticationFactorProvider.cs
+A src/IdentityAccess.Mfa.Recovery/RecoveryAuthenticationFactorProviderKey.cs
+A src/IdentityAccess.Mfa.Recovery/RecoveryAuthenticationFactorService.cs
+A src/IdentityAccess.Mfa.Recovery/RecoveryCodeGenerator.cs
+A src/IdentityAccess.Mfa.Recovery/RecoveryCodeProviderOptions.cs
+A src/IdentityAccess.Mfa.Recovery/RecoveryCodeSet.cs
+A src/IdentityAccess.Mfa.Recovery/RecoveryCodeStoreMutationResult.cs
+A src/IdentityAccess.Mfa.Recovery/RecoveryCodeVerificationResult.cs
+A src/IdentityAccess.Mfa.Recovery/RecoveryServiceCollectionExtensions.cs
+A tests/IdentityAccess.Tests/Mfa/Recovery/RecoveryAuthenticationFactorProviderTests.cs
+A tests/IdentityAccess.Tests/Mfa/Recovery/RecoveryAuthenticationFactorServiceTests.cs
+A tests/IdentityAccess.Tests/Mfa/Recovery/RecoveryCodeGeneratorTests.cs
+A tests/IdentityAccess.Tests/Mfa/Recovery/RecoveryTestRouteResolver.cs
+A tests/IdentityAccess.Tests/Mfa/Recovery/RecoveryTestSecurityAuditWriter.cs
+A tests/IdentityAccess.Tests/Mfa/Recovery/RecoveryTestSet.cs
+A tests/IdentityAccess.Tests/Mfa/Recovery/RecoveryTestStore.cs
+A tests/IdentityAccess.Tests/Mfa/Recovery/RecoveryTestTimeProvider.cs
+A tests/IdentityAccess.Tests/PostgreSql/PostgreSqlRecoverySchemaTests.cs
 
 Modified files:
 M CHANGELOG.md
@@ -44,17 +38,16 @@ M IdentityAccess.sln
 M README.md
 M SOURCE_MANIFEST.sha256
 M docs/MFA_PROVIDER_ARCHITECTURE.md
+M docs/PRODUCTION_QUALIFICATION.md
 M docs/VALIDATION.md
-M scripts/verify-mfa-source-consistency.ps1
 M scripts/verify.ps1
 M src/IdentityAccess.Api/IdentityAccess.Api.csproj
 M src/IdentityAccess.Api/Program.cs
 M src/IdentityAccess.Api/appsettings.json
-M src/IdentityAccess.Application/Security/SecurityAuditEventType.cs
-M src/IdentityAccess.Application/Security/SecurityAuditReasonCode.cs
+M tests/IdentityAccess.Tests/Architecture/RepositoryVerificationScriptTests.cs
 M tests/IdentityAccess.Tests/IdentityAccess.Tests.csproj
 
 Deleted files:
 
-Apply this ZIP as an overlay on the confirmed 0.43.2 baseline.
-Run .\scripts\verify.ps1 after overlay. Do not treat 0.44.0 as GREEN until that command succeeds in the target .NET 10 environment.
+Apply this ZIP as an overlay on the confirmed 0.44.0 baseline.
+Run .\scripts\verify.ps1 after overlay. Do not treat 0.45.0 as GREEN until that command succeeds in the target .NET 10 environment.

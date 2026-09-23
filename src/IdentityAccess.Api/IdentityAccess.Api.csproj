@@ -16,6 +16,7 @@
 
   <ItemGroup Label="Providers">
     <ProjectReference Include="../IdentityAccess.Mfa.Totp/IdentityAccess.Mfa.Totp.csproj" />
+    <ProjectReference Include="../IdentityAccess.Mfa.Recovery/IdentityAccess.Mfa.Recovery.csproj" />
   </ItemGroup>
 
   <ItemGroup Label="Infrastructure">

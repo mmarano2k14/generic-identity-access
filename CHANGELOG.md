@@ -1,3 +1,19 @@
+# 0.45.0 - Recovery-code authentication-factor provider
+
+- Added the separate `IdentityAccess.Mfa.Recovery` project while preserving the provider-neutral generic MFA core and the independent TOTP provider.
+- Added cryptographically generated 80-bit recovery codes using a 32-character ambiguity-reduced alphabet and a human-readable `XXXX-XXXX-XXXX-XXXX` presentation.
+- Added one-time code disclosure through `IRecoveryAuthenticationFactorService.GenerateOrReplaceAsync(...)`; no provider operation reads raw recovery codes back from durable storage.
+- Added SHA-256 hash-only persistence in provider-owned `identity_access.recovery_code_sets` and `identity_access.recovery_codes` tables through migration `0016_recovery_provider.sql`.
+- Kept recovery-code hashes, raw codes, and provider payloads out of the generic `user_authenticators` table.
+- Added atomic recovery-set regeneration: the user row is locked, prior active recovery authenticators are revoked, and the replacement set is inserted in one PostgreSQL transaction.
+- Added a provider-specific partial unique index enforcing at most one active recovery-code set per identity-scope/user pair.
+- Added row-lock single-use consumption so concurrent verification of the same code can succeed at most once; later reuse returns a replay outcome.
+- Added recovery provider metadata with Enrollment, Verification, and Recovery capabilities.
+- Reused the provider-neutral MFA semantic-audit categories for enrollment, successful verification, invalid proofs, and replay detection; no recovery-specific audit contract was added to the generic core.
+- Added repository source-consistency validation, PostgreSQL schema validation, provider metadata tests, code-format/hash tests, generation tests, regeneration invalidation tests, and single-use replay tests.
+- Wired the provider into the API host behind `IdentityAccess:Mfa:Recovery`; it remains disabled by default and supports a bounded configurable code count from 6 through 20, defaulting to 10.
+- Did not integrate recovery codes into password login, OIDC token issuance, step-up orchestration, lost-factor administration, or WebAuthn flows in this increment.
+
 # 0.44.0 - TOTP authentication-factor provider
 
 - Added the first concrete MFA provider as the separate `IdentityAccess.Mfa.Totp` project while preserving the provider-neutral generic MFA core.

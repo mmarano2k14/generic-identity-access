@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="../IdentityAccess.Application/IdentityAccess.Application.csproj" />
+    <ProjectReference Include="../IdentityAccess.Domain/IdentityAccess.Domain.csproj" />
+    <ProjectReference Include="../IdentityAccess.Infrastructure.Authentication/IdentityAccess.Infrastructure.Authentication.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+</Project>

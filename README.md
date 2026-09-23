@@ -17,7 +17,7 @@ The repository is application-agnostic. Consuming systems define their own resou
 - Persistent whole-segment wildcard capability patterns.
 - Neutral RBAC adapter boundary with external wildcard evaluation.
 - Local password credential management, lockout, opaque sessions, and registered redirect URIs.
-- Provider-neutral MFA policy and authenticator lifecycle foundation with pluggable authentication-factor providers, including the optional TOTP provider package.
+- Provider-neutral MFA policy and authenticator lifecycle foundation with pluggable authentication-factor providers, including optional TOTP and recovery-code provider packages.
 - Class-composed TypeScript / Next.js connector with separated system, authentication, OIDC, authorization, and administration responsibility classes, bounded core collection reads, and a premium multi-page server-first administration control center.
 
 ## Next.js Administration Module
@@ -85,7 +85,7 @@ Identity, database placement, authentication, authorization, and application res
 
 See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the architectural contracts and invariants.
 
-See [`docs/MFA_PROVIDER_ARCHITECTURE.md`](docs/MFA_PROVIDER_ARCHITECTURE.md) for the generic MFA/provider boundary and [`docs/TOTP_PROVIDER.md`](docs/TOTP_PROVIDER.md) for the concrete TOTP provider.
+See [`docs/MFA_PROVIDER_ARCHITECTURE.md`](docs/MFA_PROVIDER_ARCHITECTURE.md) for the generic MFA/provider boundary, [`docs/TOTP_PROVIDER.md`](docs/TOTP_PROVIDER.md) for TOTP, and [`docs/RECOVERY_PROVIDER.md`](docs/RECOVERY_PROVIDER.md) for recovery codes.
 
 ## Repository Structure
 
@@ -100,6 +100,7 @@ src/
   IdentityAccess.Infrastructure.ConfigurationRouting/
   IdentityAccess.Infrastructure.PostgreSql/
   IdentityAccess.Mfa.Totp/
+  IdentityAccess.Mfa.Recovery/
   IdentityAccess.Rbac/
   IdentityAccess.Rbac.MultiplexedAdapter/
 
@@ -232,7 +233,7 @@ The service currently provides a local authentication foundation with:
 - session validation and logout;
 - registered login and post-logout redirect URIs.
 
-OAuth 2.0 / OpenID Connect Authorization Code + PKCE, rotating refresh tokens, process-pinned multi-key RSA signing-key rotation, and Bearer access-token validation for protected administration APIs are implemented for registered public clients. Bearer authentication revalidates the referenced local session and current active user before entering the existing RBAC pipeline. The provider-neutral MFA policy/authenticator foundation and the optional TOTP enrollment/confirmation/verification provider are implemented. Recovery-code, passkey/WebAuthn, password-login/OIDC MFA enforcement, and step-up flows remain later work.
+OAuth 2.0 / OpenID Connect Authorization Code + PKCE, rotating refresh tokens, process-pinned multi-key RSA signing-key rotation, and Bearer access-token validation for protected administration APIs are implemented for registered public clients. Bearer authentication revalidates the referenced local session and current active user before entering the existing RBAC pipeline. The provider-neutral MFA policy/authenticator foundation, optional TOTP enrollment/confirmation/verification provider, and hash-only single-use recovery-code provider are implemented. Passkey/WebAuthn, password-login/OIDC MFA enforcement, and step-up flows remain later work.
 
 See [`docs/LOCAL_AUTHENTICATION_FOUNDATION.md`](docs/LOCAL_AUTHENTICATION_FOUNDATION.md).
 
@@ -257,6 +258,9 @@ See [`docs/LOCAL_AUTHENTICATION_FOUNDATION.md`](docs/LOCAL_AUTHENTICATION_FOUNDA
 - [`docs/RESOURCE_SCOPE_HIERARCHY.md`](docs/RESOURCE_SCOPE_HIERARCHY.md) — generic resource hierarchy and scoped bindings.
 - [`docs/RBAC_EXTERNAL_ADAPTER.md`](docs/RBAC_EXTERNAL_ADAPTER.md) — external RBAC boundary.
 - [`docs/LOCAL_AUTHENTICATION_FOUNDATION.md`](docs/LOCAL_AUTHENTICATION_FOUNDATION.md) — local authentication and sessions.
+- [`docs/MFA_PROVIDER_ARCHITECTURE.md`](docs/MFA_PROVIDER_ARCHITECTURE.md) — generic MFA/provider ownership boundary.
+- [`docs/TOTP_PROVIDER.md`](docs/TOTP_PROVIDER.md) — TOTP provider security and persistence model.
+- [`docs/RECOVERY_PROVIDER.md`](docs/RECOVERY_PROVIDER.md) — recovery-code generation, hash-only storage, replacement, and single-use consumption.
 - [`docs/CONTROLLER_API_AND_SWAGGER.md`](docs/CONTROLLER_API_AND_SWAGGER.md) — controller and OpenAPI conventions.
 - [`docs/SOURCE_LAYOUT.md`](docs/SOURCE_LAYOUT.md) — C# source conventions.
 - [`docs/VALIDATION.md`](docs/VALIDATION.md) — validation procedures.

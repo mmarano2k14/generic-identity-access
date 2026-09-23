@@ -313,3 +313,18 @@ Remove-Item Env:PGPASSWORD
 Version `0.44.0` adds `scripts/verify-totp-source-consistency.ps1` to the primary repository verification chain. It pins the concrete provider project, RFC 6238 implementation markers, provider-owned migration `0015_totp_provider.sql`, row-lock replay boundary, API host registration, and focused tests.
 
 After applying PostgreSQL migrations, `scripts/postgresql/verify-totp-provider.ps1` checks the provider table, protected-secret storage type, generic-schema separation, and transactional mutation-trigger coverage.
+
+## Recovery-code provider validation
+
+Version `0.45.0` adds `scripts/verify-recovery-source-consistency.ps1` to the primary repository verification chain. The gate pins the separate provider project, high-entropy generator, SHA-256 hash-only persistence, provider-owned migration `0016_recovery_provider.sql`, active-set replacement, row-lock single-use consumption, API host registration, and focused tests.
+
+After applying PostgreSQL migrations, run:
+
+```powershell
+$env:PGPASSWORD = "<password>"
+.\scripts\postgresql\verify-recovery-provider.ps1
+Remove-Item Env:PGPASSWORD
+```
+
+The live schema gate verifies the provider tables, `bytea` hash storage, absence of raw/protected code columns, absence of recovery-specific columns from the generic authenticator table, transactional mutation-trigger coverage, and the one-active-recovery-set partial unique index.
+

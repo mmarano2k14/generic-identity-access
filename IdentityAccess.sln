@@ -26,12 +26,18 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IdentityAccess.Infrastructu
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IdentityAccess.Mfa.Totp", "src\IdentityAccess.Mfa.Totp\IdentityAccess.Mfa.Totp.csproj", "{90197501-4435-5757-A8C0-5511D899293F}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IdentityAccess.Mfa.Recovery", "src\IdentityAccess.Mfa.Recovery\IdentityAccess.Mfa.Recovery.csproj", "{B17ACAF7-B9F1-4D07-BDFB-0E252699BE3F}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{B17ACAF7-B9F1-4D07-BDFB-0E252699BE3F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B17ACAF7-B9F1-4D07-BDFB-0E252699BE3F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B17ACAF7-B9F1-4D07-BDFB-0E252699BE3F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B17ACAF7-B9F1-4D07-BDFB-0E252699BE3F}.Release|Any CPU.Build.0 = Release|Any CPU
 		{90197501-4435-5757-A8C0-5511D899293F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{90197501-4435-5757-A8C0-5511D899293F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{90197501-4435-5757-A8C0-5511D899293F}.Release|Any CPU.ActiveCfg = Release|Any CPU
