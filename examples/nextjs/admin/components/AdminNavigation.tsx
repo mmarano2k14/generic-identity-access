@@ -1,7 +1,7 @@
-import Link from "next/link";
 import type { IdentityAccessAdminUiEntry, IdentityAccessAdminUiSection } from "@identity-access/client";
 import type { AdminIconName } from "./AdminIcon";
 import { AdminIcon } from "./AdminIcon";
+import { AdminNavigationActiveLink } from "./AdminNavigationActiveLink";
 
 const ICONS: Readonly<Record<IdentityAccessAdminUiSection, AdminIconName>> = {
   users: "users",
@@ -23,14 +23,14 @@ function NavigationGroup({ label, entries }: { readonly label: string; readonly 
       <ul className="ia-navigation-list">
         {entries.map((entry) => (
           <li key={entry.section}>
-            <Link className="ia-navigation-link" href={entry.href}>
+            <AdminNavigationActiveLink className="ia-navigation-link" href={entry.href}>
               <span className="ia-navigation-link-icon"><AdminIcon name={ICONS[entry.section]} /></span>
               <span className="ia-navigation-link-copy">
                 <span>{entry.label}</span>
                 <small>{entry.description}</small>
               </span>
               <span className="ia-navigation-link-arrow"><AdminIcon name="arrow" /></span>
-            </Link>
+            </AdminNavigationActiveLink>
           </li>
         ))}
       </ul>
@@ -38,27 +38,27 @@ function NavigationGroup({ label, entries }: { readonly label: string; readonly 
   );
 }
 
-/** Server Component rendering permission-filtered administration navigation. */
-export function AdminNavigation({ entries }: { readonly entries: readonly IdentityAccessAdminUiEntry[] }) {
+/** Server-rendered permission-filtered navigation with client-only active-route decoration. */
+export function AdminNavigation({ entries, mobile = false }: { readonly entries: readonly IdentityAccessAdminUiEntry[]; readonly mobile?: boolean }) {
   const scopeEntries = entries.filter((entry) => !entry.tenantScoped && entry.section !== "mfa" && entry.section !== "sessions" && entry.section !== "scope-authority");
   const tenantEntries = entries.filter((entry) => entry.tenantScoped);
   const securityEntries = entries.filter((entry) => entry.section === "mfa" || entry.section === "sessions" || entry.section === "scope-authority");
 
   return (
-    <nav className="ia-navigation" aria-label="Identity administration">
+    <nav className={`ia-navigation${mobile ? " ia-navigation-mobile-drawer" : ""}`} aria-label={mobile ? "Mobile identity administration" : "Identity administration"}>
       <div className="ia-navigation-top">
-        <Link className="ia-navigation-brand" href="/identity">
+        <AdminNavigationActiveLink className="ia-navigation-brand" href="/identity">
           <span className="ia-navigation-mark" aria-hidden="true"><AdminIcon name="shield" /></span>
           <span className="ia-navigation-brand-copy"><strong>Identity Access</strong><small>Security control center</small></span>
-        </Link>
+        </AdminNavigationActiveLink>
         <div className="ia-navigation-status"><span className="ia-live-dot" aria-hidden="true" />Protected server context</div>
       </div>
 
-      <Link className="ia-navigation-overview" href="/identity">
+      <AdminNavigationActiveLink className="ia-navigation-overview" href="/identity">
         <span className="ia-navigation-link-icon"><AdminIcon name="overview" /></span>
         <span>Overview</span>
         <span className="ia-navigation-link-arrow"><AdminIcon name="arrow" /></span>
-      </Link>
+      </AdminNavigationActiveLink>
 
       <div className="ia-navigation-groups">
         <NavigationGroup label="Directory" entries={scopeEntries} />

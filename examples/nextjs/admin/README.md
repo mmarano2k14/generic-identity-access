@@ -28,6 +28,7 @@ TypeScript  5.8.3
 ```text
 /                  -> redirects to /login or /identity
 /login             -> real server-side Identity Access login
+/recovery          -> recovery-code-backed password replacement
 /auth/callback     -> registered OIDC redirect target; normal host flow captures it server-side
 /identity          -> premium administration overview
 /identity/users
@@ -73,6 +74,8 @@ HTTP-only SameSite=Lax cookies
 The OIDC authorization redirect is handled with `redirect: "manual"` by `IdentityAccessClient`, so the browser normally never navigates through `/auth/callback`. The route exists because the redirect URI must still be an exact registered URI.
 
 `Sign out` attempts to revoke the persisted local session, then clears the local HTTP-only host cookies.
+
+`/recovery` remains pre-authentication and delegates through `IdentityAccessHostSessionService` to the existing recovery-code password replacement contract. It accepts no authenticator identifier from the browser, keeps the recovery proof out of URLs, and redirects back to sign-in only after successful replacement.
 
 ## Configuration
 
@@ -140,10 +143,10 @@ All custom CSS for login and administration lives in exactly one file:
 styles/identity-access-admin.css
 ```
 
-Do not add CSS Modules, per-component stylesheets, `<style>` blocks, or inline style objects. Premium light/dark tokens, responsive behavior, focus states, reduced-motion handling, tables, dialogs, navigation, login, and page composition all evolve inside this same file.
+Do not add CSS Modules, per-component stylesheets, `<style>` blocks, or inline style objects. Premium light/dark tokens, responsive behavior, focus states, reduced-motion handling, tables, dialogs, active/mobile navigation, login, recovery, and page composition all evolve inside this same file.
 
 ## Administration behavior
 
-The protected pages include server-confirmed creation flows, local filtering, loading/error/empty states, security-sensitive session revocation with explicit confirmation, a real overview dashboard, structured detail surfaces, grouped navigation, and premium responsive presentation. Mutation paths are revalidated only after the server confirms success; the UI does not assume optimistic authorization or mutation success.
+The protected pages include server-confirmed creation flows, local filtering, loading/error/empty states, security-sensitive session revocation with explicit confirmation, a real overview dashboard, structured detail surfaces, grouped active-route navigation, compact mobile navigation, and premium responsive presentation. Mutation paths are revalidated only after the server confirms success; the UI does not assume optimistic authorization or mutation success.
 
 UI visibility remains presentation filtering only. The .NET API and external RBAC integration remain the final authorization authority.

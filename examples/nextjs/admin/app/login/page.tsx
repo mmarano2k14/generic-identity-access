@@ -1,7 +1,9 @@
 import { AdminIcon } from "../../components/AdminIcon";
 import { LoginForm } from "./LoginForm";
 
-export default function LoginPage() {
+export default async function LoginPage({ searchParams }: { readonly searchParams: Promise<{ readonly recovered?: string }> }) {
+  const { recovered } = await searchParams;
+
   return (
     <main className="ia-login-shell">
       <section className="ia-login-panel" aria-labelledby="identity-login-heading">
@@ -15,8 +17,13 @@ export default function LoginPage() {
         <div className="ia-login-copy">
           <span className="ia-login-security-mark"><AdminIcon name="lock" /></span>
           <p className="ia-eyebrow">Protected workspace</p>
-          <h1 id="identity-login-heading">Control identity without exposing trust.</h1>
+          <h1 id="identity-login-heading">Security controls with a deliberately small trust surface.</h1>
           <p>Credentials are exchanged server-side through the registered public OIDC client. Browser code never receives access, refresh, or local-session tokens.</p>
+          <div className="ia-auth-trust-list" aria-label="Security architecture">
+            <span><AdminIcon name="check" />Server-owned token exchange</span>
+            <span><AdminIcon name="check" />Session assurance preserved</span>
+            <span><AdminIcon name="check" />RBAC revalidated on protected calls</span>
+          </div>
         </div>
         <div className="ia-login-protocols" aria-label="Authentication properties">
           <span>Authorization Code</span>
@@ -29,8 +36,11 @@ export default function LoginPage() {
         <div className="ia-login-card-header">
           <p className="ia-eyebrow">Administrator sign-in</p>
           <h2>Welcome back</h2>
-          <p>Use a local Identity Access account registered for this administration client.</p>
+          <p>Use an Identity Access account registered for this administration client.</p>
         </div>
+        {recovered === "1" ? (
+          <div className="ia-auth-success" role="status"><AdminIcon name="check" /><span>Your password was replaced and existing sessions were revoked. Sign in with the new password.</span></div>
+        ) : null}
         <LoginForm />
         <p className="ia-login-footnote"><AdminIcon name="shield" /> Authentication remains server-only from password entry through OIDC token exchange.</p>
       </section>

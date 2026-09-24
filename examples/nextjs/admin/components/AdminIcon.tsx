@@ -14,7 +14,13 @@ export type AdminIconName =
   | "shield"
   | "lock"
   | "spark"
-  | "arrow";
+  | "arrow"
+  | "menu"
+  | "eye"
+  | "eye-off"
+  | "key"
+  | "back"
+  | "check";
 
 /** Dependency-free icon set so the copyable administration module has no UI runtime dependency. */
 export function AdminIcon({ name, className = "ia-icon" }: { readonly name: AdminIconName; readonly className?: string }) {
@@ -62,5 +68,17 @@ export function AdminIcon({ name, className = "ia-icon" }: { readonly name: Admi
       return <svg {...common}><path d="M12 3l1.3 4.2L17 9l-3.7 1.8L12 15l-1.3-4.2L7 9l3.7-1.8z"/><path d="M18.5 15l.7 2.3 2.3.7-2.3.7-.7 2.3-.7-2.3-2.3-.7 2.3-.7z"/></svg>;
     case "arrow":
       return <svg {...common}><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg>;
+    case "menu":
+      return <svg {...common}><path d="M4 7h16"/><path d="M4 12h16"/><path d="M4 17h16"/></svg>;
+    case "eye":
+      return <svg {...common}><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6z"/><circle cx="12" cy="12" r="2.5"/></svg>;
+    case "eye-off":
+      return <svg {...common}><path d="M3 3l18 18"/><path d="M10.6 6.2A10.4 10.4 0 0 1 12 6c6 0 9.5 6 9.5 6a17 17 0 0 1-2.3 3"/><path d="M6.2 6.2A17.5 17.5 0 0 0 2.5 12s3.5 6 9.5 6a10 10 0 0 0 3.2-.5"/><path d="M10.4 10.4a2.3 2.3 0 0 0 3.2 3.2"/></svg>;
+    case "key":
+      return <svg {...common}><circle cx="7.5" cy="15.5" r="3.5"/><path d="M10 13l9-9"/><path d="M15 8l3 3"/><path d="M17 6l2 2"/></svg>;
+    case "back":
+      return <svg {...common}><path d="M19 12H5"/><path d="M11 18l-6-6 6-6"/></svg>;
+    case "check":
+      return <svg {...common}><path d="M5 12l4 4 10-10"/></svg>;
   }
 }

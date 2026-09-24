@@ -105,6 +105,20 @@ export class IdentityAccessHostSessionService {
     }
   }
 
+  public async recoverPassword(loginIdentifierValue: string, recoveryCodeValue: string, newPasswordValue: string): Promise<void> {
+    const loginIdentifier = IdentityAccessHostSessionService.requiredInput(loginIdentifierValue, "login identifier", 320);
+    const recoveryCode = IdentityAccessHostSessionService.requiredSecret(recoveryCodeValue, "recovery code", 128);
+    const newPassword = IdentityAccessHostSessionService.requiredSecret(newPasswordValue, "new password", 256);
+    if (newPassword.length < 12) throw new Error("Invalid recovery input: new password must contain at least 12 characters.");
+
+    await this.#connector.client.authentication.recoverPasswordWithCode({
+      clientId: this.#clientId,
+      loginIdentifier,
+      recoveryCode,
+      newPassword,
+    });
+  }
+
   public async signOut(): Promise<void> {
     const session = this.#sessionCredential();
     try {
@@ -114,6 +128,23 @@ export class IdentityAccessHostSessionService {
     } finally {
       this.#clearCookies();
     }
+  }
+
+  public static publicRecoveryErrorMessage(error: unknown): string {
+    if (error instanceof IdentityAccessClientError) {
+      switch (error.code) {
+        case "unavailable":
+        case "timeout":
+        case "transport":
+          return "Identity Access is temporarily unavailable. Please try again.";
+        case "configuration":
+          return "The administration host recovery configuration is incomplete.";
+        default:
+          return "Account recovery was not accepted. Check the recovery proof and try again.";
+      }
+    }
+    if (error instanceof Error && error.message.startsWith("Invalid recovery input:")) return error.message;
+    return "Account recovery could not be completed.";
   }
 
   public static publicLoginErrorMessage(error: unknown): string {

@@ -1,3 +1,22 @@
+# 0.51.1 - Recovery surface stylesheet consistency fix
+
+- Added an explicit `.ia-recovery-shell` rule to the single shared administration stylesheet so the recovery surface satisfies the existing UI source-consistency contract.
+- Preserved the existing recovery page structure, password visibility control, anti-enumeration behavior, server-only recovery action, and single-stylesheet ownership rule.
+- Advanced the repository and runnable administration host version to 0.51.1 without changing backend, API, PostgreSQL, OIDC, MFA, or RBAC contracts.
+
+# 0.51.0 - Administration navigation and account recovery UX foundation
+
+- Started the post-backend UI/UX refinement phase without changing Identity Access authorization, routing, MFA, OIDC, or PostgreSQL contracts.
+- Added active-route presentation for permission-filtered administration navigation using `aria-current`, while keeping navigation visibility server-owned and RBAC enforcement authoritative.
+- Reworked narrow-screen administration chrome so the persistent desktop rail becomes a compact top-bar navigation surface instead of expanding the full navigation above every page.
+- Added a keyboard skip-to-content path and dynamic current-workspace context in the protected administration top bar.
+- Refined the sign-in experience with password visibility control, clearer assurance cues, improved security hierarchy, and a direct account-recovery entry point.
+- Added a public `/recovery` page and Server Action over the existing `recoverPasswordWithCode` contract, with password confirmation and no caller-supplied recovery authenticator identifier.
+- Preserved account-recovery anti-enumeration semantics by mapping invalid account/authenticator/code states to one generic public rejection; recovery proofs and passwords remain outside URLs and client-readable state.
+- Added a post-recovery sign-in confirmation that explains session invalidation without exposing recovery proof details.
+- Expanded the single shared administration stylesheet for active navigation, compact mobile navigation, authentication controls, and recovery surfaces; no additional custom CSS file or UI runtime dependency was introduced.
+- Added `docs/ADMINISTRATION_UI_UX.md` and extended TypeScript source-consistency validation to pin the UI ownership, recovery, accessibility, and server-only security boundaries.
+
 # 0.50.0 - Account recovery and credential security hardening
 
 - Added authenticated self-service password replacement bound to the exact validated local session, current-password reauthentication, and the current trusted database route.

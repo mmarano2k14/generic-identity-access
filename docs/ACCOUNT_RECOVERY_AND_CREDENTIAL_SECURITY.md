@@ -163,3 +163,7 @@ The complete repository gate remains:
 ## Explicit boundary after 0.50.0
 
 `0.50.0` is the final planned backend/security milestone in the current Identity Access foundation sequence. Once it is GREEN, the next planned work is the reusable administration/login/security UI and UX improvement phase. Any defect discovered by the repository gate remains a `0.50.x` corrective patch rather than a new architectural backend milestone.
+
+## Administration host recovery surface added in 0.51.0
+
+The reusable Next.js host now exposes `/recovery` as a presentation layer over the existing recovery-code password replacement contract. The browser supplies only login identifier, recovery code, and replacement password; it does not select an authenticator. Invalid recovery states remain collapsed to the same public rejection, and successful replacement returns the user to sign-in because existing sessions were revoked by the backend transaction.

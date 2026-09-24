@@ -1,62 +1,19 @@
 Generic Identity Access delta
-Version: 0.50.0
-Baseline: 0.49.0 MFA session assurance and OIDC integration GREEN tree
+Version: 0.51.1
+Baseline: 0.51.0 administration navigation and account recovery UX foundation
 
 Added files:
-A docs/ACCOUNT_RECOVERY_AND_CREDENTIAL_SECURITY.md
-A scripts/postgresql/validate-credential-security-hardening.sql
-A scripts/postgresql/verify-credential-security-hardening.ps1
-A scripts/verify-credential-security-source-consistency.ps1
-A src/IdentityAccess.Api/Controllers/RecoveryPasswordResetController.cs
-A src/IdentityAccess.Api/Controllers/RecoveryPasswordResetRequest.cs
-A src/IdentityAccess.Api/Controllers/SelfServiceCredentialsController.cs
-A src/IdentityAccess.Api/Controllers/SelfServicePasswordChangeRequest.cs
-A src/IdentityAccess.Application/Authentication/ISelfServiceCredentialService.cs
-A src/IdentityAccess.Application/Authentication/SelfServiceCredentialService.cs
-A src/IdentityAccess.Application/Authentication/SelfServicePasswordChangeDecision.cs
-A src/IdentityAccess.Infrastructure.PostgreSql/Migrations/0020_credential_security_hardening.sql
-A src/IdentityAccess.Mfa.Recovery/IRecoveryPasswordResetService.cs
-A src/IdentityAccess.Mfa.Recovery/RecoveryPasswordResetDecision.cs
-A src/IdentityAccess.Mfa.Recovery/RecoveryPasswordResetService.cs
-A src/IdentityAccess.Mfa.Recovery/RecoveryPasswordResetStoreResult.cs
-A tests/IdentityAccess.Tests/Authentication/CredentialSecurityHardeningContractTests.cs
 
 Modified files:
 M CHANGELOG.md
 M Directory.Build.props
 M README.md
 M SOURCE_MANIFEST.sha256
-M clients/typescript/src/client/IdentityAccessAuthenticationClient.ts
-M clients/typescript/src/contracts.ts
-M clients/typescript/test/client.test.mjs
-M config/authentication.local.example.json
-M docs/LOCAL_AUTHENTICATION_FOUNDATION.md
-M docs/MFA_PROVIDER_ARCHITECTURE.md
-M docs/RECOVERY_PROVIDER.md
-M docs/SESSION_LIFECYCLE.md
-M docs/VALIDATION.md
-M scripts/verify.ps1
-M src/IdentityAccess.Api/ApiFeatureRegistration.cs
-M src/IdentityAccess.Application/Authentication/AuthenticationOptions.cs
-M src/IdentityAccess.Application/Authentication/CredentialAdministrationService.cs
-M src/IdentityAccess.Application/Security/SecurityAuditEventType.cs
-M src/IdentityAccess.Application/Security/SecurityAuditReasonCode.cs
-M src/IdentityAccess.Infrastructure.Authentication/AuthenticationServiceCollectionExtensions.cs
-M src/IdentityAccess.Infrastructure.PostgreSql/Authentication/PostgreSqlCredentialMutationStore.cs
-M src/IdentityAccess.Mfa.Recovery/IRecoveryCodeStore.cs
-M src/IdentityAccess.Mfa.Recovery/PostgreSqlRecoveryCodeStore.cs
-M src/IdentityAccess.Mfa.Recovery/RecoveryServiceCollectionExtensions.cs
-M tests/IdentityAccess.Tests/Api/RecordRequestValidationMetadataTests.cs
-M tests/IdentityAccess.Tests/Authentication/AuthenticationContractTests.cs
-M tests/IdentityAccess.Tests/Mfa/Recovery/RecoveryTestStore.cs
+M examples/nextjs/admin/package.json
+M examples/nextjs/admin/styles/identity-access-admin.css
 
 Deleted files:
 
-Apply this ZIP as an overlay on the 0.49.0 GREEN tree.
-This increment closes the planned backend/security sequence with authenticated self-service password replacement, recovery-code-backed account recovery, and credential-continuity invalidation.
-Self-service password replacement revalidates the exact local session, current password, trusted route, optimistic credential version, and recent MFA when the current application MFA policy is Required.
-Recovery-code account recovery accepts login identifier + recovery code + replacement password; the server resolves the single active recovery authenticator and does not require its identifier from the caller.
-Successful password replacement revokes active local sessions and unrevoked OIDC refresh tokens; account recovery consumes the recovery code, replaces the password, clears lockout state, and performs both revocations in one PostgreSQL transaction.
-Migration 0020_credential_security_hardening.sql expands the constrained refresh-token revocation reasons with credential_changed and account_recovery.
-Run .\scripts\verify.ps1 after overlay. Do not treat 0.50.0 as GREEN until that command succeeds in the target .NET 10 environment.
-After 0.50.0 is GREEN, the planned next phase is reusable administration/login/security UI and UX refinement; any verification defect remains a 0.50.x corrective patch.
+Apply this ZIP as an overlay on the 0.51.0 tree.
+This corrective increment adds the explicit recovery-shell style required by the existing TypeScript source-consistency gate without changing authentication, recovery, authorization, MFA, OIDC, PostgreSQL, or routing behavior.
+Run .\scripts\verify.ps1 after overlay. Do not treat 0.51.1 as GREEN until that command succeeds in the target environment.

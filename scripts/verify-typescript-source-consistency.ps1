@@ -140,6 +140,8 @@ $requiredNextFiles = @(
     "server/IdentityAccessServerConnector.ts",
     "contracts/AdminActionState.ts",
     "components/AdminNavigation.tsx",
+    "components/AdminNavigationActiveLink.tsx",
+    "components/AdminCurrentSection.tsx",
     "components/AdminIcon.tsx",
     "components/AdminMetricCard.tsx",
     "components/AdminFeatureCard.tsx",
@@ -168,9 +170,13 @@ $requiredNextFiles = @(
     "app/login/page.tsx",
     "app/login/LoginForm.tsx",
     "app/login/actions.ts",
+    "app/recovery/page.tsx",
+    "app/recovery/RecoveryForm.tsx",
+    "app/recovery/actions.ts",
     "app/auth/callback/page.tsx",
     "server/IdentityAccessHostSessionService.ts",
     "contracts/LoginActionState.ts",
+    "contracts/RecoveryActionState.ts",
     "styles/identity-access-admin.css",
     "package.json",
     "tsconfig.json",
@@ -235,6 +241,12 @@ $hostSession = Get-Content (Join-Path $nextAdmin "server/IdentityAccessHostSessi
 $hostConnector = Get-Content (Join-Path $nextAdmin "server/IdentityAccessServerConnector.ts") -Raw
 $loginActions = Get-Content (Join-Path $nextAdmin "app/login/actions.ts") -Raw
 $loginPage = Get-Content (Join-Path $nextAdmin "app/login/page.tsx") -Raw
+$loginForm = Get-Content (Join-Path $nextAdmin "app/login/LoginForm.tsx") -Raw
+$recoveryActions = Get-Content (Join-Path $nextAdmin "app/recovery/actions.ts") -Raw
+$recoveryPage = Get-Content (Join-Path $nextAdmin "app/recovery/page.tsx") -Raw
+$recoveryForm = Get-Content (Join-Path $nextAdmin "app/recovery/RecoveryForm.tsx") -Raw
+$activeNavigation = Get-Content (Join-Path $nextAdmin "components/AdminNavigationActiveLink.tsx") -Raw
+$currentSection = Get-Content (Join-Path $nextAdmin "components/AdminCurrentSection.tsx") -Raw
 $hostPackage = Get-Content (Join-Path $nextAdmin "package.json") -Raw
 $hostEnvironment = Get-Content (Join-Path $nextAdmin ".env.local.example") -Raw
 if ($rootLayout -notmatch 'styles/identity-access-admin\.css') { throw "The runnable host root layout must import the single shared CSS file." }
@@ -252,6 +264,17 @@ if ($hostSession -notmatch 'httpOnly\s*:\s*true' -or $hostSession -notmatch 'sam
 if ($hostSession -match 'NEXT_PUBLIC_') { throw "Runnable host security configuration must remain server-only." }
 if ($loginActions -notmatch '^"use server";' -or $loginActions -match '\.client\.') { throw "Login/logout Server Actions must remain thin adapters over IdentityAccessHostSessionService." }
 if ($loginPage -notmatch 'LoginForm') { throw "Runnable host login page must render the dedicated login form." }
+if ($loginForm -notmatch 'href="/recovery"' -or $loginForm -notmatch 'aria-pressed') { throw "Runnable host sign-in must expose account recovery and an accessible password visibility control." }
+if ($recoveryActions -notmatch '^"use server";' -or $recoveryActions -match '\.client\.' -or $recoveryActions -notmatch 'IdentityAccessHostSessionService') { throw "Recovery Server Action must remain a thin adapter over IdentityAccessHostSessionService." }
+if ($recoveryPage -notmatch 'RecoveryForm') { throw "Runnable host recovery page must render the dedicated recovery form." }
+foreach ($field in @("loginIdentifier", "recoveryCode", "newPassword", "confirmPassword")) {
+    if ($recoveryForm -notmatch [regex]::Escape($field)) { throw "Recovery form is missing $field." }
+}
+if ($recoveryForm -match 'authenticatorId') { throw "Public account recovery must not ask the browser for a recovery authenticator identifier." }
+if ($hostSession -notmatch '\.client\.authentication\.recoverPasswordWithCode') { throw "Runnable host account recovery must use the composed authentication client recovery contract." }
+if ($activeNavigation -notmatch 'usePathname' -or $activeNavigation -notmatch 'aria-current') { throw "Administration navigation must expose client-only active-route state with aria-current." }
+if ($currentSection -notmatch 'usePathname') { throw "Administration top-bar context must resolve the current visible workspace from the current route." }
+if ($layout -notmatch 'AdminCurrentSection' -or $layout -notmatch 'ia-mobile-navigation' -or $layout -notmatch 'id="identity-main"') { throw "Protected administration layout must retain current-workspace context, compact mobile navigation, and a skip target." }
 if ($hostPackage -notmatch '"@identity-access/client"\s*:\s*"file:\.\./\.\./\.\./clients/typescript"') { throw "Runnable host must consume the local class-based TypeScript client package." }
 if ($hostPackage -notmatch '"next"\s*:\s*"16\.3\.6"') { throw "Runnable host must pin the qualified Next.js Active LTS security release." }
 if ($hostPackage -notmatch '"react"\s*:\s*"19\.3\.0"' -or $hostPackage -notmatch '"react-dom"\s*:\s*"19\.3\.0"') { throw "Runnable host React runtime versions are not pinned." }
@@ -273,6 +296,8 @@ if ($adminCss -notmatch '--ia-accent' -or $adminCss -notmatch '\.ia-overview-her
 if ($adminCss -notmatch '@media\s*\(prefers-color-scheme:\s*dark\)') { throw "The premium administration stylesheet must retain automatic dark-mode support." }
 if ($adminCss -notmatch '@media\s*\(prefers-reduced-motion:\s*reduce\)') { throw "The premium administration stylesheet must respect reduced-motion preferences." }
 if ($adminCss -notmatch '\.ia-login-shell' -or $adminCss -notmatch '\.ia-login-card') { throw "The runnable administration host login surface is missing from the single shared stylesheet." }
+if ($adminCss -notmatch '\.ia-navigation-link-active' -or $adminCss -notmatch '\.ia-mobile-navigation-popover') { throw "Administration active-route and compact mobile navigation styles are missing." }
+if ($adminCss -notmatch '\.ia-recovery-shell' -or $adminCss -notmatch '\.ia-password-toggle') { throw "Authentication recovery and password-control styles are missing from the single shared stylesheet." }
 $cssFiles = @(Get-NextAdminOwnedFiles -Extensions @(".css"))
 if ($cssFiles.Count -ne 1) { throw "Next.js administration must own exactly one CSS file; found $($cssFiles.Count)." }
 if ($cssFiles[0].Name -ne 'identity-access-admin.css') { throw "The single administration CSS file must be identity-access-admin.css." }

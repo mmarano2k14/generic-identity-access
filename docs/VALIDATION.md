@@ -410,3 +410,20 @@ The complete repository gate remains:
 
 `0.50.0` is the final planned backend/security milestone in the current sequence. Once GREEN, the next planned work is UI/UX refinement. Any validation defect is corrected as `0.50.x` before that transition.
 
+
+## 0.51.0 administration UI/UX refinement gate
+
+Version `0.51.0` keeps the UI refinement phase inside the existing TypeScript/Next.js verification chain rather than creating a parallel frontend gate.
+
+`scripts/verify-typescript-source-consistency.ps1` now additionally requires:
+
+- active-route navigation through `AdminNavigationActiveLink` with `aria-current`;
+- current-workspace top-bar context through `AdminCurrentSection`;
+- compact mobile navigation in the protected administration layout;
+- a skip target for keyboard navigation;
+- a dedicated public `/recovery` page, recovery form, and Server Action;
+- host-side use of `IdentityAccessAuthenticationClient.recoverPasswordWithCode(...)`;
+- no browser-supplied recovery authenticator identifier;
+- the single shared stylesheet to own active-route, mobile-navigation, password-visibility, and recovery presentation.
+
+The normal `scripts/verify.ps1` path continues to run the TypeScript source-consistency gate, client tests/typecheck, and a production Next.js build. No frontend-only success should be described as repository GREEN until the complete verification command succeeds.
