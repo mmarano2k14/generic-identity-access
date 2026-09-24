@@ -44,6 +44,7 @@ namespace IdentityAccess.Mfa.Totp
             RequireService<IIdentityDatabaseConnectionFactory>(services);
             RequireService<ISecurityAuditWriter>(services);
             RequireService<IAuthenticationFactorProviderRegistry>(services);
+            RequireService<IMfaProviderPolicyGuard>(services);
             RequireService<TimeProvider>(services);
 
             var issuer = section["Issuer"];

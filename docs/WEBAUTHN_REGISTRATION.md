@@ -2,7 +2,7 @@
 
 Version `0.46.0` adds the registration half of the WebAuthn provider as the separate `IdentityAccess.Mfa.WebAuthn` project.
 
-The generic MFA core remains provider-neutral. WebAuthn registration owns its challenge ceremony, protocol validation and public credential persistence. Authentication/assertion verification is intentionally deferred to the next increment.
+The generic MFA core remains provider-neutral. WebAuthn registration owns its challenge ceremony, protocol validation and public credential persistence. Authentication/assertion verification is implemented separately and documented in `WEBAUTHN_AUTHENTICATION.md`.
 
 ## Initial registration profile
 
@@ -86,8 +86,6 @@ Allowed origins must use HTTPS, except loopback/localhost HTTP origins for local
 
 This increment does not implement:
 
-- `navigator.credentials.get()` assertion verification;
-- assertion signature verification;
 - signature-counter mutation after authentication;
 - password-login or OIDC MFA orchestration;
 - step-up authentication;

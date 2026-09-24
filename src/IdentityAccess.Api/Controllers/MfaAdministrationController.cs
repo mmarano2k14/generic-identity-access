@@ -131,6 +131,27 @@ namespace IdentityAccess.Api.Controllers
             return Ok(records.Select(UserAuthenticatorResponse.From).ToArray());
         }
 
+        /// <summary>Gets effective MFA readiness for one user under the current application policy.</summary>
+        [HttpGet("users/{userId:guid}/state")]
+        [RequireAdministrationCapability(
+            IdentityAccessAdministrationCapabilities.Resource,
+            IdentityAccessAdministrationCapabilities.MfaAuthenticators,
+            IdentityAccessAdministrationCapabilities.Read)]
+        public async Task<ActionResult<MfaUserSecurityStateResponse>> GetUserSecurityState(
+            Guid identityScopeId,
+            string applicationKey,
+            Guid userId,
+            CancellationToken cancellationToken)
+        {
+            if (!feature.TryGet(out var service)) return ApiProblems.MfaAdministrationUnavailable();
+            var state = await service.GetUserSecurityStateAsync(
+                identityScopeId,
+                new ApplicationKey(applicationKey),
+                userId,
+                cancellationToken);
+            return Ok(MfaUserSecurityStateResponse.From(state));
+        }
+
         /// <summary>Revokes one authenticator without deleting provider-specific forensic state.</summary>
         [HttpDelete("users/{userId:guid}/authenticators/{authenticatorId:guid}")]
         [RequireAdministrationCapability(
@@ -148,7 +169,44 @@ namespace IdentityAccess.Api.Controllers
             if (!feature.TryGet(out var service)) return ApiProblems.MfaAdministrationUnavailable();
             if (expectedVersion < 1) return ApiProblems.BadRequest("Expected version must be positive.");
 
-            var updated = await service.RevokeAuthenticatorAsync(
+            try
+            {
+                var updated = await service.RevokeAuthenticatorAsync(
+                    identityScopeId,
+                    new ApplicationKey(applicationKey),
+                    userId,
+                    authenticatorId,
+                    expectedVersion,
+                    cancellationToken);
+                return updated is null ? NotFound() : Ok(UserAuthenticatorResponse.From(updated));
+            }
+            catch (MfaPolicyComplianceException)
+            {
+                return ApiProblems.Result(
+                    StatusCodes.Status409Conflict,
+                    "Required MFA factor would be removed",
+                    "Enroll another allowed verification factor before revoking this authenticator, or use the explicit account-recovery revocation path.");
+            }
+        }
+
+        /// <summary>Revokes a lost factor explicitly for account recovery and revokes the user's active sessions.</summary>
+        [HttpPost("users/{userId:guid}/authenticators/{authenticatorId:guid}/recovery-revoke")]
+        [RequireAdministrationCapability(
+            IdentityAccessAdministrationCapabilities.Resource,
+            IdentityAccessAdministrationCapabilities.MfaAuthenticators,
+            IdentityAccessAdministrationCapabilities.Write)]
+        public async Task<ActionResult<UserAuthenticatorResponse>> RevokeAuthenticatorForRecovery(
+            Guid identityScopeId,
+            string applicationKey,
+            Guid userId,
+            Guid authenticatorId,
+            [FromQuery] long expectedVersion,
+            CancellationToken cancellationToken)
+        {
+            if (!feature.TryGet(out var service)) return ApiProblems.MfaAdministrationUnavailable();
+            if (expectedVersion < 1) return ApiProblems.BadRequest("Expected version must be positive.");
+
+            var updated = await service.RevokeAuthenticatorForRecoveryAsync(
                 identityScopeId,
                 new ApplicationKey(applicationKey),
                 userId,

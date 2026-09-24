@@ -36,5 +36,49 @@ namespace IdentityAccess.Mfa.WebAuthn
             WebAuthnCredentialMaterial credential,
             DateTimeOffset completedAt,
             CancellationToken cancellationToken);
+
+        Task CreateAuthenticationChallengeAsync(
+            ResolvedDatabaseRoute route,
+            Guid identityScopeId,
+            Guid userId,
+            Guid challengeId,
+            ApplicationKey application,
+            byte[] challengeHash,
+            DateTimeOffset createdAt,
+            DateTimeOffset expiresAt,
+            CancellationToken cancellationToken);
+
+        Task<WebAuthnAuthenticationChallengeState?> GetAuthenticationChallengeAsync(
+            ResolvedDatabaseRoute route,
+            Guid identityScopeId,
+            Guid userId,
+            Guid challengeId,
+            CancellationToken cancellationToken);
+
+        Task<IReadOnlyList<WebAuthnCredentialRecord>> ListActiveCredentialsAsync(
+            ResolvedDatabaseRoute route,
+            Guid identityScopeId,
+            Guid userId,
+            CancellationToken cancellationToken);
+
+        Task<WebAuthnCredentialRecord?> GetActiveCredentialAsync(
+            ResolvedDatabaseRoute route,
+            Guid identityScopeId,
+            Guid userId,
+            byte[] credentialId,
+            CancellationToken cancellationToken);
+
+        Task<WebAuthnAuthenticationStoreResult> TryCompleteAuthenticationAsync(
+            ResolvedDatabaseRoute route,
+            Guid identityScopeId,
+            Guid userId,
+            Guid challengeId,
+            ApplicationKey application,
+            byte[] credentialId,
+            long assertedSignCount,
+            bool assertedBackupEligible,
+            bool assertedBackupState,
+            DateTimeOffset completedAt,
+            CancellationToken cancellationToken);
     }
 }

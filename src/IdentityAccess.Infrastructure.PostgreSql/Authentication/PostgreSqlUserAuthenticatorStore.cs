@@ -105,6 +105,122 @@ namespace IdentityAccess.Infrastructure.PostgreSql.Authentication
         }
 
         /// <inheritdoc />
+        public async Task<UserAuthenticatorRevocationResult> RevokeAsync(
+            ResolvedDatabaseRoute route,
+            Guid identityScopeId,
+            Guid userId,
+            Guid authenticatorId,
+            long expectedVersion,
+            IReadOnlyCollection<AuthenticationFactorProviderKey> eligibleRequiredFactorProviders,
+            bool requireRemainingRequiredFactor,
+            DateTimeOffset revokedAt,
+            CancellationToken cancellationToken)
+        {
+            PostgreSqlDirectoryGuard.EnsureScope(route, identityScopeId);
+            PostgreSqlDirectoryGuard.EnsureVersion(expectedVersion);
+            if (userId == Guid.Empty) throw new ArgumentException("User identifier is required.", nameof(userId));
+            if (authenticatorId == Guid.Empty)
+                throw new ArgumentException("Authenticator identifier is required.", nameof(authenticatorId));
+            ArgumentNullException.ThrowIfNull(eligibleRequiredFactorProviders);
+
+            var eligible = eligibleRequiredFactorProviders
+                .Select(provider => provider ?? throw new ArgumentException(
+                    "Eligible provider keys cannot contain null values.",
+                    nameof(eligibleRequiredFactorProviders)))
+                .ToHashSet();
+
+            await using var connection = (NpgsqlConnection)await connectionFactory
+                .OpenAsync(route, cancellationToken)
+                .ConfigureAwait(false);
+            await using var transaction = await connection
+                .BeginTransactionAsync(cancellationToken)
+                .ConfigureAwait(false);
+
+            var records = new List<VersionedRecord<UserAuthenticator>>();
+            await using (var read = new NpgsqlCommand("""
+                SELECT authenticator_id, provider_key, display_name, status, row_version,
+                       created_at, confirmed_at, last_used_at, revoked_at
+                FROM identity_access.user_authenticators
+                WHERE identity_scope_id = @scope
+                  AND user_id = @user_id
+                ORDER BY authenticator_id
+                FOR UPDATE;
+                """, connection, transaction))
+            {
+                read.Parameters.AddWithValue("scope", identityScopeId);
+                read.Parameters.AddWithValue("user_id", userId);
+
+                await using var reader = await read.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
+                while (await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
+                    records.Add(Read(reader, identityScopeId, userId));
+            }
+
+            var existing = records.SingleOrDefault(record => record.Value.AuthenticatorId == authenticatorId);
+            if (existing is null)
+                return new UserAuthenticatorRevocationResult(UserAuthenticatorRevocationDecision.NotFound);
+
+            if (existing.Version != expectedVersion)
+                return new UserAuthenticatorRevocationResult(UserAuthenticatorRevocationDecision.VersionConflict);
+
+            if (existing.Value.Status == UserAuthenticatorStatus.Revoked)
+                return new UserAuthenticatorRevocationResult(UserAuthenticatorRevocationDecision.Succeeded, existing);
+
+            if (requireRemainingRequiredFactor &&
+                existing.Value.Status == UserAuthenticatorStatus.Active &&
+                eligible.Contains(existing.Value.Provider) &&
+                !records.Any(record =>
+                    record.Value.AuthenticatorId != authenticatorId &&
+                    record.Value.Status == UserAuthenticatorStatus.Active &&
+                    eligible.Contains(record.Value.Provider)))
+            {
+                return new UserAuthenticatorRevocationResult(
+                    UserAuthenticatorRevocationDecision.WouldViolateRequiredMfa,
+                    existing);
+            }
+
+            var value = existing.Value;
+            var revoked = new UserAuthenticator(
+                value.IdentityScopeId,
+                value.AuthenticatorId,
+                value.UserId,
+                value.Provider,
+                value.DisplayName,
+                UserAuthenticatorStatus.Revoked,
+                value.CreatedAt,
+                value.ConfirmedAt,
+                value.LastUsedAt,
+                revokedAt);
+
+            await using var update = new NpgsqlCommand("""
+                UPDATE identity_access.user_authenticators
+                SET status = @status,
+                    revoked_at = @revoked_at,
+                    row_version = row_version + 1,
+                    updated_at = transaction_timestamp()
+                WHERE identity_scope_id = @scope
+                  AND authenticator_id = @authenticator_id
+                  AND user_id = @user_id
+                  AND row_version = @expected_version
+                RETURNING row_version;
+                """, connection, transaction);
+            update.Parameters.AddWithValue("status", (short)UserAuthenticatorStatus.Revoked);
+            update.Parameters.AddWithValue("revoked_at", revokedAt);
+            update.Parameters.AddWithValue("scope", identityScopeId);
+            update.Parameters.AddWithValue("authenticator_id", authenticatorId);
+            update.Parameters.AddWithValue("user_id", userId);
+            update.Parameters.AddWithValue("expected_version", expectedVersion);
+
+            var version = await update.ExecuteScalarAsync(cancellationToken).ConfigureAwait(false);
+            if (version is null or DBNull)
+                return new UserAuthenticatorRevocationResult(UserAuthenticatorRevocationDecision.VersionConflict);
+
+            await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
+            return new UserAuthenticatorRevocationResult(
+                UserAuthenticatorRevocationDecision.Succeeded,
+                new VersionedRecord<UserAuthenticator>(revoked, (long)version));
+        }
+
+        /// <inheritdoc />
         public async Task<VersionedRecord<UserAuthenticator>> UpdateAsync(
             ResolvedDatabaseRoute route,
             UserAuthenticator authenticator,

@@ -134,6 +134,7 @@ namespace IdentityAccess.Tests.Mfa.WebAuthn
                 new WebAuthnTestRouteResolver(),
                 store,
                 audit,
+                new IdentityAccess.Tests.Mfa.AllowingMfaProviderPolicyGuard(),
                 time,
                 new WebAuthnProviderOptions(
                     "example.test",

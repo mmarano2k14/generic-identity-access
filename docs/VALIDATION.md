@@ -342,3 +342,30 @@ Remove-Item Env:PGPASSWORD
 ```
 
 The live schema gate verifies the registration-challenge and credential tables, `bytea` challenge-hash/public-key storage, absence of private-key columns, generic authenticator separation, and transactional mutation-trigger coverage.
+
+## WebAuthn authentication provider validation
+
+Version `0.47.0` adds `scripts/verify-webauthn-authentication-source-consistency.ps1` to the primary repository verification chain. The gate pins `webauthn.get` client-data validation, ES256 assertion-signature verification, RP ID and UP/UV checks, stable backup eligibility, signature-counter replay handling, atomic challenge consumption, provider Verification capability, migration `0018_webauthn_authentication.sql`, and focused tests.
+
+After applying PostgreSQL migrations, run:
+
+```powershell
+$env:PGPASSWORD = "<password>"
+.\scripts\postgresql\verify-webauthn-authentication.ps1
+Remove-Item Env:PGPASSWORD
+```
+
+The live schema gate verifies hash-only authentication-challenge persistence, user binding, mutation-ledger coverage, and absence of raw challenge or private-key material.
+
+
+## MFA integration and hardening validation
+
+Version `0.48.0` adds `scripts/verify-mfa-integration-source-consistency.ps1` to the primary repository verification chain. The gate pins provider-policy enforcement across TOTP, recovery codes and both WebAuthn ceremonies, provider-neutral effective user MFA state, row-locked normal authenticator revocation, explicit lost-factor recovery revocation with session invalidation, API/TypeScript surfaces, Next.js state inspection, and focused regression tests.
+
+Run the complete gate with:
+
+```powershell
+.\scripts\verify.ps1
+```
+
+The repository does not claim session-level MFA assurance, password-login step-up, or OIDC MFA/ACR enforcement in this increment. Those protocol interactions require a separately validated session-assurance contract.

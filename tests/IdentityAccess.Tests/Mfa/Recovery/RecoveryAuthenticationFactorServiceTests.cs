@@ -151,6 +151,7 @@ namespace IdentityAccess.Tests.Mfa.Recovery
                 new RecoveryTestRouteResolver(),
                 store,
                 audit,
+                new IdentityAccess.Tests.Mfa.AllowingMfaProviderPolicyGuard(),
                 time ?? new RecoveryTestTimeProvider(DateTimeOffset.Parse("2026-09-23T12:00:00Z")),
                 new RecoveryCodeProviderOptions(10));
     }

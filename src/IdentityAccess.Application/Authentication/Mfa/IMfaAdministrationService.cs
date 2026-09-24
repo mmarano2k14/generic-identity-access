@@ -39,8 +39,25 @@ namespace IdentityAccess.Application.Authentication.Mfa
             Guid userId,
             CancellationToken cancellationToken);
 
+
+        /// <summary>Gets the effective provider-neutral MFA state for one user.</summary>
+        Task<MfaUserSecurityState> GetUserSecurityStateAsync(
+            Guid identityScopeId,
+            ApplicationKey application,
+            Guid userId,
+            CancellationToken cancellationToken);
+
         /// <summary>Revokes one authenticator metadata record without touching provider-specific material.</summary>
         Task<VersionedRecord<UserAuthenticator>?> RevokeAuthenticatorAsync(
+            Guid identityScopeId,
+            ApplicationKey application,
+            Guid userId,
+            Guid authenticatorId,
+            long expectedVersion,
+            CancellationToken cancellationToken);
+
+        /// <summary>Revokes a lost authenticator explicitly for account recovery and revokes active user sessions.</summary>
+        Task<VersionedRecord<UserAuthenticator>?> RevokeAuthenticatorForRecoveryAsync(
             Guid identityScopeId,
             ApplicationKey application,
             Guid userId,

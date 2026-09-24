@@ -345,6 +345,7 @@ namespace IdentityAccess.Infrastructure.Authentication
 
             if (hasPolicyStore)
             {
+                services.AddSingleton<IMfaProviderPolicyGuard, MfaProviderPolicyGuard>();
                 services.AddSingleton<IMfaAdministrationService, MfaAdministrationService>();
             }
         }

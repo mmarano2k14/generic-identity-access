@@ -8,10 +8,10 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace IdentityAccess.Mfa.WebAuthn
 {
-    /// <summary>Registers the WebAuthn registration provider from trusted server configuration.</summary>
+    /// <summary>Registers the WebAuthn provider from trusted server configuration.</summary>
     public static class WebAuthnServiceCollectionExtensions
     {
-        /// <summary>Adds WebAuthn registration only when the provider is explicitly enabled.</summary>
+        /// <summary>Adds WebAuthn registration and assertion verification only when the provider is explicitly enabled.</summary>
         public static IServiceCollection AddIdentityAccessWebAuthnProvider(
             this IServiceCollection services,
             IConfigurationSection section)
@@ -46,6 +46,7 @@ namespace IdentityAccess.Mfa.WebAuthn
             RequireService<IIdentityDatabaseConnectionFactory>(services);
             RequireService<ISecurityAuditWriter>(services);
             RequireService<IAuthenticationFactorProviderRegistry>(services);
+            RequireService<IMfaProviderPolicyGuard>(services);
             RequireService<TimeProvider>(services);
 
             var rpId = section["RelyingPartyId"];
@@ -68,6 +69,7 @@ namespace IdentityAccess.Mfa.WebAuthn
             services.AddSingleton(options);
             services.AddSingleton<IWebAuthnCredentialStore, PostgreSqlWebAuthnCredentialStore>();
             services.AddSingleton<IWebAuthnRegistrationService, WebAuthnRegistrationService>();
+            services.AddSingleton<IWebAuthnAuthenticationService, WebAuthnAuthenticationService>();
             services.AddIdentityAccessAuthenticationFactorProvider<WebAuthnAuthenticationFactorProvider>();
             return services;
         }

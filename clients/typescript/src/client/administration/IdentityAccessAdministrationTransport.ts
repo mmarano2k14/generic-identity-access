@@ -39,6 +39,24 @@ export class IdentityAccessAdministrationTransport {
     return this.#transport.requestJson(path, this.jsonOptions("POST", context, body, signal, [201]), decode);
   }
 
+  public async postAction<T>(
+    path: string,
+    context: IdentityAdministrationContext,
+    decode: (body: unknown, status: number) => T,
+    signal?: AbortSignal,
+  ): Promise<T> {
+    return this.#transport.requestJson(
+      path,
+      {
+        method: "POST",
+        acceptedStatuses: [200],
+        headers: IdentityAccessPathBuilder.credentialHeaders(context.credential),
+        ...(signal === undefined ? {} : { signal }),
+      },
+      decode,
+    );
+  }
+
   public async put<T>(
     path: string,
     context: IdentityAdministrationContext,

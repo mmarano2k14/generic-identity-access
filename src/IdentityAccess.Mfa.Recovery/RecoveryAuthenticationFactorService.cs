@@ -1,4 +1,5 @@
 using System.Security.Cryptography;
+using IdentityAccess.Application.Authentication.Mfa;
 using IdentityAccess.Application.Routing;
 using IdentityAccess.Application.Security;
 using IdentityAccess.Domain;
@@ -11,6 +12,7 @@ namespace IdentityAccess.Mfa.Recovery
         private readonly IDatabaseRouteResolver _routeResolver;
         private readonly IRecoveryCodeStore _store;
         private readonly ISecurityAuditWriter _auditWriter;
+        private readonly IMfaProviderPolicyGuard _policyGuard;
         private readonly TimeProvider _timeProvider;
         private readonly RecoveryCodeProviderOptions _options;
 
@@ -18,18 +20,21 @@ namespace IdentityAccess.Mfa.Recovery
             IDatabaseRouteResolver routeResolver,
             IRecoveryCodeStore store,
             ISecurityAuditWriter auditWriter,
+            IMfaProviderPolicyGuard policyGuard,
             TimeProvider timeProvider,
             RecoveryCodeProviderOptions options)
         {
             ArgumentNullException.ThrowIfNull(routeResolver);
             ArgumentNullException.ThrowIfNull(store);
             ArgumentNullException.ThrowIfNull(auditWriter);
+            ArgumentNullException.ThrowIfNull(policyGuard);
             ArgumentNullException.ThrowIfNull(timeProvider);
             ArgumentNullException.ThrowIfNull(options);
 
             _routeResolver = routeResolver;
             _store = store;
             _auditWriter = auditWriter;
+            _policyGuard = policyGuard;
             _timeProvider = timeProvider;
             _options = options;
         }
@@ -45,6 +50,7 @@ namespace IdentityAccess.Mfa.Recovery
             ArgumentException.ThrowIfNullOrWhiteSpace(displayName);
 
             var route = await ResolveAsync(identityScopeId, application, cancellationToken).ConfigureAwait(false);
+            await EnsurePolicyAllowedAsync(route, identityScopeId, application, cancellationToken).ConfigureAwait(false);
             var authenticatorId = Guid.NewGuid();
             var createdAt = _timeProvider.GetUtcNow();
             var codes = RecoveryCodeGenerator.GenerateSet(_options.CodeCount);
@@ -111,6 +117,7 @@ namespace IdentityAccess.Mfa.Recovery
             ValidateAuthenticatorId(authenticatorId);
 
             var route = await ResolveAsync(identityScopeId, application, cancellationToken).ConfigureAwait(false);
+            await EnsurePolicyAllowedAsync(route, identityScopeId, application, cancellationToken).ConfigureAwait(false);
             if (!RecoveryCodeGenerator.TryHash(code, out var hash))
             {
                 await AuditDeniedAsync(
@@ -184,6 +191,25 @@ namespace IdentityAccess.Mfa.Recovery
             {
                 CryptographicOperations.ZeroMemory(hash);
             }
+        }
+
+        private async Task EnsurePolicyAllowedAsync(
+            ResolvedDatabaseRoute route,
+            Guid identityScopeId,
+            ApplicationKey application,
+            CancellationToken cancellationToken)
+        {
+            var decision = await _policyGuard
+                .EvaluateAsync(
+                    route,
+                    identityScopeId,
+                    application,
+                    RecoveryAuthenticationFactorProviderKey.Instance,
+                    cancellationToken)
+                .ConfigureAwait(false);
+
+            if (decision != MfaProviderPolicyDecision.Allowed)
+                throw new MfaProviderPolicyException(decision);
         }
 
         private ValueTask<ResolvedDatabaseRoute> ResolveAsync(

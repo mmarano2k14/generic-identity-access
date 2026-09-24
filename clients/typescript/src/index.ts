@@ -36,6 +36,7 @@ export type {
   IdentityMfaPolicyRecord,
   IdentityMfaProviderCapability,
   IdentityMfaProviderRecord,
+  IdentityMfaUserSecurityState,
   IdentityAddGroupPolicyBindingRequest,
   IdentityAddPolicyStatementRequest,
   IdentityAddScopeTypeRequest,

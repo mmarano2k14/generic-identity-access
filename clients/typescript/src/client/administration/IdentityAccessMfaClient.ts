@@ -5,6 +5,7 @@ import type {
   IdentityMfaPolicyRecord,
   IdentityMfaProviderCapability,
   IdentityMfaProviderRecord,
+  IdentityMfaUserSecurityState,
   IdentityUpdateMfaPolicyRequest,
   IdentityUserAuthenticatorRecord,
 } from "../../admin-contracts.js";
@@ -94,6 +95,20 @@ export class IdentityAccessMfaClient {
     );
   }
 
+  public async getUserSecurityState(
+    context: IdentityAdministrationContext,
+    userIdValue: string,
+    signal?: AbortSignal,
+  ): Promise<IdentityMfaUserSecurityState> {
+    const userId = IdentityAccessValueCodec.uuid(userIdValue);
+    return this.#admin.get(
+      `${this.#base(context)}/users/${userId}/state`,
+      context,
+      (value) => IdentityAccessMfaClient.userSecurityState(value),
+      signal,
+    );
+  }
+
   public async revokeAuthenticator(
     context: IdentityAdministrationContext,
     userIdValue: string,
@@ -106,6 +121,24 @@ export class IdentityAccessMfaClient {
     const expectedVersion = IdentityAccessValueCodec.version(expectedVersionValue);
     return this.#admin.deleteJson(
       `${this.#base(context)}/users/${userId}/authenticators/${authenticatorId}?expectedVersion=${expectedVersion}`,
+      context,
+      (value) => IdentityAccessMfaClient.authenticatorRecord(value),
+      signal,
+    );
+  }
+
+  public async revokeAuthenticatorForRecovery(
+    context: IdentityAdministrationContext,
+    userIdValue: string,
+    authenticatorIdValue: string,
+    expectedVersionValue: number,
+    signal?: AbortSignal,
+  ): Promise<IdentityUserAuthenticatorRecord> {
+    const userId = IdentityAccessValueCodec.uuid(userIdValue);
+    const authenticatorId = IdentityAccessValueCodec.uuid(authenticatorIdValue);
+    const expectedVersion = IdentityAccessValueCodec.version(expectedVersionValue);
+    return this.#admin.postAction(
+      `${this.#base(context)}/users/${userId}/authenticators/${authenticatorId}/recovery-revoke?expectedVersion=${expectedVersion}`,
       context,
       (value) => IdentityAccessMfaClient.authenticatorRecord(value),
       signal,
@@ -142,6 +175,30 @@ export class IdentityAccessMfaClient {
       allowedProviders: data.allowedProviders.map((item) =>
         IdentityAccessValueCodec.slug(IdentityAccessValueCodec.text(item))),
       version: IdentityAccessValueCodec.version(data.version),
+    };
+  }
+
+  private static userSecurityState(value: unknown): IdentityMfaUserSecurityState {
+    const data = IdentityAccessValueCodec.object(value);
+    const policyMode = data.policyMode === null || data.policyMode === undefined
+      ? undefined
+      : IdentityAccessMfaClient.policyMode(data.policyMode);
+
+    const providers = (input: unknown): readonly string[] =>
+      IdentityAccessValueCodec.array(input, (item) =>
+        IdentityAccessValueCodec.slug(IdentityAccessValueCodec.text(item)));
+
+    return {
+      policyConfigured: IdentityAccessValueCodec.boolean(data.policyConfigured),
+      ...(policyMode === undefined ? {} : { policyMode }),
+      mfaRequired: IdentityAccessValueCodec.boolean(data.mfaRequired),
+      hasActiveVerificationFactor: IdentityAccessValueCodec.boolean(data.hasActiveVerificationFactor),
+      hasActivePrimaryFactor: IdentityAccessValueCodec.boolean(data.hasActivePrimaryFactor),
+      hasActiveRecoveryFactor: IdentityAccessValueCodec.boolean(data.hasActiveRecoveryFactor),
+      satisfiesCurrentPolicy: IdentityAccessValueCodec.boolean(data.satisfiesCurrentPolicy),
+      activeVerificationProviders: providers(data.activeVerificationProviders),
+      activePrimaryProviders: providers(data.activePrimaryProviders),
+      activeRecoveryProviders: providers(data.activeRecoveryProviders),
     };
   }
 

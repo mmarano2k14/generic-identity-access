@@ -1,4 +1,5 @@
 using System.Security.Cryptography;
+using IdentityAccess.Application.Authentication.Mfa;
 using IdentityAccess.Application.Routing;
 using IdentityAccess.Application.Security;
 using IdentityAccess.Domain;
@@ -11,6 +12,7 @@ namespace IdentityAccess.Mfa.WebAuthn
         private readonly IDatabaseRouteResolver _routeResolver;
         private readonly IWebAuthnCredentialStore _store;
         private readonly ISecurityAuditWriter _auditWriter;
+        private readonly IMfaProviderPolicyGuard _policyGuard;
         private readonly TimeProvider _timeProvider;
         private readonly WebAuthnProviderOptions _options;
 
@@ -18,18 +20,21 @@ namespace IdentityAccess.Mfa.WebAuthn
             IDatabaseRouteResolver routeResolver,
             IWebAuthnCredentialStore store,
             ISecurityAuditWriter auditWriter,
+            IMfaProviderPolicyGuard policyGuard,
             TimeProvider timeProvider,
             WebAuthnProviderOptions options)
         {
             ArgumentNullException.ThrowIfNull(routeResolver);
             ArgumentNullException.ThrowIfNull(store);
             ArgumentNullException.ThrowIfNull(auditWriter);
+            ArgumentNullException.ThrowIfNull(policyGuard);
             ArgumentNullException.ThrowIfNull(timeProvider);
             ArgumentNullException.ThrowIfNull(options);
 
             _routeResolver = routeResolver;
             _store = store;
             _auditWriter = auditWriter;
+            _policyGuard = policyGuard;
             _timeProvider = timeProvider;
             _options = options;
         }
@@ -49,6 +54,7 @@ namespace IdentityAccess.Mfa.WebAuthn
             ValidateUserText(userDisplayName, nameof(userDisplayName));
 
             var route = await ResolveAsync(identityScopeId, application, cancellationToken).ConfigureAwait(false);
+            await EnsurePolicyAllowedAsync(route, identityScopeId, application, cancellationToken).ConfigureAwait(false);
             var existingCredentialIds = await _store.ListActiveCredentialIdsAsync(
                 route,
                 identityScopeId,
@@ -134,6 +140,7 @@ namespace IdentityAccess.Mfa.WebAuthn
             ArgumentNullException.ThrowIfNull(response);
 
             var route = await ResolveAsync(identityScopeId, application, cancellationToken).ConfigureAwait(false);
+            await EnsurePolicyAllowedAsync(route, identityScopeId, application, cancellationToken).ConfigureAwait(false);
             var state = await _store.GetPendingRegistrationAsync(
                 route,
                 identityScopeId,
@@ -239,6 +246,25 @@ namespace IdentityAccess.Mfa.WebAuthn
                 WebAuthnRegistrationStoreResult.CredentialAlreadyRegistered => WebAuthnRegistrationResult.CredentialAlreadyRegistered,
                 _ => WebAuthnRegistrationResult.InvalidState
             };
+        }
+
+        private async Task EnsurePolicyAllowedAsync(
+            ResolvedDatabaseRoute route,
+            Guid identityScopeId,
+            ApplicationKey application,
+            CancellationToken cancellationToken)
+        {
+            var decision = await _policyGuard
+                .EvaluateAsync(
+                    route,
+                    identityScopeId,
+                    application,
+                    WebAuthnAuthenticationFactorProviderKey.Instance,
+                    cancellationToken)
+                .ConfigureAwait(false);
+
+            if (decision != MfaProviderPolicyDecision.Allowed)
+                throw new MfaProviderPolicyException(decision);
         }
 
         private ValueTask<ResolvedDatabaseRoute> ResolveAsync(

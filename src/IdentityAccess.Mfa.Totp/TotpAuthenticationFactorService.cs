@@ -1,4 +1,5 @@
 using System.Security.Cryptography;
+using IdentityAccess.Application.Authentication.Mfa;
 using IdentityAccess.Application.Routing;
 using IdentityAccess.Application.Security;
 using IdentityAccess.Domain;
@@ -12,6 +13,7 @@ namespace IdentityAccess.Mfa.Totp
         private readonly ITotpAuthenticatorStore _store;
         private readonly ITotpSecretProtector _secretProtector;
         private readonly ISecurityAuditWriter _auditWriter;
+        private readonly IMfaProviderPolicyGuard _policyGuard;
         private readonly TimeProvider _timeProvider;
         private readonly TotpProviderOptions _options;
 
@@ -20,6 +22,7 @@ namespace IdentityAccess.Mfa.Totp
             ITotpAuthenticatorStore store,
             ITotpSecretProtector secretProtector,
             ISecurityAuditWriter auditWriter,
+            IMfaProviderPolicyGuard policyGuard,
             TimeProvider timeProvider,
             TotpProviderOptions options)
         {
@@ -27,6 +30,7 @@ namespace IdentityAccess.Mfa.Totp
             ArgumentNullException.ThrowIfNull(store);
             ArgumentNullException.ThrowIfNull(secretProtector);
             ArgumentNullException.ThrowIfNull(auditWriter);
+            ArgumentNullException.ThrowIfNull(policyGuard);
             ArgumentNullException.ThrowIfNull(timeProvider);
             ArgumentNullException.ThrowIfNull(options);
 
@@ -34,6 +38,7 @@ namespace IdentityAccess.Mfa.Totp
             _store = store;
             _secretProtector = secretProtector;
             _auditWriter = auditWriter;
+            _policyGuard = policyGuard;
             _timeProvider = timeProvider;
             _options = options;
         }
@@ -53,6 +58,7 @@ namespace IdentityAccess.Mfa.Totp
                 throw new ArgumentException("TOTP account name must not exceed 256 characters.", nameof(accountName));
 
             var route = await ResolveAsync(identityScopeId, application, cancellationToken).ConfigureAwait(false);
+            await EnsurePolicyAllowedAsync(route, identityScopeId, application, cancellationToken).ConfigureAwait(false);
             var authenticatorId = Guid.NewGuid();
             var createdAt = _timeProvider.GetUtcNow();
             var secret = RandomNumberGenerator.GetBytes(TotpProviderOptions.SecretLengthBytes);
@@ -117,6 +123,7 @@ namespace IdentityAccess.Mfa.Totp
             ValidateAuthenticatorId(authenticatorId);
 
             var route = await ResolveAsync(identityScopeId, application, cancellationToken).ConfigureAwait(false);
+            await EnsurePolicyAllowedAsync(route, identityScopeId, application, cancellationToken).ConfigureAwait(false);
             var state = await _store.GetAsync(
                 route,
                 identityScopeId,
@@ -199,6 +206,7 @@ namespace IdentityAccess.Mfa.Totp
             ValidateAuthenticatorId(authenticatorId);
 
             var route = await ResolveAsync(identityScopeId, application, cancellationToken).ConfigureAwait(false);
+            await EnsurePolicyAllowedAsync(route, identityScopeId, application, cancellationToken).ConfigureAwait(false);
             var state = await _store.GetAsync(
                 route,
                 identityScopeId,
@@ -307,6 +315,25 @@ namespace IdentityAccess.Mfa.Totp
             var account = Uri.EscapeDataString(accountName);
             var label = $"{issuer}:{account}";
             return $"otpauth://totp/{label}?secret={base32Secret}&issuer={issuer}&algorithm={TotpProviderOptions.AlgorithmName}&digits={TotpProviderOptions.Digits}&period={TotpProviderOptions.PeriodSeconds}";
+        }
+
+        private async Task EnsurePolicyAllowedAsync(
+            ResolvedDatabaseRoute route,
+            Guid identityScopeId,
+            ApplicationKey application,
+            CancellationToken cancellationToken)
+        {
+            var decision = await _policyGuard
+                .EvaluateAsync(
+                    route,
+                    identityScopeId,
+                    application,
+                    TotpAuthenticationFactorProviderKey.Instance,
+                    cancellationToken)
+                .ConfigureAwait(false);
+
+            if (decision != MfaProviderPolicyDecision.Allowed)
+                throw new MfaProviderPolicyException(decision);
         }
 
         private ValueTask<ResolvedDatabaseRoute> ResolveAsync(

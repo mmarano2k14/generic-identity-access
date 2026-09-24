@@ -934,15 +934,51 @@ test("MFA administration stays provider-neutral and class-based", async () => {
     if (url.endsWith("/mfa/policy")) {
       return json({ mode: 2, allowedProviders: ["totp", "webauthn"], version: 3 });
     }
+    if (url.endsWith(`/mfa/users/${adminUserId}/state`)) {
+      return json({
+        policyConfigured: true,
+        policyMode: 2,
+        mfaRequired: false,
+        hasActiveVerificationFactor: true,
+        hasActivePrimaryFactor: true,
+        hasActiveRecoveryFactor: false,
+        satisfiesCurrentPolicy: true,
+        activeVerificationProviders: ["totp"],
+        activePrimaryProviders: ["totp"],
+        activeRecoveryProviders: [],
+      });
+    }
+    if (url.endsWith(`/mfa/users/${adminUserId}/authenticators/${adminGroupId}/recovery-revoke?expectedVersion=4`)) {
+      assert.equal(init.method, "POST");
+      assert.equal(init.body, undefined);
+      return json({
+        authenticatorId: adminGroupId,
+        userId: adminUserId,
+        providerKey: "totp",
+        displayName: "Authenticator app",
+        status: 3,
+        createdAt: "2026-09-24T00:00:00Z",
+        revokedAt: "2026-09-24T00:05:00Z",
+        version: 5,
+      });
+    }
     throw new Error(`unexpected url ${url}`);
   });
   const context = { identityScopeId: scopeId, applicationKey: "app-a", credential: bearer };
 
   const providers = await api.administration.mfa.listProviders(context);
   const policy = await api.administration.mfa.getPolicy(context);
+  const state = await api.administration.mfa.getUserSecurityState(context, adminUserId);
+  const recovered = await api.administration.mfa.revokeAuthenticatorForRecovery(
+    context, adminUserId, adminGroupId, 4,
+  );
 
   assert.deepEqual(providers.map((item) => item.key), ["totp", "webauthn"]);
   assert.deepEqual(policy, { mode: 2, allowedProviders: ["totp", "webauthn"], version: 3 });
+  assert.equal(state.satisfiesCurrentPolicy, true);
+  assert.deepEqual(state.activePrimaryProviders, ["totp"]);
+  assert.equal(recovered.status, 3);
+  assert.equal(recovered.version, 5);
   assert.equal(typeof api.administration.mfa.createPolicy, "function");
   assert.equal(typeof api.administration.mfa.listAuthenticators, "function");
   assert.equal(requests.every((request) => request.init.headers.Authorization === "Bearer header.payload.signature"), true);

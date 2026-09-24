@@ -42,7 +42,6 @@ foreach ($file in $requiredFiles) {
 }
 
 Require-Text "src/IdentityAccess.Mfa.WebAuthn/WebAuthnAuthenticationFactorProvider.cs" "AuthenticationFactorProviderCapabilities.Enrollment"
-Reject-Text "src/IdentityAccess.Mfa.WebAuthn/WebAuthnAuthenticationFactorProvider.cs" "AuthenticationFactorProviderCapabilities.Verification"
 Require-Text "src/IdentityAccess.Mfa.WebAuthn/WebAuthnRegistrationVerifier.cs" '"webauthn.create"'
 Require-Text "src/IdentityAccess.Mfa.WebAuthn/WebAuthnRegistrationVerifier.cs" '"none"'
 Require-Text "src/IdentityAccess.Mfa.WebAuthn/WebAuthnRegistrationVerifier.cs" "CryptographicOperations.FixedTimeEquals"

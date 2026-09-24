@@ -1,3 +1,33 @@
+# 0.48.0 - MFA integration and administration hardening
+
+- Added a provider-neutral MFA policy guard and wired TOTP, recovery-code, and WebAuthn enrollment/verification operations to the current application policy on the already resolved database route.
+- Made concrete provider execution fail closed when no MFA policy is configured, MFA is disabled, the provider is not allowed, or the supplied route does not match the requested identity scope/application.
+- Added effective per-user MFA security state derived from the application policy, active generic authenticators, and registered provider capabilities without exposing provider-owned security material.
+- Added a protected administration endpoint and TypeScript client operation for inspecting effective MFA state, and updated the reusable Next.js MFA page with user-scoped state/authenticator inspection.
+- Hardened normal authenticator revocation so a Required policy cannot remove the final active allowed non-recovery verification factor. PostgreSQL serializes concurrent generic authenticator revocations for the same user with row locks and preserves optimistic concurrency.
+- Added an explicit lost-factor recovery revocation path that may remove the final factor and then revokes the user's active local sessions; the authenticator mutation and session revocation are intentionally not represented as one distributed transaction.
+- Added typed revocation outcomes for not-found, version-conflict, and Required-policy violations, with HTTP 409 for a normal revocation that would violate the MFA policy.
+- Preserved provider-owned security state after generic revocation for audit/forensics; concrete provider verification continues to reject non-active generic authenticator lifecycle state.
+- Added focused policy-guard and effective-state tests, expanded the TypeScript client test suite for recovery revocation, and added a dedicated MFA integration source-consistency gate to the primary repository verification chain.
+- Added `docs/MFA_INTEGRATION_HARDENING.md` documenting provider-policy enforcement, effective state, concurrent revocation, lost-factor handling, and exact transaction boundaries.
+- No PostgreSQL schema migration is required for 0.48.0; the hardening uses the existing generic MFA/session tables and provider-owned schemas through stronger application/store contracts.
+- Did not add session-level MFA assurance, password-login step-up, or OIDC MFA/ACR enforcement in this increment; those protocol interactions remain separate work and are not claimed as complete.
+
+# 0.47.0 - WebAuthn / passkey authentication provider
+
+- Added WebAuthn assertion authentication to the existing `IdentityAccess.Mfa.WebAuthn` provider while preserving the separate registration ceremony introduced in 0.46.x.
+- Added `IWebAuthnAuthenticationService` with bounded challenge creation and assertion completion for a known scoped user.
+- Added 32-byte cryptographic authentication challenges with SHA-256 hash-only persistence in provider-owned `identity_access.webauthn_authentication_challenges`; raw challenges are never persisted.
+- Added `webauthn.get` client-data validation with exact configured origin binding, challenge hashing, cross-origin rejection, and RP ID hash validation.
+- Added assertion authenticator-data validation requiring user presence and user verification, rejecting attested-credential data and authenticator extensions in the initial profile.
+- Added ES256/P-256 assertion signature verification against the COSE public key persisted during WebAuthn registration; authenticator private keys remain outside Identity Access.
+- Added optional scoped user-handle verification and stable backup-eligibility enforcement, with mutable backup-state persistence after successful assertions.
+- Added atomic PostgreSQL completion with row locking across the authentication challenge, generic authenticator and WebAuthn credential before challenge consumption, `last_used_at`, signature-counter and backup-state mutation.
+- Added conservative signature-counter replay detection: zero-to-zero counterless authenticators remain supported, while a non-zero non-increasing counter is rejected as replay/counter regression.
+- Updated the WebAuthn provider metadata from Enrollment-only to Enrollment + Verification.
+- Added migration `0018_webauthn_authentication.sql`, provider authentication tests, invalid-origin/signature tests, counter replay tests, counterless-authenticator tests, schema tests, source-consistency validation, and live PostgreSQL verification.
+- Kept password-login/OIDC MFA enforcement, step-up orchestration, browser UI integration, lost-factor administration, and cross-provider hardening outside this increment.
+
 # 0.46.1 - WebAuthn framework dependency correction
 
 - Removed the explicit `System.Formats.Cbor` NuGet package reference from the WebAuthn provider because .NET 10 supplies the assembly automatically.

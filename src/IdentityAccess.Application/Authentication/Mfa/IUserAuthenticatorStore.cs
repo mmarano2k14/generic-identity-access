@@ -27,6 +27,18 @@ namespace IdentityAccess.Application.Authentication.Mfa
             UserAuthenticator authenticator,
             CancellationToken cancellationToken);
 
+        /// <summary>Atomically revokes generic authenticator metadata while optionally preserving one required active factor.</summary>
+        Task<UserAuthenticatorRevocationResult> RevokeAsync(
+            ResolvedDatabaseRoute route,
+            Guid identityScopeId,
+            Guid userId,
+            Guid authenticatorId,
+            long expectedVersion,
+            IReadOnlyCollection<AuthenticationFactorProviderKey> eligibleRequiredFactorProviders,
+            bool requireRemainingRequiredFactor,
+            DateTimeOffset revokedAt,
+            CancellationToken cancellationToken);
+
         /// <summary>Updates generic metadata using optimistic concurrency.</summary>
         Task<VersionedRecord<UserAuthenticator>> UpdateAsync(
             ResolvedDatabaseRoute route,

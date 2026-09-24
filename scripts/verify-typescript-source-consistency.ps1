@@ -103,7 +103,7 @@ $classRequirements = @(
     @{ Source = $usersClient; ClassName = "IdentityAccessUsersClient"; Methods = @("list", "get", "create", "update") },
     @{ Source = $tenantsClient; ClassName = "IdentityAccessTenantsClient"; Methods = @("list", "get", "create", "update") },
     @{ Source = $membershipsClient; ClassName = "IdentityAccessMembershipsClient"; Methods = @("get", "findByUser", "create", "update") },
-    @{ Source = $mfaClient; ClassName = "IdentityAccessMfaClient"; Methods = @("listProviders", "getPolicy", "createPolicy", "updatePolicy", "listAuthenticators", "revokeAuthenticator") },
+    @{ Source = $mfaClient; ClassName = "IdentityAccessMfaClient"; Methods = @("listProviders", "getPolicy", "createPolicy", "updatePolicy", "listAuthenticators", "getUserSecurityState", "revokeAuthenticator", "revokeAuthenticatorForRecovery") },
     @{ Source = $groupsClient; ClassName = "IdentityAccessGroupsClient"; Methods = @("list", "get", "create", "update", "listMembers", "addMember", "removeMember") },
     @{ Source = $policiesClient; ClassName = "IdentityAccessPoliciesClient"; Methods = @("list", "get", "create", "update", "listStatements", "addStatement", "removeStatement", "listBindings", "addBinding", "removeBinding") },
     @{ Source = $resourceScopesClient; ClassName = "IdentityAccessResourceScopesClient"; Methods = @("list", "get", "create", "update") },

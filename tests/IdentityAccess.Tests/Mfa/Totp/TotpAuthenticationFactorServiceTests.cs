@@ -19,6 +19,7 @@ namespace IdentityAccess.Tests.Mfa.Totp
                 store,
                 new TotpTestSecretProtector(),
                 audit,
+                new IdentityAccess.Tests.Mfa.AllowingMfaProviderPolicyGuard(),
                 time,
                 new TotpProviderOptions("Generic Identity Access", allowedClockSkewSteps: 1));
 
@@ -103,6 +104,7 @@ namespace IdentityAccess.Tests.Mfa.Totp
                 store,
                 new TotpTestSecretProtector(),
                 new TotpTestSecurityAuditWriter(),
+                new IdentityAccess.Tests.Mfa.AllowingMfaProviderPolicyGuard(),
                 time,
                 new TotpProviderOptions("Generic Identity Access", allowedClockSkewSteps: 1));
 

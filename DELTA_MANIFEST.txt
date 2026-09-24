@@ -1,20 +1,63 @@
 Generic Identity Access delta
-Version: 0.46.1
-Baseline: 0.46.0 NOT GREEN (NU1510 compile repair)
+Version: 0.48.0
+Baseline: 0.47.0 WebAuthn authentication tree
 
 Added files:
+A docs/MFA_INTEGRATION_HARDENING.md
+A scripts/verify-mfa-integration-source-consistency.ps1
+A src/IdentityAccess.Api/Controllers/MfaUserSecurityStateResponse.cs
+A src/IdentityAccess.Application/Authentication/Mfa/IMfaProviderPolicyGuard.cs
+A src/IdentityAccess.Application/Authentication/Mfa/MfaPolicyComplianceException.cs
+A src/IdentityAccess.Application/Authentication/Mfa/MfaProviderPolicyDecision.cs
+A src/IdentityAccess.Application/Authentication/Mfa/MfaProviderPolicyException.cs
+A src/IdentityAccess.Application/Authentication/Mfa/MfaProviderPolicyGuard.cs
+A src/IdentityAccess.Application/Authentication/Mfa/MfaUserSecurityState.cs
+A src/IdentityAccess.Application/Authentication/Mfa/UserAuthenticatorRevocationDecision.cs
+A src/IdentityAccess.Application/Authentication/Mfa/UserAuthenticatorRevocationResult.cs
+A tests/IdentityAccess.Tests/Mfa/AllowingMfaProviderPolicyGuard.cs
+A tests/IdentityAccess.Tests/Mfa/MfaProviderPolicyGuardTests.cs
+A tests/IdentityAccess.Tests/Mfa/MfaTestPolicyStore.cs
+A tests/IdentityAccess.Tests/Mfa/MfaUserSecurityStateTests.cs
+A tests/IdentityAccess.Tests/PostgreSql/PostgreSqlMfaIntegrationHardeningContractTests.cs
 
 Modified files:
 M CHANGELOG.md
 M Directory.Build.props
-M Directory.Packages.props
+M README.md
 M SOURCE_MANIFEST.sha256
-M docs/DEPENDENCIES.md
-M scripts/verify-webauthn-registration-source-consistency.ps1
-M src/IdentityAccess.Mfa.WebAuthn/IdentityAccess.Mfa.WebAuthn.csproj
+M clients/typescript/src/admin-contracts.ts
+M clients/typescript/src/client/administration/IdentityAccessAdministrationTransport.ts
+M clients/typescript/src/client/administration/IdentityAccessMfaClient.ts
+M clients/typescript/src/index.ts
+M clients/typescript/test/client.test.mjs
+M docs/MFA_PROVIDER_ARCHITECTURE.md
+M docs/PRODUCTION_QUALIFICATION.md
+M docs/VALIDATION.md
+M examples/nextjs/admin/app/identity/mfa/page.tsx
+M scripts/verify-typescript-source-consistency.ps1
+M scripts/verify.ps1
+M src/IdentityAccess.Api/Controllers/MfaAdministrationController.cs
+M src/IdentityAccess.Application/Authentication/Mfa/IMfaAdministrationService.cs
+M src/IdentityAccess.Application/Authentication/Mfa/IUserAuthenticatorStore.cs
+M src/IdentityAccess.Application/Authentication/Mfa/MfaAdministrationService.cs
+M src/IdentityAccess.Infrastructure.Authentication/AuthenticationServiceCollectionExtensions.cs
+M src/IdentityAccess.Infrastructure.PostgreSql/Authentication/PostgreSqlUserAuthenticatorStore.cs
+M src/IdentityAccess.Mfa.Recovery/RecoveryAuthenticationFactorService.cs
+M src/IdentityAccess.Mfa.Recovery/RecoveryServiceCollectionExtensions.cs
+M src/IdentityAccess.Mfa.Totp/TotpAuthenticationFactorService.cs
+M src/IdentityAccess.Mfa.Totp/TotpServiceCollectionExtensions.cs
+M src/IdentityAccess.Mfa.WebAuthn/WebAuthnAuthenticationService.cs
+M src/IdentityAccess.Mfa.WebAuthn/WebAuthnRegistrationService.cs
+M src/IdentityAccess.Mfa.WebAuthn/WebAuthnServiceCollectionExtensions.cs
+M tests/IdentityAccess.Tests/Mfa/Recovery/RecoveryAuthenticationFactorServiceTests.cs
+M tests/IdentityAccess.Tests/Mfa/Totp/TotpAuthenticationFactorServiceTests.cs
+M tests/IdentityAccess.Tests/Mfa/WebAuthn/WebAuthnAuthenticationServiceTests.cs
+M tests/IdentityAccess.Tests/Mfa/WebAuthn/WebAuthnRegistrationServiceTests.cs
 
 Deleted files:
 
-Apply this ZIP as an overlay on the 0.46.0 WebAuthn registration tree.
-The correction removes the redundant explicit System.Formats.Cbor package dependency that .NET 10 reports as NU1510 under warnings-as-errors.
-Run .\scripts\verify.ps1 after overlay. Do not treat 0.46.1 as GREEN until that command succeeds in the target .NET 10 environment.
+Apply this ZIP as an overlay on the 0.47.0 tree.
+This increment integrates concrete MFA providers with provider-neutral policy, adds effective user MFA state, hardens normal revocation under Required policy, and adds an explicit lost-factor recovery revocation path with local-session invalidation.
+No PostgreSQL schema migration is introduced by 0.48.0.
+Session-level MFA assurance, password-login step-up, and OIDC MFA/ACR enforcement are not claimed by this increment.
+Run .\scripts\verify.ps1 after overlay. Do not treat 0.48.0 as GREEN until that command succeeds in the target .NET 10 environment.

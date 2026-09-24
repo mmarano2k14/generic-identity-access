@@ -26,6 +26,12 @@ try {
     & (Join-Path $root "scripts/verify-webauthn-registration-source-consistency.ps1")
     if (-not $?) { throw "WebAuthn registration source consistency validation failed." }
 
+    & (Join-Path $root "scripts/verify-webauthn-authentication-source-consistency.ps1")
+    if (-not $?) { throw "WebAuthn authentication source consistency validation failed." }
+
+    & (Join-Path $root "scripts/verify-mfa-integration-source-consistency.ps1")
+    if (-not $?) { throw "MFA integration source consistency validation failed." }
+
     & (Join-Path $root "scripts/verify-typescript-source-consistency.ps1")
     if (-not $?) { throw "TypeScript source consistency validation failed." }
 

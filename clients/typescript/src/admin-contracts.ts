@@ -248,6 +248,19 @@ export interface IdentityUpdateMfaPolicyRequest {
   readonly expectedVersion: number;
 }
 
+export interface IdentityMfaUserSecurityState {
+  readonly policyConfigured: boolean;
+  readonly policyMode?: IdentityMfaPolicyMode;
+  readonly mfaRequired: boolean;
+  readonly hasActiveVerificationFactor: boolean;
+  readonly hasActivePrimaryFactor: boolean;
+  readonly hasActiveRecoveryFactor: boolean;
+  readonly satisfiesCurrentPolicy: boolean;
+  readonly activeVerificationProviders: readonly string[];
+  readonly activePrimaryProviders: readonly string[];
+  readonly activeRecoveryProviders: readonly string[];
+}
+
 export interface IdentityUserAuthenticatorRecord {
   readonly authenticatorId: string;
   readonly userId: string;

@@ -19,7 +19,7 @@ Generic MFA Core
     |                    |                    |
     v                    v                    v
  TOTP provider       Recovery provider    WebAuthn provider
- implemented         implemented         later releases
+ implemented         implemented         implemented
 ```
 
 ## Core invariants
@@ -36,6 +36,9 @@ Generic MFA Core
 10. An optional or required policy must allow at least one provider.
 11. Provider registration never grants authorization.
 12. UI visibility never replaces server-side authorization.
+13. Concrete provider operations are constrained by the configured application MFA policy.
+14. A Required policy cannot be weakened through ordinary final-primary-factor revocation; recovery-capable providers remain fallback factors.
+15. Lost-factor recovery revocation is explicit and revokes active local sessions after the authenticator mutation.
 
 ## Policy
 
@@ -131,7 +134,9 @@ GET  /api/v1/identity-scopes/{scope}/applications/{app}/mfa/policy
 POST /api/v1/identity-scopes/{scope}/applications/{app}/mfa/policy
 PUT  /api/v1/identity-scopes/{scope}/applications/{app}/mfa/policy
 GET  /api/v1/identity-scopes/{scope}/applications/{app}/mfa/users/{user}/authenticators
+GET  /api/v1/identity-scopes/{scope}/applications/{app}/mfa/users/{user}/state
 DELETE /api/v1/identity-scopes/{scope}/applications/{app}/mfa/users/{user}/authenticators/{authenticator}?expectedVersion=N
+POST /api/v1/identity-scopes/{scope}/applications/{app}/mfa/users/{user}/authenticators/{authenticator}/recovery-revoke?expectedVersion=N
 ```
 
 Capabilities:
@@ -151,7 +156,9 @@ client.administration.mfa.getPolicy(...)
 client.administration.mfa.createPolicy(...)
 client.administration.mfa.updatePolicy(...)
 client.administration.mfa.listAuthenticators(...)
+client.administration.mfa.getUserSecurityState(...)
 client.administration.mfa.revokeAuthenticator(...)
+client.administration.mfa.revokeAuthenticatorForRecovery(...)
 ```
 
 The root `IdentityAccessClient` remains a composition facade.
@@ -163,8 +170,8 @@ The root `IdentityAccessClient` remains a composition facade.
 0.44.0  TOTP provider implemented as a separate provider project
 0.45.0  recovery provider implemented as a separate provider project
 0.46.0  WebAuthn/passkey registration provider implemented as a separate provider project
-0.47.x  WebAuthn/passkey authentication provider work
-0.48.x  integration / administration / security hardening
+0.47.0  WebAuthn/passkey authentication provider implemented
+0.48.0  provider-policy integration / administration / security hardening implemented
 ```
 
 The provider releases extend the generic foundation rather than modifying its ownership model.
@@ -175,4 +182,11 @@ The TOTP provider is documented separately in `TOTP_PROVIDER.md`. Its provider-o
 
 The recovery-code provider is documented in `RECOVERY_PROVIDER.md`. Raw codes are returned only at generation time; only provider-owned SHA-256 hashes and consumption timestamps are persisted.
 
-The WebAuthn registration provider is documented in `WEBAUTHN_REGISTRATION.md`. It persists only registration challenge hashes and public credential material; authenticator private keys never enter Identity Access.
+The WebAuthn registration provider is documented in `WEBAUTHN_REGISTRATION.md`. Assertion authentication is documented in `WEBAUTHN_AUTHENTICATION.md`. The provider persists only challenge hashes and public credential state; authenticator private keys never enter Identity Access.
+
+
+## Integration and revocation hardening
+
+Version `0.48.0` adds a generic policy guard used by all concrete provider services, effective user MFA state, row-locked normal revocation that preserves a Required policy, and an explicit lost-factor recovery path that revokes active user sessions after the authenticator mutation. See `MFA_INTEGRATION_HARDENING.md` for exact guarantees and transaction boundaries.
+
+Session-level MFA assurance, password-login step-up, and OIDC MFA/ACR enforcement are not claimed by this increment.

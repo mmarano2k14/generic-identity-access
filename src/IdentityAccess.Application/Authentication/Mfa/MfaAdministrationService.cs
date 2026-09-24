@@ -1,3 +1,4 @@
+using IdentityAccess.Application.Authentication;
 using IdentityAccess.Application.Routing;
 using IdentityAccess.Application.Security;
 using IdentityAccess.Application.Storage;
@@ -11,6 +12,7 @@ namespace IdentityAccess.Application.Authentication.Mfa
         IMfaPolicyStore policies,
         IUserAuthenticatorStore authenticators,
         IAuthenticationFactorProviderRegistry providers,
+        ISessionAdministrationService sessionAdministration,
         ISecurityAuditWriter auditWriter,
         TimeProvider timeProvider) : IMfaAdministrationService
     {
@@ -75,6 +77,63 @@ namespace IdentityAccess.Application.Authentication.Mfa
         }
 
         /// <inheritdoc />
+        public async Task<MfaUserSecurityState> GetUserSecurityStateAsync(
+            Guid identityScopeId,
+            ApplicationKey application,
+            Guid userId,
+            CancellationToken cancellationToken)
+        {
+            if (userId == Guid.Empty) throw new ArgumentException("User identifier is required.", nameof(userId));
+
+            var route = await ResolveAsync(identityScopeId, application, cancellationToken);
+            var policy = await policies.GetAsync(route, identityScopeId, application, cancellationToken);
+            var records = await authenticators.ListByUserAsync(route, identityScopeId, userId, cancellationToken);
+
+            if (policy is null || policy.Value.Mode == MfaPolicyMode.Disabled)
+            {
+                return new MfaUserSecurityState(
+                    policyConfigured: policy is not null,
+                    policyMode: policy?.Value.Mode,
+                    activeVerificationProviders: [],
+                    activePrimaryProviders: [],
+                    activeRecoveryProviders: []);
+            }
+
+            var allowed = policy.Value.AllowedProviders.ToHashSet();
+            var verification = new List<AuthenticationFactorProviderKey>();
+            var primary = new List<AuthenticationFactorProviderKey>();
+            var recovery = new List<AuthenticationFactorProviderKey>();
+
+            foreach (var record in records)
+            {
+                var authenticator = record.Value;
+                if (authenticator.Status != UserAuthenticatorStatus.Active || !allowed.Contains(authenticator.Provider))
+                    continue;
+
+                var provider = providers.Find(authenticator.Provider);
+                if (provider is null ||
+                    (provider.Descriptor.Capabilities & AuthenticationFactorProviderCapabilities.Verification) == 0)
+                {
+                    continue;
+                }
+
+                verification.Add(authenticator.Provider);
+
+                if ((provider.Descriptor.Capabilities & AuthenticationFactorProviderCapabilities.Recovery) != 0)
+                    recovery.Add(authenticator.Provider);
+                else
+                    primary.Add(authenticator.Provider);
+            }
+
+            return new MfaUserSecurityState(
+                policyConfigured: true,
+                policyMode: policy.Value.Mode,
+                activeVerificationProviders: verification,
+                activePrimaryProviders: primary,
+                activeRecoveryProviders: recovery);
+        }
+
+        /// <inheritdoc />
         public async Task<VersionedRecord<UserAuthenticator>?> RevokeAuthenticatorAsync(
             Guid identityScopeId,
             ApplicationKey application,
@@ -88,28 +147,117 @@ namespace IdentityAccess.Application.Authentication.Mfa
             if (expectedVersion < 1) throw new ArgumentOutOfRangeException(nameof(expectedVersion));
 
             var route = await ResolveAsync(identityScopeId, application, cancellationToken);
-            var existing = await authenticators.GetAsync(route, identityScopeId, authenticatorId, cancellationToken);
-            if (existing is null || existing.Value.UserId != userId) return null;
-            if (existing.Version != expectedVersion) throw new IdentityConcurrencyException();
-            if (existing.Value.Status == UserAuthenticatorStatus.Revoked) return existing;
+            var policy = await policies.GetAsync(route, identityScopeId, application, cancellationToken);
+            var eligibleProviders = ResolveRequiredFactorProviders(policy?.Value);
+            var result = await authenticators.RevokeAsync(
+                route,
+                identityScopeId,
+                userId,
+                authenticatorId,
+                expectedVersion,
+                eligibleProviders,
+                requireRemainingRequiredFactor: policy?.Value.Mode == MfaPolicyMode.Required,
+                timeProvider.GetUtcNow(),
+                cancellationToken);
 
-            var value = existing.Value;
-            var revoked = new UserAuthenticator(
-                value.IdentityScopeId,
-                value.AuthenticatorId,
-                value.UserId,
-                value.Provider,
-                value.DisplayName,
-                UserAuthenticatorStatus.Revoked,
-                value.CreatedAt,
-                value.ConfirmedAt,
-                value.LastUsedAt,
-                timeProvider.GetUtcNow());
+            return await HandleRevocationResultAsync(
+                result,
+                route,
+                identityScopeId,
+                application,
+                authenticatorId,
+                cancellationToken);
+        }
 
-            var updated = await authenticators.UpdateAsync(route, revoked, expectedVersion, cancellationToken);
-            await AuditAsync(route, SecurityAuditEventType.UserAuthenticatorRevoked, identityScopeId, application,
-                authenticatorId.ToString("D"), cancellationToken);
+        /// <inheritdoc />
+        public async Task<VersionedRecord<UserAuthenticator>?> RevokeAuthenticatorForRecoveryAsync(
+            Guid identityScopeId,
+            ApplicationKey application,
+            Guid userId,
+            Guid authenticatorId,
+            long expectedVersion,
+            CancellationToken cancellationToken)
+        {
+            if (userId == Guid.Empty) throw new ArgumentException("User identifier is required.", nameof(userId));
+            if (authenticatorId == Guid.Empty) throw new ArgumentException("Authenticator identifier is required.", nameof(authenticatorId));
+            if (expectedVersion < 1) throw new ArgumentOutOfRangeException(nameof(expectedVersion));
+
+            var route = await ResolveAsync(identityScopeId, application, cancellationToken);
+            var result = await authenticators.RevokeAsync(
+                route,
+                identityScopeId,
+                userId,
+                authenticatorId,
+                expectedVersion,
+                eligibleRequiredFactorProviders: [],
+                requireRemainingRequiredFactor: false,
+                timeProvider.GetUtcNow(),
+                cancellationToken);
+
+            var updated = await HandleRevocationResultAsync(
+                result,
+                route,
+                identityScopeId,
+                application,
+                authenticatorId,
+                cancellationToken);
+
+            if (updated is not null)
+                await sessionAdministration.RevokeUserSessionsAsync(identityScopeId, application, userId, cancellationToken);
+
             return updated;
+        }
+
+        private IReadOnlyCollection<AuthenticationFactorProviderKey> ResolveRequiredFactorProviders(MfaPolicy? policy)
+        {
+            if (policy is null || policy.Mode == MfaPolicyMode.Disabled)
+                return [];
+
+            return policy.AllowedProviders
+                .Where(providerKey =>
+                {
+                    var provider = providers.Find(providerKey);
+                    return provider is not null &&
+                        (provider.Descriptor.Capabilities & AuthenticationFactorProviderCapabilities.Verification) != 0 &&
+                        (provider.Descriptor.Capabilities & AuthenticationFactorProviderCapabilities.Recovery) == 0;
+                })
+                .ToArray();
+        }
+
+        private async Task<VersionedRecord<UserAuthenticator>?> HandleRevocationResultAsync(
+            UserAuthenticatorRevocationResult result,
+            ResolvedDatabaseRoute route,
+            Guid identityScopeId,
+            ApplicationKey application,
+            Guid authenticatorId,
+            CancellationToken cancellationToken)
+        {
+            switch (result.Decision)
+            {
+                case UserAuthenticatorRevocationDecision.NotFound:
+                    return null;
+                case UserAuthenticatorRevocationDecision.VersionConflict:
+                    throw new IdentityConcurrencyException();
+                case UserAuthenticatorRevocationDecision.WouldViolateRequiredMfa:
+                    throw new MfaPolicyComplianceException();
+                case UserAuthenticatorRevocationDecision.Succeeded:
+                    break;
+                default:
+                    throw new InvalidOperationException("Unknown authenticator revocation result.");
+            }
+
+            if (result.Record is null)
+                throw new InvalidOperationException("Successful authenticator revocation did not return a record.");
+
+            await AuditAsync(
+                route,
+                SecurityAuditEventType.UserAuthenticatorRevoked,
+                identityScopeId,
+                application,
+                authenticatorId.ToString("D"),
+                cancellationToken);
+
+            return result.Record;
         }
 
         private void EnsureProvidersRegistered(IEnumerable<AuthenticationFactorProviderKey> providerKeys)

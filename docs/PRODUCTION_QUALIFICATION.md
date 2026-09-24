@@ -16,7 +16,7 @@ The qualification surface covers:
 - restored-schema structural validation;
 - operational key/secret handling and restart boundaries.
 
-The generic MFA provider foundation is included in the current qualification gates. Concrete TOTP, recovery-code, and WebAuthn registration providers are implemented and covered by repository/provider-specific validation, but their live provider scripts are not yet part of this consolidated production-qualification gate. WebAuthn assertion authentication and step-up flows remain later work.
+The generic MFA provider foundation and the 0.48 provider-policy/administration hardening are included in repository qualification gates. Concrete TOTP, recovery-code, and WebAuthn registration/authentication providers are implemented and covered by repository/provider-specific validation, but their live provider scripts are not yet part of this consolidated production-qualification gate. Session-level assurance, password-login step-up, OIDC MFA/ACR enforcement, and end-to-end interactive MFA orchestration remain separate work.
 
 ## Primary qualification command
 
