@@ -43,6 +43,21 @@ namespace IdentityAccess.Application.Authentication
             DateTimeOffset now,
             CancellationToken cancellationToken);
 
+        /// <summary>
+        /// Atomically upgrades one active session after an additional authentication factor has
+        /// been verified for the exact subject/client/application binding.
+        /// </summary>
+        Task<AuthenticationSession?> UpgradeAssuranceAsync(
+            ResolvedDatabaseRoute route,
+            SubjectReference subject,
+            Guid sessionId,
+            string clientId,
+            ApplicationKey application,
+            string authenticationContextKey,
+            string factorMethodReference,
+            DateTimeOffset verifiedAt,
+            CancellationToken cancellationToken);
+
         /// <summary>Revokes one opaque local session.</summary>
         Task<bool> RevokeAsync(
             ResolvedDatabaseRoute route,

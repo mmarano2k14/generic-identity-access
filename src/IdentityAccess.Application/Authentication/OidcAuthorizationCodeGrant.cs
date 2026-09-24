@@ -47,6 +47,9 @@ namespace IdentityAccess.Application.Authentication
         /// <summary>Gets when the authorization code expires.</summary>
         public DateTimeOffset ExpiresAt { get; }
 
+        /// <summary>Gets the authentication assurance pinned when the authorization code was issued.</summary>
+        public AuthenticationAssurance Assurance { get; }
+
         /// <summary>Gets when the authorization code was consumed.</summary>
         public DateTimeOffset? ConsumedAt { get; }
 
@@ -65,7 +68,8 @@ namespace IdentityAccess.Application.Authentication
             DateTimeOffset authenticatedAt,
             DateTimeOffset issuedAt,
             DateTimeOffset expiresAt,
-            DateTimeOffset? consumedAt = null)
+            DateTimeOffset? consumedAt = null,
+            AuthenticationAssurance? assurance = null)
         {
             if (codeId == Guid.Empty)
                 throw new ArgumentException("Code id must not be empty.", nameof(codeId));
@@ -100,9 +104,14 @@ namespace IdentityAccess.Application.Authentication
             AuthenticationContextKey = authenticationContextKey;
             RedirectUri = redirectUri;
             Scope = scope;
+            var resolvedAssurance = assurance ?? AuthenticationAssurance.Password(authenticatedAt);
+            if (resolvedAssurance.VerifiedAt != authenticatedAt)
+                throw new ArgumentException("Authorization-code assurance time must match authenticated_at.", nameof(assurance));
+
             CodeChallenge = codeChallenge;
             Nonce = nonce;
             AuthenticatedAt = authenticatedAt;
+            Assurance = resolvedAssurance;
             IssuedAt = issuedAt;
             ExpiresAt = expiresAt;
             ConsumedAt = consumedAt;

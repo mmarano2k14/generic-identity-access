@@ -369,3 +369,24 @@ Run the complete gate with:
 ```
 
 The repository does not claim session-level MFA assurance, password-login step-up, or OIDC MFA/ACR enforcement in this increment. Those protocol interactions require a separately validated session-assurance contract.
+
+## MFA session assurance and OIDC integration validation
+
+Version `0.49.0` adds `scripts/verify-mfa-session-assurance-source-consistency.ps1` to the primary repository verification chain. The gate pins durable local-session assurance, row-locked exact-session upgrades, TOTP/recovery/WebAuthn step-up endpoints, Required-policy OIDC freshness enforcement, `interaction_required`, signed `auth_time`/`acr`/`amr` claims, pinned refresh assurance, TypeScript client support, migration `0019_session_authentication_assurance.sql`, and focused tests.
+
+After applying PostgreSQL migrations, run:
+
+```powershell
+$env:PGPASSWORD = "<password>"
+.\scripts\postgresql\verify-session-assurance.ps1
+Remove-Item Env:PGPASSWORD
+```
+
+The complete repository gate remains:
+
+```powershell
+.\scripts\verify.ps1
+```
+
+`0.49.0` does not claim a generic declarative step-up requirement for every application operation. The session-assurance contract is reusable by such boundaries, while each consuming application still defines which non-OIDC operations require recent MFA.
+

@@ -32,6 +32,18 @@ namespace IdentityAccess.Tests.Authentication
             CancellationToken cancellationToken) =>
             Task.FromResult(session);
 
+        public Task<AuthenticationSession?> UpgradeAssuranceAsync(
+            ResolvedDatabaseRoute route,
+            SubjectReference subject,
+            Guid sessionId,
+            string clientId,
+            ApplicationKey application,
+            string authenticationContextKey,
+            string factorMethodReference,
+            DateTimeOffset verifiedAt,
+            CancellationToken cancellationToken) =>
+            throw new NotSupportedException();
+
         public Task<bool> RevokeAsync(
             ResolvedDatabaseRoute route,
             string clientId,

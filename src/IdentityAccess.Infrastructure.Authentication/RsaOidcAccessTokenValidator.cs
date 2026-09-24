@@ -30,6 +30,9 @@ namespace IdentityAccess.Infrastructure.Authentication
             "aud",
             "exp",
             "iat",
+            "auth_time",
+            "acr",
+            "amr",
             "jti",
             "client_id",
             "scope",
@@ -262,7 +265,8 @@ namespace IdentityAccess.Infrastructure.Authentication
                 }
 
                 if (!TryGetInt64(payload.RootElement, "exp", out var expiresUnix) ||
-                    !TryGetInt64(payload.RootElement, "iat", out var issuedUnix))
+                    !TryGetInt64(payload.RootElement, "iat", out var issuedUnix) ||
+                    !TryGetInt64(payload.RootElement, "auth_time", out var authenticatedUnix))
                 {
                     return Invalid(
                         OidcAccessTokenValidationFailureCode.ClaimsInvalid);
@@ -270,11 +274,13 @@ namespace IdentityAccess.Infrastructure.Authentication
 
                 DateTimeOffset issuedAt;
                 DateTimeOffset expiresAt;
+                DateTimeOffset authenticatedAt;
 
                 try
                 {
                     issuedAt = DateTimeOffset.FromUnixTimeSeconds(issuedUnix);
                     expiresAt = DateTimeOffset.FromUnixTimeSeconds(expiresUnix);
+                    authenticatedAt = DateTimeOffset.FromUnixTimeSeconds(authenticatedUnix);
                 }
                 catch (ArgumentOutOfRangeException)
                 {
@@ -295,11 +301,47 @@ namespace IdentityAccess.Infrastructure.Authentication
                         options.AccessTokenLifetimeMinutes);
 
                 if (issuedAt > now ||
+                    authenticatedAt > issuedAt ||
                     expiresAt <= issuedAt ||
                     expiresAt - issuedAt > maximumLifetime)
                 {
                     return Invalid(
                         OidcAccessTokenValidationFailureCode.LifetimeInvalid);
+                }
+
+                if (!TryGetString(payload.RootElement, "acr", out var acr) ||
+                    !TryGetStringArray(payload.RootElement, "amr", out var authenticationMethods))
+                {
+                    return Invalid(
+                        OidcAccessTokenValidationFailureCode.ClaimsInvalid);
+                }
+
+                var assuranceLevel = acr switch
+                {
+                    "urn:generic-identity-access:acr:password" => AuthenticationAssuranceLevel.PasswordOnly,
+                    "urn:generic-identity-access:acr:mfa" => AuthenticationAssuranceLevel.MultiFactor,
+                    _ => (AuthenticationAssuranceLevel?)null
+                };
+
+                if (assuranceLevel is null)
+                {
+                    return Invalid(
+                        OidcAccessTokenValidationFailureCode.ClaimsInvalid);
+                }
+
+                AuthenticationAssurance assurance;
+
+                try
+                {
+                    assurance = new AuthenticationAssurance(
+                        assuranceLevel.Value,
+                        authenticationMethods,
+                        authenticatedAt);
+                }
+                catch (ArgumentException)
+                {
+                    return Invalid(
+                        OidcAccessTokenValidationFailureCode.ClaimsInvalid);
                 }
 
                 if (!TryGetString(payload.RootElement, "client_id", out var clientId) ||
@@ -362,7 +404,8 @@ namespace IdentityAccess.Infrastructure.Authentication
                         scope,
                         tokenId,
                         issuedAt,
-                        expiresAt));
+                        expiresAt,
+                        assurance));
             }
             catch (JsonException)
             {
@@ -417,6 +460,46 @@ namespace IdentityAccess.Infrastructure.Authentication
 
             value = string.Empty;
             return false;
+        }
+
+        private static bool TryGetStringArray(
+            JsonElement element,
+            string propertyName,
+            out string[] values)
+        {
+            if (!element.TryGetProperty(propertyName, out var property) ||
+                property.ValueKind != JsonValueKind.Array)
+            {
+                values = [];
+                return false;
+            }
+
+            var parsed = new List<string>();
+
+            foreach (var item in property.EnumerateArray())
+            {
+                if (item.ValueKind != JsonValueKind.String ||
+                    item.GetString() is not { } value ||
+                    string.IsNullOrWhiteSpace(value) ||
+                    value.Length > 64 ||
+                    value.Any(char.IsControl))
+                {
+                    values = [];
+                    return false;
+                }
+
+                parsed.Add(value);
+            }
+
+            if (parsed.Count == 0 ||
+                parsed.Count != parsed.Distinct(StringComparer.Ordinal).Count())
+            {
+                values = [];
+                return false;
+            }
+
+            values = parsed.ToArray();
+            return true;
         }
 
         private static bool TryGetInt64(

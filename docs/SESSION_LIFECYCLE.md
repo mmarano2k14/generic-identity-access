@@ -37,6 +37,15 @@ in addition to the existing session checks:
 A session that was valid when issued becomes invalid immediately after the persisted user
 is suspended.
 
+
+## Authentication assurance
+
+Version `0.49.0` extends the durable session with non-secret authentication assurance. New password sessions begin as `PasswordOnly` with `pwd`. Successful TOTP, recovery-code, or WebAuthn step-up can atomically upgrade the exact active session to `MultiFactor` with a verification timestamp and method references.
+
+The upgrade is serialized with `FOR UPDATE` and revalidates subject, client, application, authentication context, current user status, expiry, and revocation before mutation. Raw authentication proofs are never persisted in session assurance.
+
+OIDC consumes this state through `IAuthenticationAssuranceService`; see `MFA_SESSION_ASSURANCE_OIDC.md`.
+
 ## User Suspension
 
 Updating a user to a non-active status revokes active subject sessions in the same

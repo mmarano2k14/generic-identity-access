@@ -54,7 +54,11 @@ namespace IdentityAccess.Application.Authentication
                 string.Equals(
                     session.AuthenticationContextKey,
                     token.AuthenticationContextKey,
-                    StringComparison.Ordinal);
+                    StringComparison.Ordinal) &&
+                session.Assurance.Level >= token.Assurance.Level &&
+                session.Assurance.VerifiedAt >= token.Assurance.VerifiedAt &&
+                token.Assurance.Methods.All(method =>
+                    session.Assurance.Methods.Contains(method, StringComparer.Ordinal));
         }
     }
 }

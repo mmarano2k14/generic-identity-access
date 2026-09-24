@@ -110,6 +110,7 @@ Example trusted configuration:
         "AccessTokenLifetimeMinutes": "15",
         "IdTokenLifetimeMinutes": "15",
         "RefreshTokenLifetimeDays": "30",
+        "MfaMaxAgeMinutes": "15",
         "ActiveSigningKeyId": "identity-key-2",
         "SigningKeys": [
           {
@@ -746,3 +747,10 @@ consumed-token replay family revocation
 absolute family expiry preservation
 local-session-bound refresh eligibility
 ```
+
+## MFA assurance
+
+OIDC authorization revalidates the current local-session assurance against the current generic MFA policy. When the policy is `Required`, the session must carry recent multi-factor assurance within `MfaMaxAgeMinutes`; otherwise the authorization response uses `interaction_required`.
+
+Successful grants pin the evaluated assurance. Signed ID/access tokens include `auth_time`, `acr`, and `amr`, and refresh-token rotation preserves the pinned assurance rather than silently adopting later session upgrades. See `MFA_SESSION_ASSURANCE_OIDC.md`.
+

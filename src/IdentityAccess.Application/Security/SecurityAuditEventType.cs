@@ -102,6 +102,10 @@ namespace IdentityAccess.Application.Security
         /// <summary>An authentication-factor proof was verified successfully.</summary>
         AuthenticationFactorVerificationSucceeded = 49,
         /// <summary>An authentication-factor proof was rejected.</summary>
-        AuthenticationFactorVerificationFailed = 50
+        AuthenticationFactorVerificationFailed = 50,
+        /// <summary>An active local session was upgraded after an additional verified factor.</summary>
+        SessionAssuranceUpgraded = 51,
+        /// <summary>A session assurance upgrade was rejected because the session binding was no longer valid.</summary>
+        SessionAssuranceUpgradeFailed = 52
     }
 }

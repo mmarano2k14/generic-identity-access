@@ -38,6 +38,20 @@ namespace IdentityAccess.Tests.Authentication
                 }.Validate());
         }
 
+        /// <summary>Verifies OIDC Required-MFA freshness remains explicitly bounded.</summary>
+        [Theory]
+        [InlineData(0)]
+        [InlineData(1441)]
+        public void Unsafe_mfa_max_age_is_rejected(int minutes)
+        {
+            Assert.Throws<ArgumentOutOfRangeException>(() =>
+                new OidcOptions
+                {
+                    Issuer = "https://identity.example.test",
+                    MfaMaxAgeMinutes = minutes
+                }.Validate());
+        }
+
         /// <summary>Verifies refresh-token families use a finite validated absolute lifetime.</summary>
         [Theory]
         [InlineData(0)]

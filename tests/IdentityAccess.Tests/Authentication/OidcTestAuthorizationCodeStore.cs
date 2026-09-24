@@ -82,7 +82,8 @@ namespace IdentityAccess.Tests.Authentication
                     grant.AuthenticatedAt,
                     grant.IssuedAt,
                     grant.ExpiresAt,
-                    now));
+                    now,
+                    grant.Assurance));
         }
     }
 }

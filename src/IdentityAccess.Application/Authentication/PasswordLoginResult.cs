@@ -8,5 +8,6 @@ namespace IdentityAccess.Application.Authentication
         string? SessionToken = null,
         DateTimeOffset? ExpiresAt = null,
         string? RedirectUri = null,
-        AuthenticationFailureCode? FailureCode = null);
+        AuthenticationFailureCode? FailureCode = null,
+        AuthenticationAssurance? Assurance = null);
 }

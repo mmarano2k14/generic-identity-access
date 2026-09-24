@@ -236,6 +236,12 @@ namespace IdentityAccess.Infrastructure.Authentication
                     nameof(request));
             }
 
+            var assurance = request.Assurance ?? AuthenticationAssurance.Password(request.AuthenticatedAt);
+            if (assurance.VerifiedAt != request.AuthenticatedAt)
+                throw new ArgumentException(
+                    "Token assurance time must match authenticated_at.",
+                    nameof(request));
+
             var access =
                 IssueAccessToken(
                     new OidcAccessTokenIssueRequest(
@@ -244,7 +250,8 @@ namespace IdentityAccess.Infrastructure.Authentication
                         request.ClientId,
                         request.Application,
                         request.Scope,
-                        request.IssuedAt));
+                        request.IssuedAt,
+                        assurance));
 
             var idExpiresAt =
                 request.IssuedAt.AddMinutes(
@@ -262,7 +269,9 @@ namespace IdentityAccess.Infrastructure.Authentication
                     ["aud"] = request.ClientId,
                     ["exp"] = idExpiresAt.ToUnixTimeSeconds(),
                     ["iat"] = request.IssuedAt.ToUnixTimeSeconds(),
-                    ["auth_time"] = request.AuthenticatedAt.ToUnixTimeSeconds(),
+                    ["auth_time"] = assurance.VerifiedAt.ToUnixTimeSeconds(),
+                    ["acr"] = assurance.Acr,
+                    ["amr"] = assurance.Methods.ToArray(),
                     ["nonce"] = request.Nonce,
                     ["sid"] = request.SessionId.ToString("D"),
                     ["at_hash"] = AccessTokenHash(access.AccessToken)
@@ -297,6 +306,12 @@ namespace IdentityAccess.Infrastructure.Authentication
             ArgumentException.ThrowIfNullOrWhiteSpace(
                 request.Scope);
 
+            var assurance = request.Assurance ?? AuthenticationAssurance.Password(request.IssuedAt);
+            if (assurance.VerifiedAt > request.IssuedAt)
+                throw new ArgumentException(
+                    "Access-token assurance time must not be after issuance.",
+                    nameof(request));
+
             var accessExpiresAt =
                 request.IssuedAt.AddMinutes(
                     options.AccessTokenLifetimeMinutes);
@@ -309,6 +324,9 @@ namespace IdentityAccess.Infrastructure.Authentication
                     ["aud"] = options.AccessTokenAudience,
                     ["exp"] = accessExpiresAt.ToUnixTimeSeconds(),
                     ["iat"] = request.IssuedAt.ToUnixTimeSeconds(),
+                    ["auth_time"] = assurance.VerifiedAt.ToUnixTimeSeconds(),
+                    ["acr"] = assurance.Acr,
+                    ["amr"] = assurance.Methods.ToArray(),
                     ["jti"] = Guid.NewGuid().ToString("N"),
                     ["client_id"] = request.ClientId,
                     ["scope"] = request.Scope,

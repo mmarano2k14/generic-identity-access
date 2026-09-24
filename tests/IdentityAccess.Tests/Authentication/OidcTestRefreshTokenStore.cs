@@ -105,7 +105,8 @@ namespace IdentityAccess.Tests.Authentication
                     currentGrant.Scope,
                     currentGrant.AuthenticatedAt,
                     now,
-                    currentGrant.ExpiresAt);
+                    currentGrant.ExpiresAt,
+                    currentGrant.Assurance);
 
             currentGrant = replacement;
             currentHash = replacementTokenHash.ToArray();

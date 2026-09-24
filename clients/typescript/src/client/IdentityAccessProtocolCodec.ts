@@ -110,6 +110,7 @@ export class IdentityAccessProtocolCodec {
       "unsupported_response_type",
       "invalid_scope",
       "login_required",
+      "interaction_required",
       "temporarily_unavailable",
     ]);
     if (!allowed.has(code)) {

@@ -172,6 +172,7 @@ The root `IdentityAccessClient` remains a composition facade.
 0.46.0  WebAuthn/passkey registration provider implemented as a separate provider project
 0.47.0  WebAuthn/passkey authentication provider implemented
 0.48.0  provider-policy integration / administration / security hardening implemented
+0.49.0  session assurance / OIDC MFA integration implemented
 ```
 
 The provider releases extend the generic foundation rather than modifying its ownership model.
@@ -189,4 +190,6 @@ The WebAuthn registration provider is documented in `WEBAUTHN_REGISTRATION.md`. 
 
 Version `0.48.0` adds a generic policy guard used by all concrete provider services, effective user MFA state, row-locked normal revocation that preserves a Required policy, and an explicit lost-factor recovery path that revokes active user sessions after the authenticator mutation. See `MFA_INTEGRATION_HARDENING.md` for exact guarantees and transaction boundaries.
 
-Session-level MFA assurance, password-login step-up, and OIDC MFA/ACR enforcement are not claimed by this increment.
+Version `0.49.0` adds durable local-session authentication assurance, exact-session provider step-up, and OIDC MFA freshness/claim propagation. See `MFA_SESSION_ASSURANCE_OIDC.md` for the persistence and protocol contract.
+
+Session assurance and OIDC MFA integration are implemented in `0.49.0`; see `MFA_SESSION_ASSURANCE_OIDC.md` for exact boundaries.

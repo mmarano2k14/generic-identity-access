@@ -9,11 +9,13 @@ namespace IdentityAccess.Application.Authentication
     /// <param name="Application">The registered application.</param>
     /// <param name="Scope">The granted canonical scope string.</param>
     /// <param name="IssuedAt">The token issuance time.</param>
+    /// <param name="Assurance">The authentication assurance pinned to the grant.</param>
     public sealed record OidcAccessTokenIssueRequest(
         SubjectReference Subject,
         Guid SessionId,
         string ClientId,
         ApplicationKey Application,
         string Scope,
-        DateTimeOffset IssuedAt);
+        DateTimeOffset IssuedAt,
+        AuthenticationAssurance? Assurance = null);
 }

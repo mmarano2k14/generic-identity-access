@@ -87,6 +87,14 @@ namespace IdentityAccess.Tests.Authentication
                     "nonce-12345678",
                     idPayload.RootElement.GetProperty("nonce").GetString());
 
+                Assert.Equal(
+                    "urn:generic-identity-access:acr:password",
+                    idPayload.RootElement.GetProperty("acr").GetString());
+
+                Assert.Equal(
+                    new[] { "pwd" },
+                    idPayload.RootElement.GetProperty("amr").EnumerateArray().Select(value => value.GetString()).ToArray());
+
                 Assert.True(
                     idPayload.RootElement.TryGetProperty(
                         "at_hash",

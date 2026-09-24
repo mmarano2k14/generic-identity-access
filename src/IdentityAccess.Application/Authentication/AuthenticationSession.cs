@@ -2,7 +2,6 @@ using IdentityAccess.Domain;
 
 namespace IdentityAccess.Application.Authentication
 {
-
     /// <summary>
     /// Persistent server session metadata. The raw opaque token is never stored in this object or in PostgreSQL.
     /// </summary>
@@ -24,11 +23,20 @@ namespace IdentityAccess.Application.Authentication
         public DateTimeOffset ExpiresAt { get; }
         /// <summary>Gets the revoked at.</summary>
         public DateTimeOffset? RevokedAt { get; }
+        /// <summary>Gets the current server-recorded authentication assurance.</summary>
+        public AuthenticationAssurance Assurance { get; }
 
         /// <summary>Initializes a new instance of <see cref="AuthenticationSession"/>.</summary>
-        public AuthenticationSession(Guid sessionId, SubjectReference subject, string clientId,
-            ApplicationKey application, string authenticationContextKey, DateTimeOffset createdAt,
-            DateTimeOffset expiresAt, DateTimeOffset? revokedAt = null)
+        public AuthenticationSession(
+            Guid sessionId,
+            SubjectReference subject,
+            string clientId,
+            ApplicationKey application,
+            string authenticationContextKey,
+            DateTimeOffset createdAt,
+            DateTimeOffset expiresAt,
+            DateTimeOffset? revokedAt = null,
+            AuthenticationAssurance? assurance = null)
         {
             if (sessionId == Guid.Empty) throw new ArgumentException("A session identifier is required.", nameof(sessionId));
             ArgumentNullException.ThrowIfNull(subject);
@@ -36,6 +44,15 @@ namespace IdentityAccess.Application.Authentication
             ArgumentNullException.ThrowIfNull(application);
             ArgumentException.ThrowIfNullOrWhiteSpace(authenticationContextKey);
             if (expiresAt <= createdAt) throw new ArgumentException("Session expiry must be after creation.", nameof(expiresAt));
+
+            var resolvedAssurance = assurance ?? AuthenticationAssurance.Password(createdAt);
+            if (resolvedAssurance.VerifiedAt < createdAt || resolvedAssurance.VerifiedAt >= expiresAt)
+            {
+                throw new ArgumentException(
+                    "Session assurance verification time must be within the session lifetime.",
+                    nameof(assurance));
+            }
+
             SessionId = sessionId;
             Subject = subject;
             ClientId = clientId;
@@ -44,6 +61,7 @@ namespace IdentityAccess.Application.Authentication
             CreatedAt = createdAt;
             ExpiresAt = expiresAt;
             RevokedAt = revokedAt;
+            Assurance = resolvedAssurance;
         }
     }
 }

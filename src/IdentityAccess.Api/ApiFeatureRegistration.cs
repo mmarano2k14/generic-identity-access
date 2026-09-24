@@ -4,6 +4,9 @@ using IdentityAccess.Application.Authentication;
 using IdentityAccess.Application.Authentication.Mfa;
 using IdentityAccess.Application.Routing;
 using IdentityAccess.Application.Storage;
+using IdentityAccess.Mfa.Recovery;
+using IdentityAccess.Mfa.Totp;
+using IdentityAccess.Mfa.WebAuthn;
 
 namespace IdentityAccess.Api
 {
@@ -30,6 +33,10 @@ namespace IdentityAccess.Api
             Register<ICredentialAdministrationService>(builder.Services);
             Register<ISessionAdministrationService>(builder.Services);
             Register<IMfaAdministrationService>(builder.Services);
+            Register<IAuthenticationAssuranceService>(builder.Services);
+            Register<ITotpAuthenticationFactorService>(builder.Services);
+            Register<IRecoveryAuthenticationFactorService>(builder.Services);
+            Register<IWebAuthnAuthenticationService>(builder.Services);
             Register<IOidcAuthorizationService>(builder.Services);
         }
 

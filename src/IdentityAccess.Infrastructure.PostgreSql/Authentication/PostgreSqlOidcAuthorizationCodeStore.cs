@@ -63,6 +63,8 @@ namespace IdentityAccess.Infrastructure.PostgreSql.Authentication
                         code_challenge_method,
                         nonce,
                         authenticated_at,
+                        assurance_level,
+                        assurance_methods,
                         issued_at,
                         expires_at
                     )
@@ -81,6 +83,8 @@ namespace IdentityAccess.Infrastructure.PostgreSql.Authentication
                         'S256',
                         @nonce,
                         @authenticated_at,
+                        @assurance_level,
+                        @assurance_methods,
                         @issued_at,
                         @expires_at
                     FROM identity_access.user_sessions AS s
@@ -151,6 +155,15 @@ namespace IdentityAccess.Infrastructure.PostgreSql.Authentication
             command.Parameters.AddWithValue(
                 "authenticated_at",
                 grant.AuthenticatedAt);
+
+            command.Parameters.AddWithValue(
+                "assurance_level",
+                (short)grant.Assurance.Level);
+
+            command.Parameters.AddWithValue(
+                "assurance_methods",
+                NpgsqlTypes.NpgsqlDbType.Array | NpgsqlTypes.NpgsqlDbType.Text,
+                grant.Assurance.Methods.ToArray());
 
             command.Parameters.AddWithValue(
                 "issued_at",
@@ -239,6 +252,8 @@ namespace IdentityAccess.Infrastructure.PostgreSql.Authentication
                         c.code_challenge,
                         c.nonce,
                         c.authenticated_at,
+                        c.assurance_level,
+                        c.assurance_methods,
                         c.issued_at,
                         c.expires_at,
                         c.consumed_at;
@@ -305,9 +320,13 @@ namespace IdentityAccess.Infrastructure.PostgreSql.Authentication
                 reader.GetString(8),
                 reader.GetString(9),
                 reader.GetFieldValue<DateTimeOffset>(10),
-                reader.GetFieldValue<DateTimeOffset>(11),
-                reader.GetFieldValue<DateTimeOffset>(12),
-                reader.GetFieldValue<DateTimeOffset>(13));
+                reader.GetFieldValue<DateTimeOffset>(13),
+                reader.GetFieldValue<DateTimeOffset>(14),
+                reader.GetFieldValue<DateTimeOffset>(15),
+                new AuthenticationAssurance(
+                    (AuthenticationAssuranceLevel)reader.GetInt16(11),
+                    reader.GetFieldValue<string[]>(12),
+                    reader.GetFieldValue<DateTimeOffset>(10)));
         }
 
         private static void EnsureRoute(

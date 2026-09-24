@@ -326,7 +326,20 @@ const idTokenOne = "idheader.idpayload.idsignature";
 const loginSessionId = "42333333-3333-3333-3333-333333333333";
 const loginUserId = "42444444-4444-4444-4444-444444444444";
 const loginExpiresAt = "2026-09-23T12:00:00+00:00";
+const loginVerifiedAt = "2026-09-23T10:00:00+00:00";
 const loginRedirectUri = "https://app.example.test/callback";
+const passwordAssurance = {
+  level: "password",
+  methods: ["pwd"],
+  verifiedAt: loginVerifiedAt,
+  acr: "urn:generic-identity-access:acr:password",
+};
+const mfaAssurance = {
+  level: "mfa",
+  methods: ["mfa", "otp", "pwd"],
+  verifiedAt: "2026-09-23T10:05:00+00:00",
+  acr: "urn:generic-identity-access:acr:mfa",
+};
 
 const loginSession = {
   kind: "session",
@@ -352,6 +365,7 @@ test("password login returns a class-client session credential without placing t
       sessionToken: "local-session-token",
       expiresAt: loginExpiresAt,
       redirectUri: loginRedirectUri,
+      assurance: passwordAssurance,
     });
   });
 
@@ -368,6 +382,7 @@ test("password login returns a class-client session credential without placing t
     sessionToken: "local-session-token",
     expiresAt: loginExpiresAt,
     redirectUri: loginRedirectUri,
+    assurance: passwordAssurance,
   });
 });
 
@@ -380,7 +395,7 @@ test("session validation and logout use the registered client path and opaque se
         sessionId: loginSessionId,
         sessionToken: "local-session-token",
       });
-      return json({ userId: loginUserId, sessionId: loginSessionId, expiresAt: loginExpiresAt });
+      return json({ userId: loginUserId, sessionId: loginSessionId, expiresAt: loginExpiresAt, assurance: passwordAssurance });
     }
     assert.ok(url.endsWith("/logout"));
     assert.deepEqual(JSON.parse(init.body), {
@@ -395,10 +410,88 @@ test("session validation and logout use the registered client path and opaque se
     userId: loginUserId,
     sessionId: loginSessionId,
     expiresAt: loginExpiresAt,
+    assurance: passwordAssurance,
   });
   assert.deepEqual(await api.authentication.logout(loginSession, "https://app.example.test/signed-out"), {
     postLogoutRedirectUri: "https://app.example.test/signed-out",
   });
+  assert.equal(calls, 2);
+});
+
+test("TOTP and recovery step-up bind the proof to the exact local session", async () => {
+  let calls = 0;
+  const authenticatorId = "42555555-5555-5555-5555-555555555555";
+  const api = client(async (url, init) => {
+    calls++;
+    assert.equal(init.headers.Authorization, "IdentitySession local-session-token");
+    assert.equal(init.headers["X-Identity-Access-Session"], loginSessionId);
+    assert.equal(init.headers["Content-Type"], "application/json");
+
+    if (url.includes("/totp/")) {
+      assert.deepEqual(JSON.parse(init.body), { code: "123456" });
+    } else {
+      assert.ok(url.includes("/recovery/"));
+      assert.deepEqual(JSON.parse(init.body), { code: "ABCD-EFGH-JKLM-NPQR" });
+    }
+
+    return json(mfaAssurance);
+  });
+
+  assert.deepEqual(
+    await api.authentication.verifyTotp(loginSession, authenticatorId, "123456"),
+    mfaAssurance,
+  );
+  assert.deepEqual(
+    await api.authentication.verifyRecoveryCode(loginSession, authenticatorId, "ABCD-EFGH-JKLM-NPQR"),
+    mfaAssurance,
+  );
+  assert.equal(calls, 2);
+});
+
+test("WebAuthn step-up exposes request options and returns upgraded assurance", async () => {
+  const challengeId = "42666666-6666-6666-6666-666666666666";
+  let calls = 0;
+  const api = client(async (url, init) => {
+    calls++;
+    assert.equal(init.headers.Authorization, "IdentitySession local-session-token");
+    assert.equal(init.headers["X-Identity-Access-Session"], loginSessionId);
+
+    if (url.endsWith("/webauthn/options")) {
+      assert.equal(init.method, "POST");
+      assert.equal(init.body, undefined);
+      return json({
+        challengeId,
+        challenge: "A".repeat(43),
+        relyingPartyId: "identity.example.test",
+        timeoutMilliseconds: 60000,
+        allowCredentialIds: ["B".repeat(43)],
+        userVerification: "required",
+      });
+    }
+
+    assert.ok(url.endsWith("/webauthn/complete"));
+    assert.deepEqual(JSON.parse(init.body), {
+      challengeId,
+      credentialId: "B".repeat(43),
+      clientDataJson: "C".repeat(43),
+      authenticatorData: "D".repeat(43),
+      signature: "E".repeat(43),
+    });
+    return json({ ...mfaAssurance, methods: ["mfa", "pop", "pwd"] });
+  });
+
+  const options = await api.authentication.beginWebAuthnStepUp(loginSession);
+  assert.equal(options.challengeId, challengeId);
+  assert.equal(options.userVerification, "required");
+
+  const assurance = await api.authentication.completeWebAuthnStepUp(loginSession, {
+    challengeId,
+    credentialId: "B".repeat(43),
+    clientDataJson: "C".repeat(43),
+    authenticatorData: "D".repeat(43),
+    signature: "E".repeat(43),
+  });
+  assert.deepEqual(assurance.methods, ["mfa", "pop", "pwd"]);
   assert.equal(calls, 2);
 });
 
@@ -461,6 +554,25 @@ test("OIDC authorization protocol errors preserve the stable error code without 
     assert.equal(error.code, "oidc");
     assert.equal(error.protocolCode, "login_required");
     assert.equal(error.httpStatus, 302);
+    return true;
+  });
+});
+
+test("OIDC interaction_required remains a typed protocol error for MFA step-up", async () => {
+  const api = client(async () => new Response(null, {
+    status: 302,
+    headers: { location: `${loginRedirectUri}?error=interaction_required&state=state-423-fixed-value` },
+  }));
+
+  await assert.rejects(api.oidc.authorize(loginSession, {
+    clientId: "admin-web",
+    redirectUri: loginRedirectUri,
+    state: "state-423-fixed-value",
+    nonce: "nonce-423-fixed-value",
+  }), (error) => {
+    assert.ok(error instanceof IdentityAccessClientError);
+    assert.equal(error.code, "oidc");
+    assert.equal(error.protocolCode, "interaction_required");
     return true;
   });
 });

@@ -72,6 +72,28 @@ namespace IdentityAccess.Tests.Authentication
             Assert.Equal("state-12345678", result.State);
         }
 
+        /// <summary>Verifies a valid local session is redirected to MFA interaction when current assurance is insufficient.</summary>
+        [Fact]
+        public async Task Insufficient_session_assurance_returns_mfa_interaction_required()
+        {
+            var fixture = Create(assuranceSatisfied: false);
+
+            var result = await fixture.Service.AuthorizeAsync(
+                AuthorizationRequest(
+                    fixture.CodeService.ComputeS256Challenge(
+                        CodeVerifier)),
+                Session(),
+                TestContext.Current.CancellationToken);
+
+            Assert.False(result.Succeeded);
+            Assert.Equal(
+                OidcAuthorizationFailureCode.MfaRequired,
+                result.FailureCode);
+            Assert.Equal(RedirectUri, result.RedirectUri);
+            Assert.Equal("state-12345678", result.State);
+            Assert.Null(fixture.Store.Grant);
+        }
+
         /// <summary>Verifies an unregistered redirect is never used as an error redirect target.</summary>
         [Fact]
         public async Task Unregistered_redirect_is_rejected_without_redirect()
@@ -487,7 +509,7 @@ namespace IdentityAccess.Tests.Authentication
                 authenticatedAt.AddHours(1));
         }
 
-        private static OidcAuthorizationServiceFixture Create()
+        private static OidcAuthorizationServiceFixture Create(bool assuranceSatisfied = true)
         {
             var client = new AuthenticationClientRegistration(
                 "web-client",
@@ -521,6 +543,7 @@ namespace IdentityAccess.Tests.Authentication
                     codeService,
                     refreshTokenService,
                     new OidcTestTokenIssuer(),
+                    new OidcTestAuthenticationAssuranceService(assuranceSatisfied),
                     new OidcOptions
                     {
                         Issuer = "https://identity.example.test",

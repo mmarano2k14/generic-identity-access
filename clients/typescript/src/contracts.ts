@@ -48,6 +48,32 @@ export interface IdentitySessionCredential {
 
 export type IdentityAccessCredential = IdentityBearerCredential | IdentitySessionCredential;
 
+
+export interface IdentityAuthenticationAssurance {
+  readonly level: "password" | "mfa";
+  readonly methods: readonly string[];
+  readonly verifiedAt: string;
+  readonly acr: string;
+}
+
+export interface IdentityWebAuthnAuthenticationOptions {
+  readonly challengeId: string;
+  readonly challenge: string;
+  readonly relyingPartyId: string;
+  readonly timeoutMilliseconds: number;
+  readonly allowCredentialIds: readonly string[];
+  readonly userVerification: "required";
+}
+
+export interface IdentityWebAuthnAuthenticationResponse {
+  readonly challengeId: string;
+  readonly credentialId: string;
+  readonly clientDataJson: string;
+  readonly authenticatorData: string;
+  readonly signature: string;
+  readonly userHandle?: string;
+}
+
 export interface IdentityPasswordLoginRequest {
   readonly clientId: string;
   readonly loginIdentifier: string;
@@ -59,12 +85,14 @@ export interface IdentityLocalSession extends IdentitySessionCredential {
   readonly userId: string;
   readonly expiresAt: string;
   readonly redirectUri: string;
+  readonly assurance: IdentityAuthenticationAssurance;
 }
 
 export interface IdentitySessionValidationResult {
   readonly userId: string;
   readonly sessionId: string;
   readonly expiresAt: string;
+  readonly assurance: IdentityAuthenticationAssurance;
 }
 
 export interface IdentityLogoutResult {

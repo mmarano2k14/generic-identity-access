@@ -120,7 +120,7 @@ namespace IdentityAccess.Application.Authentication
                 cancellationToken).ConfigureAwait(false);
 
             return new PasswordLoginResult(PasswordLoginDecision.Succeeded, credential.Value.Subject.UserId,
-                sessionId, issued.Value, expiresAt, redirectUri);
+                sessionId, issued.Value, expiresAt, redirectUri, Assurance: session.Assurance);
         }
 
         /// <summary>Validates an opaque local authentication session.</summary>
@@ -156,7 +156,8 @@ namespace IdentityAccess.Application.Authentication
                     session.Application,
                     session.AuthenticationContextKey,
                     session.CreatedAt,
-                    session.ExpiresAt));
+                    session.ExpiresAt,
+                    session.Assurance));
         }
 
         /// <summary>Revokes an opaque local session and validates an optional post-logout redirect URI.</summary>

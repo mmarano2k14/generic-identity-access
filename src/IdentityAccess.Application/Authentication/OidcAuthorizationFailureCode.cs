@@ -28,6 +28,9 @@ namespace IdentityAccess.Application.Authentication
         LoginRequired = 8,
 
         /// <summary>The configured identity directory is unavailable.</summary>
-        DirectoryUnavailable = 9
+        DirectoryUnavailable = 9,
+
+        /// <summary>The current local session requires a recent additional authentication factor.</summary>
+        MfaRequired = 10
     }
 }

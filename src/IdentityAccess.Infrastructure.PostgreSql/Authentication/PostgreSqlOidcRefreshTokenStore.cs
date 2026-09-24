@@ -71,6 +71,8 @@ namespace IdentityAccess.Infrastructure.PostgreSql.Authentication
                         authentication_context_key,
                         scope,
                         authenticated_at,
+                        assurance_level,
+                        assurance_methods,
                         issued_at,
                         expires_at
                     )
@@ -88,6 +90,8 @@ namespace IdentityAccess.Infrastructure.PostgreSql.Authentication
                         @authentication_context_key,
                         @scope,
                         @authenticated_at,
+                        @assurance_level,
+                        @assurance_methods,
                         @issued_at,
                         @expires_at
                     FROM identity_access.user_sessions AS s
@@ -246,6 +250,7 @@ namespace IdentityAccess.Infrastructure.PostgreSql.Authentication
             string authenticationContextKey;
             string scope;
             DateTimeOffset authenticatedAt;
+            AuthenticationAssurance assurance;
             DateTimeOffset expiresAt;
             DateTimeOffset? consumedAt;
             DateTimeOffset? revokedAt;
@@ -265,6 +270,8 @@ namespace IdentityAccess.Infrastructure.PostgreSql.Authentication
                         t.authentication_context_key,
                         t.scope,
                         t.authenticated_at,
+                        t.assurance_level,
+                        t.assurance_methods,
                         t.expires_at,
                         t.consumed_at,
                         t.revoked_at,
@@ -347,15 +354,19 @@ namespace IdentityAccess.Infrastructure.PostgreSql.Authentication
                 authenticationContextKey = reader.GetString(6);
                 scope = reader.GetString(7);
                 authenticatedAt = reader.GetFieldValue<DateTimeOffset>(8);
-                expiresAt = reader.GetFieldValue<DateTimeOffset>(9);
-                consumedAt = reader.IsDBNull(10)
+                assurance = new AuthenticationAssurance(
+                    (AuthenticationAssuranceLevel)reader.GetInt16(9),
+                    reader.GetFieldValue<string[]>(10),
+                    authenticatedAt);
+                expiresAt = reader.GetFieldValue<DateTimeOffset>(11);
+                consumedAt = reader.IsDBNull(12)
                     ? null
-                    : reader.GetFieldValue<DateTimeOffset>(10);
-                revokedAt = reader.IsDBNull(11)
+                    : reader.GetFieldValue<DateTimeOffset>(12);
+                revokedAt = reader.IsDBNull(13)
                     ? null
-                    : reader.GetFieldValue<DateTimeOffset>(11);
-                sessionEligible = reader.GetBoolean(12);
-                familyRevoked = reader.GetBoolean(13);
+                    : reader.GetFieldValue<DateTimeOffset>(13);
+                sessionEligible = reader.GetBoolean(14);
+                familyRevoked = reader.GetBoolean(15);
             }
 
             if (revokedAt is not null || familyRevoked)
@@ -456,7 +467,8 @@ namespace IdentityAccess.Infrastructure.PostgreSql.Authentication
                     scope,
                     authenticatedAt,
                     now,
-                    expiresAt);
+                    expiresAt,
+                    assurance);
 
             await using (var insert =
                 new NpgsqlCommand(
@@ -476,6 +488,8 @@ namespace IdentityAccess.Infrastructure.PostgreSql.Authentication
                         authentication_context_key,
                         scope,
                         authenticated_at,
+                        assurance_level,
+                        assurance_methods,
                         issued_at,
                         expires_at
                     )
@@ -494,6 +508,8 @@ namespace IdentityAccess.Infrastructure.PostgreSql.Authentication
                         @authentication_context_key,
                         @scope,
                         @authenticated_at,
+                        @assurance_level,
+                        @assurance_methods,
                         @issued_at,
                         @expires_at
                     );
@@ -568,6 +584,13 @@ namespace IdentityAccess.Infrastructure.PostgreSql.Authentication
             command.Parameters.AddWithValue(
                 "authenticated_at",
                 grant.AuthenticatedAt);
+            command.Parameters.AddWithValue(
+                "assurance_level",
+                (short)grant.Assurance.Level);
+            command.Parameters.AddWithValue(
+                "assurance_methods",
+                NpgsqlDbType.Array | NpgsqlDbType.Text,
+                grant.Assurance.Methods.ToArray());
             command.Parameters.AddWithValue(
                 "issued_at",
                 grant.IssuedAt);

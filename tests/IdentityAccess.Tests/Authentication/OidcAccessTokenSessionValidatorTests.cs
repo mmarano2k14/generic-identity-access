@@ -90,7 +90,8 @@ namespace IdentityAccess.Tests.Authentication
                 token.Application,
                 token.AuthenticationContextKey,
                 token.IssuedAt.AddMinutes(-1),
-                token.ExpiresAt.AddMinutes(30));
+                token.ExpiresAt.AddMinutes(30),
+                assurance: token.Assurance);
 
         private static ResolvedDatabaseRoute Route(
             Guid identityScopeId,

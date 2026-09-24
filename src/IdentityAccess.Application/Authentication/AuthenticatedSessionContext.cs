@@ -3,8 +3,8 @@ using IdentityAccess.Domain;
 namespace IdentityAccess.Application.Authentication
 {
     /// <summary>
-    /// Represents server-validated session identity and provenance. The raw opaque session token is
-    /// deliberately excluded.
+    /// Represents server-validated session identity, provenance, and assurance. The raw opaque
+    /// session token is deliberately excluded.
     /// </summary>
     public sealed record AuthenticatedSessionContext
     {
@@ -23,11 +23,14 @@ namespace IdentityAccess.Application.Authentication
         /// <summary>Gets the server-registered authentication context key.</summary>
         public string AuthenticationContextKey { get; }
 
-        /// <summary>Gets the original local authentication time.</summary>
+        /// <summary>Gets the original local password-authentication time.</summary>
         public DateTimeOffset AuthenticatedAt { get; }
 
         /// <summary>Gets the session expiration time.</summary>
         public DateTimeOffset ExpiresAt { get; }
+
+        /// <summary>Gets the current server-recorded authentication assurance.</summary>
+        public AuthenticationAssurance Assurance { get; }
 
         /// <summary>Initializes a server-validated session context.</summary>
         public AuthenticatedSessionContext(
@@ -37,7 +40,8 @@ namespace IdentityAccess.Application.Authentication
             ApplicationKey application,
             string authenticationContextKey,
             DateTimeOffset authenticatedAt,
-            DateTimeOffset expiresAt)
+            DateTimeOffset expiresAt,
+            AuthenticationAssurance? assurance = null)
         {
             ArgumentNullException.ThrowIfNull(subject);
 
@@ -52,10 +56,6 @@ namespace IdentityAccess.Application.Authentication
             ArgumentNullException.ThrowIfNull(application);
             ArgumentException.ThrowIfNullOrWhiteSpace(authenticationContextKey);
 
-            Subject = subject;
-            SessionId = sessionId;
-            ClientId = clientId;
-            Application = application;
             if (authenticatedAt >= expiresAt)
             {
                 throw new ArgumentException(
@@ -63,9 +63,22 @@ namespace IdentityAccess.Application.Authentication
                     nameof(authenticatedAt));
             }
 
+            var resolvedAssurance = assurance ?? AuthenticationAssurance.Password(authenticatedAt);
+            if (resolvedAssurance.VerifiedAt < authenticatedAt || resolvedAssurance.VerifiedAt >= expiresAt)
+            {
+                throw new ArgumentException(
+                    "Session assurance verification time must be within the session lifetime.",
+                    nameof(assurance));
+            }
+
+            Subject = subject;
+            SessionId = sessionId;
+            ClientId = clientId;
+            Application = application;
             AuthenticationContextKey = authenticationContextKey;
             AuthenticatedAt = authenticatedAt;
             ExpiresAt = expiresAt;
+            Assurance = resolvedAssurance;
         }
     }
 }

@@ -3,8 +3,9 @@ using IdentityAccess.Domain;
 namespace IdentityAccess.Application.Authentication
 {
     /// <summary>
-    /// Represents trusted access-token identity and provenance after signature, lifetime, issuer,
-    /// audience, and registered-client validation. The raw encoded token is deliberately excluded.
+    /// Represents trusted access-token identity, provenance, and pinned authentication assurance
+    /// after signature, lifetime, issuer, audience, and registered-client validation. The raw
+    /// encoded token is deliberately excluded.
     /// </summary>
     public sealed record ValidatedOidcAccessToken
     {
@@ -35,6 +36,9 @@ namespace IdentityAccess.Application.Authentication
         /// <summary>Gets the token expiry time.</summary>
         public DateTimeOffset ExpiresAt { get; }
 
+        /// <summary>Gets the authentication assurance pinned into the access token.</summary>
+        public AuthenticationAssurance Assurance { get; }
+
         /// <summary>Initializes a validated access-token context.</summary>
         public ValidatedOidcAccessToken(
             SubjectReference subject,
@@ -45,7 +49,8 @@ namespace IdentityAccess.Application.Authentication
             string scope,
             Guid tokenId,
             DateTimeOffset issuedAt,
-            DateTimeOffset expiresAt)
+            DateTimeOffset expiresAt,
+            AuthenticationAssurance? assurance = null)
         {
             ArgumentNullException.ThrowIfNull(subject);
 
@@ -63,6 +68,10 @@ namespace IdentityAccess.Application.Authentication
             if (expiresAt <= issuedAt)
                 throw new ArgumentException("Access-token expiry must be after issuance.", nameof(expiresAt));
 
+            var resolvedAssurance = assurance ?? AuthenticationAssurance.Password(issuedAt);
+            if (resolvedAssurance.VerifiedAt > issuedAt)
+                throw new ArgumentException("Access-token assurance time must not be after issuance.", nameof(assurance));
+
             Subject = subject;
             SessionId = sessionId;
             ClientId = clientId;
@@ -72,6 +81,7 @@ namespace IdentityAccess.Application.Authentication
             TokenId = tokenId;
             IssuedAt = issuedAt;
             ExpiresAt = expiresAt;
+            Assurance = resolvedAssurance;
         }
     }
 }

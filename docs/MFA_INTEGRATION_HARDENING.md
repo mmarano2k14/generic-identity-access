@@ -5,9 +5,7 @@
 Version `0.48.0` integrates the provider-neutral MFA policy with the concrete TOTP, recovery-code,
 and WebAuthn providers and hardens generic authenticator administration.
 
-This increment does not claim end-to-end password-login or OIDC step-up authentication. Session-level
-MFA assurance and protocol interaction remain separate work because the current session model does not
-persist a verified factor/assurance state.
+This increment did not claim end-to-end password-login or OIDC step-up authentication. Those protocol interactions were added later by `0.49.0` through the durable session-assurance contract documented in `MFA_SESSION_ASSURANCE_OIDC.md`.
 
 ## Provider policy enforcement
 

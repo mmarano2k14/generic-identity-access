@@ -36,7 +36,7 @@ namespace IdentityAccess.Api.Controllers
             {
                 PasswordLoginDecision.Succeeded => Ok(new PasswordLoginResponse(
                     result.UserId!.Value, result.SessionId!.Value, result.SessionToken!, result.ExpiresAt!.Value,
-                    result.RedirectUri!)),
+                    result.RedirectUri!, AuthenticationAssuranceResponse.From(result.Assurance!))),
                 PasswordLoginDecision.InvalidCredentials => ApiProblems.Unauthorized(
                     "Authentication failed",
                     "The credentials are invalid."),
@@ -60,7 +60,8 @@ namespace IdentityAccess.Api.Controllers
                 ? Ok(new SessionValidationResponse(
                     result.Context.Subject.UserId,
                     result.Context.SessionId,
-                    result.Context.ExpiresAt))
+                    result.Context.ExpiresAt,
+                    AuthenticationAssuranceResponse.From(result.Context.Assurance)))
                 : ApiProblems.Unauthorized(
                     "Invalid session",
                     "The session is invalid, expired or revoked.");

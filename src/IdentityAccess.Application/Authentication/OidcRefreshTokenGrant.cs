@@ -41,6 +41,9 @@ namespace IdentityAccess.Application.Authentication
         /// <summary>Gets the original local authentication time.</summary>
         public DateTimeOffset AuthenticatedAt { get; }
 
+        /// <summary>Gets the authentication assurance pinned to this refresh-token family member.</summary>
+        public AuthenticationAssurance Assurance { get; }
+
         /// <summary>Gets when this refresh token was issued.</summary>
         public DateTimeOffset IssuedAt { get; }
 
@@ -61,7 +64,8 @@ namespace IdentityAccess.Application.Authentication
             string scope,
             DateTimeOffset authenticatedAt,
             DateTimeOffset issuedAt,
-            DateTimeOffset expiresAt)
+            DateTimeOffset expiresAt,
+            AuthenticationAssurance? assurance = null)
         {
             if (familyId == Guid.Empty)
                 throw new ArgumentException("Family id must not be empty.", nameof(familyId));
@@ -106,8 +110,13 @@ namespace IdentityAccess.Application.Authentication
             ClientId = clientId;
             Application = application;
             AuthenticationContextKey = authenticationContextKey;
+            var resolvedAssurance = assurance ?? AuthenticationAssurance.Password(authenticatedAt);
+            if (resolvedAssurance.VerifiedAt != authenticatedAt)
+                throw new ArgumentException("Refresh-token assurance time must match authenticated_at.", nameof(assurance));
+
             Scope = scope;
             AuthenticatedAt = authenticatedAt;
+            Assurance = resolvedAssurance;
             IssuedAt = issuedAt;
             ExpiresAt = expiresAt;
         }

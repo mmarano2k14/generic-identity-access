@@ -175,6 +175,7 @@ namespace IdentityAccess.Infrastructure.Authentication
                     "AccessTokenLifetimeMinutes",
                     "IdTokenLifetimeMinutes",
                     "RefreshTokenLifetimeDays",
+                    "MfaMaxAgeMinutes",
                     "ActiveSigningKeyId",
                     "SigningKeys",
                     "SigningKeyId",
@@ -223,6 +224,7 @@ namespace IdentityAccess.Infrastructure.Authentication
 
             RequireService<IOidcAuthorizationCodeStore>(services);
             RequireService<IOidcRefreshTokenStore>(services);
+            RequireService<IAuthenticationAssuranceService>(services);
 
             var oidcOptions =
                 new OidcOptions
@@ -257,7 +259,13 @@ namespace IdentityAccess.Infrastructure.Authentication
                         ReadInt(
                             section,
                             "RefreshTokenLifetimeDays",
-                            OidcOptions.DefaultRefreshTokenLifetimeDays)
+                            OidcOptions.DefaultRefreshTokenLifetimeDays),
+
+                    MfaMaxAgeMinutes =
+                        ReadInt(
+                            section,
+                            "MfaMaxAgeMinutes",
+                            OidcOptions.DefaultMfaMaxAgeMinutes)
                 };
 
             oidcOptions.Validate();
@@ -347,6 +355,7 @@ namespace IdentityAccess.Infrastructure.Authentication
             {
                 services.AddSingleton<IMfaProviderPolicyGuard, MfaProviderPolicyGuard>();
                 services.AddSingleton<IMfaAdministrationService, MfaAdministrationService>();
+                services.AddSingleton<IAuthenticationAssuranceService, AuthenticationAssuranceService>();
             }
         }
 

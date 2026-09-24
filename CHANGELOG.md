@@ -1,3 +1,19 @@
+# 0.49.0 - MFA session assurance and OIDC integration
+
+- Added durable authentication assurance to local sessions with explicit PasswordOnly and MultiFactor levels, stable method references, a verification timestamp, and service-defined ACR values.
+- Added migration `0019_session_authentication_assurance.sql` to persist bounded assurance state on local sessions and pin assurance metadata into OIDC authorization codes and refresh-token families; existing rows are conservatively backfilled as password-only.
+- Added row-locked `IAuthenticationSessionStore.UpgradeAssuranceAsync(...)` persistence that revalidates the exact identity scope, user, session, client, application, authentication context, user status, session lifetime, and revocation state before recording a successful factor.
+- Added `IAuthenticationAssuranceService` to re-resolve trusted routing, evaluate current persisted session assurance against the current MFA policy, enforce freshness for Required MFA, and audit assurance upgrade success/failure.
+- Added local-session MFA step-up HTTP endpoints for TOTP, recovery-code, and WebAuthn assertion verification; successful proofs upgrade only the exact authenticated local session and never persist raw factor proofs.
+- Added non-secret assurance metadata to password-login and session-validation responses and added TypeScript class-client support for TOTP, recovery, WebAuthn step-up, and assurance decoding.
+- Integrated OIDC authorization with current MFA policy and `IdentityAccess:Authentication:Oidc:MfaMaxAgeMinutes`; Required MFA that is missing or stale returns the OIDC `interaction_required` error.
+- Pinned assurance into authorization-code and refresh-token grants and emitted `auth_time`, `acr`, and `amr` in signed ID/access tokens.
+- Preserved pinned assurance during refresh-token rotation; a later local-session upgrade does not silently elevate an already issued refresh-token family.
+- Hardened Bearer validation by reconstructing signed assurance and requiring the current persisted session to retain at least the token's assurance level, verification time, and method references.
+- Added focused assurance, OIDC interaction, TypeScript step-up, and PostgreSQL schema tests, plus dedicated source-consistency and live PostgreSQL assurance validation gates.
+- Added `docs/MFA_SESSION_ASSURANCE_OIDC.md` documenting exact-session step-up, OIDC freshness enforcement, claim pinning, refresh behavior, persistence, and remaining application-policy boundaries.
+- Did not add a generic per-controller step-up attribute for arbitrary business operations; non-OIDC applications may consume the session-assurance contract but remain responsible for defining which operations require recent MFA.
+
 # 0.48.0 - MFA integration and administration hardening
 
 - Added a provider-neutral MFA policy guard and wired TOTP, recovery-code, and WebAuthn enrollment/verification operations to the current application policy on the already resolved database route.

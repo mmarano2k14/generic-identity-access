@@ -72,6 +72,9 @@ namespace IdentityAccess.Api.Oidc
                 OidcAuthorizationFailureCode.LoginRequired =>
                     "login_required",
 
+                OidcAuthorizationFailureCode.MfaRequired =>
+                    "interaction_required",
+
                 OidcAuthorizationFailureCode.DirectoryUnavailable =>
                     "temporarily_unavailable",
 

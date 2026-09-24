@@ -85,7 +85,7 @@ Identity, database placement, authentication, authorization, and application res
 
 See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the architectural contracts and invariants.
 
-See [`docs/MFA_PROVIDER_ARCHITECTURE.md`](docs/MFA_PROVIDER_ARCHITECTURE.md) for the generic MFA/provider boundary, [`docs/TOTP_PROVIDER.md`](docs/TOTP_PROVIDER.md) for TOTP, [`docs/RECOVERY_PROVIDER.md`](docs/RECOVERY_PROVIDER.md) for recovery codes, [`docs/WEBAUTHN_REGISTRATION.md`](docs/WEBAUTHN_REGISTRATION.md) plus [`docs/WEBAUTHN_AUTHENTICATION.md`](docs/WEBAUTHN_AUTHENTICATION.md) for passkey/WebAuthn, and [`docs/MFA_INTEGRATION_HARDENING.md`](docs/MFA_INTEGRATION_HARDENING.md) for cross-provider policy and administration hardening.
+See [`docs/MFA_PROVIDER_ARCHITECTURE.md`](docs/MFA_PROVIDER_ARCHITECTURE.md) for the generic MFA/provider boundary, [`docs/TOTP_PROVIDER.md`](docs/TOTP_PROVIDER.md) for TOTP, [`docs/RECOVERY_PROVIDER.md`](docs/RECOVERY_PROVIDER.md) for recovery codes, [`docs/WEBAUTHN_REGISTRATION.md`](docs/WEBAUTHN_REGISTRATION.md) plus [`docs/WEBAUTHN_AUTHENTICATION.md`](docs/WEBAUTHN_AUTHENTICATION.md) for passkey/WebAuthn, and [`docs/MFA_INTEGRATION_HARDENING.md`](docs/MFA_INTEGRATION_HARDENING.md) for cross-provider policy and administration hardening; [`docs/MFA_SESSION_ASSURANCE_OIDC.md`](docs/MFA_SESSION_ASSURANCE_OIDC.md) for durable session assurance, MFA step-up, and OIDC integration.
 
 ## Repository Structure
 
@@ -234,7 +234,7 @@ The service currently provides a local authentication foundation with:
 - session validation and logout;
 - registered login and post-logout redirect URIs.
 
-OAuth 2.0 / OpenID Connect Authorization Code + PKCE, rotating refresh tokens, process-pinned multi-key RSA signing-key rotation, and Bearer access-token validation for protected administration APIs are implemented for registered public clients. Bearer authentication revalidates the referenced local session and current active user before entering the existing RBAC pipeline. The provider-neutral MFA policy/authenticator foundation, optional TOTP provider, hash-only single-use recovery-code provider, and WebAuthn/passkey registration/authentication provider are implemented. Concrete provider execution is now constrained by the current application MFA policy, administration exposes effective user MFA state, normal revocation protects the final non-recovery verification factor required by a Required policy, and explicit lost-factor revocation revokes active local sessions. Session-level MFA assurance, password-login step-up, and OIDC MFA/ACR enforcement remain separate work.
+OAuth 2.0 / OpenID Connect Authorization Code + PKCE, rotating refresh tokens, process-pinned multi-key RSA signing-key rotation, and Bearer access-token validation for protected administration APIs are implemented for registered public clients. Bearer authentication revalidates the referenced local session and current active user before entering the existing RBAC pipeline. The provider-neutral MFA policy/authenticator foundation, optional TOTP provider, hash-only single-use recovery-code provider, and WebAuthn/passkey registration/authentication provider are implemented. Concrete provider execution is constrained by the current application MFA policy, administration exposes effective user MFA state, normal revocation protects the final non-recovery verification factor required by a Required policy, and explicit lost-factor revocation revokes active local sessions. Local sessions now persist password-only or multi-factor assurance, exact-session TOTP/recovery/WebAuthn step-up can raise that assurance, and OIDC authorization enforces current Required-MFA freshness while pinning `auth_time`, `acr`, and `amr` into issued grants and tokens. A generic declarative step-up requirement for arbitrary non-OIDC business operations remains application policy rather than a repository-wide controller attribute.
 
 See [`docs/LOCAL_AUTHENTICATION_FOUNDATION.md`](docs/LOCAL_AUTHENTICATION_FOUNDATION.md).
 
@@ -265,6 +265,7 @@ See [`docs/LOCAL_AUTHENTICATION_FOUNDATION.md`](docs/LOCAL_AUTHENTICATION_FOUNDA
 - [`docs/WEBAUTHN_REGISTRATION.md`](docs/WEBAUTHN_REGISTRATION.md) — WebAuthn/passkey registration, challenge validation, and public credential persistence.
 - [`docs/WEBAUTHN_AUTHENTICATION.md`](docs/WEBAUTHN_AUTHENTICATION.md) — WebAuthn/passkey assertion verification, signature counters, backup state, and atomic challenge consumption.
 - [`docs/MFA_INTEGRATION_HARDENING.md`](docs/MFA_INTEGRATION_HARDENING.md) — cross-provider policy enforcement, effective user state, safe revocation, and lost-factor administration.
+- [`docs/MFA_SESSION_ASSURANCE_OIDC.md`](docs/MFA_SESSION_ASSURANCE_OIDC.md) — durable local-session assurance, provider step-up, OIDC MFA freshness, and `auth_time`/`acr`/`amr` propagation.
 - [`docs/CONTROLLER_API_AND_SWAGGER.md`](docs/CONTROLLER_API_AND_SWAGGER.md) — controller and OpenAPI conventions.
 - [`docs/SOURCE_LAYOUT.md`](docs/SOURCE_LAYOUT.md) — C# source conventions.
 - [`docs/VALIDATION.md`](docs/VALIDATION.md) — validation procedures.

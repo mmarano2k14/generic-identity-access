@@ -15,6 +15,9 @@ namespace IdentityAccess.Application.Authentication
         /// <summary>Defines the default absolute refresh-token family lifetime in days.</summary>
         public const int DefaultRefreshTokenLifetimeDays = 30;
 
+        /// <summary>Defines the default maximum age of MFA assurance accepted by OIDC authorization.</summary>
+        public const int DefaultMfaMaxAgeMinutes = 15;
+
         /// <summary>Gets or initializes the canonical provider issuer.</summary>
         public string Issuer { get; init; } = string.Empty;
 
@@ -36,6 +39,10 @@ namespace IdentityAccess.Application.Authentication
         /// <summary>Gets or initializes the absolute refresh-token family lifetime in days.</summary>
         public int RefreshTokenLifetimeDays { get; init; } =
             DefaultRefreshTokenLifetimeDays;
+
+        /// <summary>Gets or initializes the maximum accepted age of required MFA assurance.</summary>
+        public int MfaMaxAgeMinutes { get; init; } =
+            DefaultMfaMaxAgeMinutes;
 
         /// <summary>Validates the current value and normalizes the issuer.</summary>
         public OidcOptions Validate()
@@ -67,6 +74,9 @@ namespace IdentityAccess.Application.Authentication
 
             if (RefreshTokenLifetimeDays is < 1 or > 365)
                 throw new ArgumentOutOfRangeException(nameof(RefreshTokenLifetimeDays));
+
+            if (MfaMaxAgeMinutes is < 1 or > 1440)
+                throw new ArgumentOutOfRangeException(nameof(MfaMaxAgeMinutes));
 
             return this;
         }

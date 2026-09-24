@@ -16,6 +16,7 @@ namespace IdentityAccess.Application.Authentication
         IOidcCodeService codeService,
         IOidcRefreshTokenService refreshTokenService,
         IOidcTokenIssuer tokenIssuer,
+        IAuthenticationAssuranceService assuranceService,
         OidcOptions options,
         TimeProvider timeProvider,
         ISecurityAuditWriter auditWriter)
@@ -181,6 +182,29 @@ namespace IdentityAccess.Application.Authentication
                     state);
             }
 
+            var assuranceEvaluation = await assuranceService
+                .EvaluateAsync(
+                    session,
+                    TimeSpan.FromMinutes(validatedOptions.MfaMaxAgeMinutes),
+                    cancellationToken)
+                .ConfigureAwait(false);
+
+            if (assuranceEvaluation is null)
+            {
+                return OidcAuthorizationResult.Reject(
+                    OidcAuthorizationFailureCode.LoginRequired,
+                    redirectUri,
+                    state);
+            }
+
+            if (!assuranceEvaluation.Satisfied)
+            {
+                return OidcAuthorizationResult.Reject(
+                    OidcAuthorizationFailureCode.MfaRequired,
+                    redirectUri,
+                    state);
+            }
+
             var now =
                 timeProvider.GetUtcNow();
 
@@ -199,10 +223,11 @@ namespace IdentityAccess.Application.Authentication
                     "openid",
                     request.CodeChallenge,
                     request.Nonce!,
-                    session.AuthenticatedAt,
+                    assuranceEvaluation.Assurance.VerifiedAt,
                     now,
                     now.AddSeconds(
-                        validatedOptions.AuthorizationCodeLifetimeSeconds));
+                        validatedOptions.AuthorizationCodeLifetimeSeconds),
+                    assurance: assuranceEvaluation.Assurance);
 
             var created =
                 await authorizationCodes
@@ -357,7 +382,8 @@ namespace IdentityAccess.Application.Authentication
                     grant.AuthenticatedAt,
                     now,
                     now.AddDays(
-                        validatedOptions.RefreshTokenLifetimeDays));
+                        validatedOptions.RefreshTokenLifetimeDays),
+                    grant.Assurance);
 
             var refreshFamilyCreated =
                 await refreshTokens
@@ -387,7 +413,8 @@ namespace IdentityAccess.Application.Authentication
                         grant.Scope,
                         grant.Nonce,
                         grant.AuthenticatedAt,
-                        now));
+                        now,
+                        grant.Assurance));
             }
             catch
             {
@@ -546,7 +573,8 @@ namespace IdentityAccess.Application.Authentication
                         grant.ClientId,
                         grant.Application,
                         grant.Scope,
-                        now));
+                        now,
+                        grant.Assurance));
             }
             catch
             {

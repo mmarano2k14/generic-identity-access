@@ -49,6 +49,8 @@ namespace IdentityAccess.Tests.Authentication
             Assert.Contains("/connect/token", json, StringComparison.Ordinal);
             Assert.Contains("/.well-known/openid-configuration", json, StringComparison.Ordinal);
             Assert.Contains("/.well-known/jwks.json", json, StringComparison.Ordinal);
+            Assert.Contains("/api/v1/authentication/clients/{clientId}/mfa/totp/{authenticatorId}/verify", json, StringComparison.Ordinal);
+            Assert.Contains("/api/v1/authentication/clients/{clientId}/mfa/webauthn/options", json, StringComparison.Ordinal);
         }
 
         [Fact]
