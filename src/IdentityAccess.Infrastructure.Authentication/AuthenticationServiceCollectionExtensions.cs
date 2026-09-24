@@ -71,6 +71,7 @@ namespace IdentityAccess.Infrastructure.Authentication
                     "SessionLifetimeMinutes",
                     "LockoutAttempts",
                     "LockoutMinutes",
+                    "SensitiveOperationMfaMaxAgeMinutes",
                     "Clients",
                     "Oidc"
                 };
@@ -128,7 +129,12 @@ namespace IdentityAccess.Infrastructure.Authentication
                     LockoutMinutes = ReadInt(
                         section,
                         "LockoutMinutes",
-                        AuthenticationOptions.DefaultLockoutMinutes)
+                        AuthenticationOptions.DefaultLockoutMinutes),
+
+                    SensitiveOperationMfaMaxAgeMinutes = ReadInt(
+                        section,
+                        "SensitiveOperationMfaMaxAgeMinutes",
+                        AuthenticationOptions.DefaultSensitiveOperationMfaMaxAgeMinutes)
                 };
 
             options.Validate();
@@ -144,6 +150,7 @@ namespace IdentityAccess.Infrastructure.Authentication
             services.AddSingleton(TimeProvider.System);
             services.AddSingleton<ILocalAuthenticationService, LocalAuthenticationService>();
             services.AddSingleton<ICredentialAdministrationService, CredentialAdministrationService>();
+            services.AddSingleton<ISelfServiceCredentialService, SelfServiceCredentialService>();
             services.AddSingleton<ISessionAdministrationService, SessionAdministrationService>();
             AddMfaAdministration(services);
 

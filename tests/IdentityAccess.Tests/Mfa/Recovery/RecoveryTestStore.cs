@@ -91,5 +91,45 @@ namespace IdentityAccess.Tests.Mfa.Recovery
             return Task.FromResult(RecoveryCodeStoreMutationResult.Succeeded);
         }
 
+        public Task<RecoveryPasswordResetStoreResult> TryResetPasswordAsync(
+            ResolvedDatabaseRoute route,
+            Guid identityScopeId,
+            Guid userId,
+            byte[] codeHash,
+            string passwordHash,
+            DateTimeOffset occurredAt,
+            CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            var set = _sets.Values.SingleOrDefault(candidate =>
+                candidate.Authenticator.IdentityScopeId == identityScopeId &&
+                candidate.Authenticator.UserId == userId &&
+                candidate.Authenticator.Status == UserAuthenticatorStatus.Active);
+
+            if (set is null)
+                return Task.FromResult(RecoveryPasswordResetStoreResult.NotFound);
+
+            var hash = Convert.ToHexString(codeHash);
+            if (!set.Consumed.TryGetValue(hash, out var existingConsumedAt))
+                return Task.FromResult(RecoveryPasswordResetStoreResult.InvalidCode);
+            if (existingConsumedAt is not null)
+                return Task.FromResult(RecoveryPasswordResetStoreResult.AlreadyConsumed);
+
+            set.Consumed[hash] = occurredAt;
+            var current = set.Authenticator;
+            set.Authenticator = new UserAuthenticator(
+                current.IdentityScopeId,
+                current.AuthenticatorId,
+                current.UserId,
+                current.Provider,
+                current.DisplayName,
+                current.Status,
+                current.CreatedAt,
+                current.ConfirmedAt,
+                occurredAt,
+                current.RevokedAt);
+            return Task.FromResult(RecoveryPasswordResetStoreResult.Succeeded);
+        }
+
     }
 }

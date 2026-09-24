@@ -3,6 +3,8 @@ import type {
   IdentityLocalSession,
   IdentityLogoutResult,
   IdentityPasswordLoginRequest,
+  IdentityRecoveryPasswordResetRequest,
+  IdentitySelfServicePasswordChangeRequest,
   IdentitySessionCredential,
   IdentitySessionValidationResult,
   IdentityWebAuthnAuthenticationOptions,
@@ -56,6 +58,49 @@ export class IdentityAccessAuthenticationClient {
           assurance: IdentityAccessAuthenticationClient.decodeAssurance(data.assurance),
         };
       },
+    );
+  }
+
+  public async changePassword(
+    request: IdentitySelfServicePasswordChangeRequest,
+    signal?: AbortSignal,
+  ): Promise<void> {
+    const normalized = IdentityAccessAuthenticationClient.normalizeCredential(request.credential);
+    const currentPassword = IdentityAccessValueCodec.nonEmptySecret(request.currentPassword);
+    const newPassword = IdentityAccessValueCodec.nonEmptySecret(request.newPassword);
+
+    await this.#transport.perform(
+      `api/v1/authentication/clients/${encodeURIComponent(normalized.clientId)}/credentials/password/change`,
+      {
+        method: "POST",
+        acceptedStatuses: [204],
+        headers: IdentityAccessAuthenticationClient.sessionHeaders(normalized, true),
+        body: JSON.stringify({ currentPassword, newPassword }),
+        ...(signal === undefined ? {} : { signal }),
+      },
+      async () => undefined,
+    );
+  }
+
+  public async recoverPasswordWithCode(
+    request: IdentityRecoveryPasswordResetRequest,
+    signal?: AbortSignal,
+  ): Promise<void> {
+    const clientId = IdentityAccessValueCodec.clientId(request.clientId);
+    const loginIdentifier = IdentityAccessValueCodec.nonEmpty(request.loginIdentifier);
+    const recoveryCode = IdentityAccessValueCodec.nonEmptySecret(request.recoveryCode);
+    const newPassword = IdentityAccessValueCodec.nonEmptySecret(request.newPassword);
+
+    await this.#transport.perform(
+      `api/v1/authentication/clients/${encodeURIComponent(clientId)}/recovery/password`,
+      {
+        method: "POST",
+        acceptedStatuses: [204],
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ loginIdentifier, recoveryCode, newPassword }),
+        ...(signal === undefined ? {} : { signal }),
+      },
+      async () => undefined,
     );
   }
 

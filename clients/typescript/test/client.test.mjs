@@ -386,6 +386,53 @@ test("password login returns a class-client session credential without placing t
   });
 });
 
+test("self-service password change reuses the exact local-session provenance and keeps passwords out of the URL", async () => {
+  const api = client(async (url, init) => {
+    assert.equal(url, "https://identity.example.test/api/v1/authentication/clients/admin-web/credentials/password/change");
+    assert.equal(url.includes("current-password"), false);
+    assert.equal(url.includes("replacement-password"), false);
+    assert.equal(init.method, "POST");
+    assert.equal(init.headers.Authorization, "IdentitySession local-session-token");
+    assert.equal(init.headers["X-Identity-Access-Session"], loginSessionId);
+    assert.equal(init.headers["Content-Type"], "application/json");
+    assert.deepEqual(JSON.parse(init.body), {
+      currentPassword: "current-password-value",
+      newPassword: "replacement-password-value",
+    });
+    return new Response(null, { status: 204 });
+  });
+
+  await api.authentication.changePassword({
+    credential: loginSession,
+    currentPassword: "current-password-value",
+    newPassword: "replacement-password-value",
+  });
+});
+
+test("recovery-code password reset sends only the requested recovery proof in the body", async () => {
+  const api = client(async (url, init) => {
+    assert.equal(url, "https://identity.example.test/api/v1/authentication/clients/admin-web/recovery/password");
+    assert.equal(url.includes("marco@example.test"), false);
+    assert.equal(url.includes("ABCD"), false);
+    assert.equal(init.method, "POST");
+    assert.equal(init.headers["Content-Type"], "application/json");
+    assert.equal("Authorization" in init.headers, false);
+    assert.deepEqual(JSON.parse(init.body), {
+      loginIdentifier: "marco@example.test",
+      recoveryCode: "ABCD-EFGH-JKLM-NPQR",
+      newPassword: "replacement-password-value",
+    });
+    return new Response(null, { status: 204 });
+  });
+
+  await api.authentication.recoverPasswordWithCode({
+    clientId: "admin-web",
+    loginIdentifier: "marco@example.test",
+    recoveryCode: "ABCD-EFGH-JKLM-NPQR",
+    newPassword: "replacement-password-value",
+  });
+});
+
 test("session validation and logout use the registered client path and opaque session payload", async () => {
   let calls = 0;
   const api = client(async (url, init) => {

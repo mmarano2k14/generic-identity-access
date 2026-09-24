@@ -12,6 +12,8 @@ namespace IdentityAccess.Application.Authentication
         public const int DefaultLockoutAttempts = 5;
         /// <summary>Defines the default lockout minutes constant.</summary>
         public const int DefaultLockoutMinutes = 15;
+        /// <summary>Defines the default recent-MFA window for sensitive credential operations.</summary>
+        public const int DefaultSensitiveOperationMfaMaxAgeMinutes = 10;
 
         /// <summary>Gets or initializes the session lifetime minutes.</summary>
         public int SessionLifetimeMinutes { get; init; } = DefaultSessionLifetimeMinutes;
@@ -19,6 +21,8 @@ namespace IdentityAccess.Application.Authentication
         public int LockoutAttempts { get; init; } = DefaultLockoutAttempts;
         /// <summary>Gets or initializes the lockout minutes.</summary>
         public int LockoutMinutes { get; init; } = DefaultLockoutMinutes;
+        /// <summary>Gets or initializes the maximum age of MFA accepted for sensitive credential operations.</summary>
+        public int SensitiveOperationMfaMaxAgeMinutes { get; init; } = DefaultSensitiveOperationMfaMaxAgeMinutes;
 
         /// <summary>Validates the current value and throws when it violates the contract.</summary>
         public void Validate()
@@ -29,6 +33,8 @@ namespace IdentityAccess.Application.Authentication
                 throw new ArgumentOutOfRangeException(nameof(LockoutAttempts));
             if (LockoutMinutes is < 1 or > 1440)
                 throw new ArgumentOutOfRangeException(nameof(LockoutMinutes));
+            if (SensitiveOperationMfaMaxAgeMinutes is < 1 or > 60)
+                throw new ArgumentOutOfRangeException(nameof(SensitiveOperationMfaMaxAgeMinutes));
         }
     }
 }

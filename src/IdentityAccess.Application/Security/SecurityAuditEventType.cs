@@ -106,6 +106,12 @@ namespace IdentityAccess.Application.Security
         /// <summary>An active local session was upgraded after an additional verified factor.</summary>
         SessionAssuranceUpgraded = 51,
         /// <summary>A session assurance upgrade was rejected because the session binding was no longer valid.</summary>
-        SessionAssuranceUpgradeFailed = 52
+        SessionAssuranceUpgradeFailed = 52,
+        /// <summary>An authenticated password-change attempt was rejected.</summary>
+        PasswordChangeRejected = 53,
+        /// <summary>A recovery code was used to replace a password and revoke existing credentials.</summary>
+        PasswordRecoverySucceeded = 54,
+        /// <summary>A password-recovery attempt was rejected after directory resolution.</summary>
+        PasswordRecoveryFailed = 55
     }
 }

@@ -55,11 +55,11 @@ Reactivating the user does not restore previously revoked sessions.
 
 ## Password Changes
 
-Password change updates the credential and revokes all active sessions for the subject in
-the same PostgreSQL statement.
+Password change updates the credential and revokes all active sessions for the subject in the same PostgreSQL statement. Version `0.50.0` also revokes every unrevoked OIDC refresh token for the subject with categorical reason `credential_changed`.
 
-A stale credential version does not revoke sessions because revocation is conditional on a
-successful credential update.
+A stale credential version does not revoke sessions or refresh tokens because both revocation paths are conditional on a successful credential update. Self-service change re-authenticates the current password and requires recent MFA when the current application policy is `Required`.
+
+Recovery-code account recovery performs code consumption, password replacement, lockout reset, local-session revocation, and refresh-token revocation with reason `account_recovery` inside one PostgreSQL transaction.
 
 ## Administrative Revocation
 

@@ -81,6 +81,19 @@ export interface IdentityPasswordLoginRequest {
   readonly redirectUri: string;
 }
 
+export interface IdentitySelfServicePasswordChangeRequest {
+  readonly credential: IdentitySessionCredential;
+  readonly currentPassword: string;
+  readonly newPassword: string;
+}
+
+export interface IdentityRecoveryPasswordResetRequest {
+  readonly clientId: string;
+  readonly loginIdentifier: string;
+  readonly recoveryCode: string;
+  readonly newPassword: string;
+}
+
 export interface IdentityLocalSession extends IdentitySessionCredential {
   readonly userId: string;
   readonly expiresAt: string;

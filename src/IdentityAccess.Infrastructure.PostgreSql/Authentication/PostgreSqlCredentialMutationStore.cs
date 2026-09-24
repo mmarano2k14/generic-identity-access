@@ -116,11 +116,23 @@ namespace IdentityAccess.Infrastructure.PostgreSql.Authentication
                       AND revoked_at IS NULL
                       AND EXISTS (SELECT 1 FROM updated)
                     RETURNING 1
+                ),
+                refresh_revoked AS
+                (
+                    UPDATE identity_access.oidc_refresh_tokens
+                    SET revoked_at = transaction_timestamp(),
+                        revocation_reason = 'credential_changed'
+                    WHERE identity_scope_id = @scope
+                      AND user_id = @user_id
+                      AND revoked_at IS NULL
+                      AND EXISTS (SELECT 1 FROM updated)
+                    RETURNING 1
                 )
                 SELECT
                     EXISTS (SELECT 1 FROM subject),
                     (SELECT row_version FROM updated LIMIT 1),
-                    (SELECT count(*) FROM revoked);
+                    (SELECT count(*) FROM revoked),
+                    (SELECT count(*) FROM refresh_revoked);
                 """, connection);
 
             AddCredentialParameters(command, credential);

@@ -390,3 +390,23 @@ The complete repository gate remains:
 
 `0.49.0` does not claim a generic declarative step-up requirement for every application operation. The session-assurance contract is reusable by such boundaries, while each consuming application still defines which non-OIDC operations require recent MFA.
 
+## Account recovery and credential-security validation
+
+Version `0.50.0` adds `scripts/verify-credential-security-source-consistency.ps1` to the primary repository verification chain. The gate pins recent-MFA self-service password replacement, current-password reuse rejection, recovery-code-backed password reset, generic public recovery failures, local-session and refresh-token invalidation, migration `0020_credential_security_hardening.sql`, TypeScript client support, and focused source/schema contract tests.
+
+After applying PostgreSQL migrations, run:
+
+```powershell
+$env:PGPASSWORD = "<password>"
+.\scripts\postgresql\verify-credential-security-hardening.ps1
+Remove-Item Env:PGPASSWORD
+```
+
+The complete repository gate remains:
+
+```powershell
+.\scripts\verify.ps1
+```
+
+`0.50.0` is the final planned backend/security milestone in the current sequence. Once GREEN, the next planned work is UI/UX refinement. Any validation defect is corrected as `0.50.x` before that transition.
+

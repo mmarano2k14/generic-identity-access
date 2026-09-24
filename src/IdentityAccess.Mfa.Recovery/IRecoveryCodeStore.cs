@@ -20,5 +20,14 @@ namespace IdentityAccess.Mfa.Recovery
             byte[] codeHash,
             DateTimeOffset consumedAt,
             CancellationToken cancellationToken);
+
+        Task<RecoveryPasswordResetStoreResult> TryResetPasswordAsync(
+            ResolvedDatabaseRoute route,
+            Guid identityScopeId,
+            Guid userId,
+            byte[] codeHash,
+            string passwordHash,
+            DateTimeOffset occurredAt,
+            CancellationToken cancellationToken);
     }
 }

@@ -5,6 +5,7 @@
       "SessionLifetimeMinutes": "60",
       "LockoutAttempts": "5",
       "LockoutMinutes": "15",
+      "SensitiveOperationMfaMaxAgeMinutes": "10",
       "Clients": [
         {
           "ClientId": "web-client",

@@ -1,3 +1,4 @@
+using IdentityAccess.Application.Authentication;
 using IdentityAccess.Application.Authentication.Mfa;
 using IdentityAccess.Application.Routing;
 using IdentityAccess.Application.Security;
@@ -44,6 +45,10 @@ namespace IdentityAccess.Mfa.Recovery
             RequireService<ISecurityAuditWriter>(services);
             RequireService<IAuthenticationFactorProviderRegistry>(services);
             RequireService<IMfaProviderPolicyGuard>(services);
+            RequireService<IAuthenticationClientRegistry>(services);
+            RequireService<IAuthenticationDirectoryLocator>(services);
+            RequireService<IPasswordCredentialStore>(services);
+            RequireService<IPasswordHashingService>(services);
             RequireService<TimeProvider>(services);
 
             var codeCount = ReadInt(section, "CodeCount", RecoveryCodeProviderOptions.DefaultCodeCount);
@@ -52,6 +57,7 @@ namespace IdentityAccess.Mfa.Recovery
             services.AddSingleton(options);
             services.AddSingleton<IRecoveryCodeStore, PostgreSqlRecoveryCodeStore>();
             services.AddSingleton<IRecoveryAuthenticationFactorService, RecoveryAuthenticationFactorService>();
+            services.AddSingleton<IRecoveryPasswordResetService, RecoveryPasswordResetService>();
             services.AddIdentityAccessAuthenticationFactorProvider<RecoveryAuthenticationFactorProvider>();
             return services;
         }

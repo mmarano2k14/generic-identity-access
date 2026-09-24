@@ -56,6 +56,7 @@ Example configuration when authentication is enabled:
       "SessionLifetimeMinutes": "60",
       "LockoutAttempts": "5",
       "LockoutMinutes": "15",
+      "SensitiveOperationMfaMaxAgeMinutes": "10",
       "Clients": [
         {
           "ClientId": "web-client",
@@ -135,6 +136,8 @@ appropriate protected HTTP-only session mechanism.
 POST /api/v1/authentication/clients/{clientId}/password-login
 POST /api/v1/authentication/clients/{clientId}/sessions/validate
 POST /api/v1/authentication/clients/{clientId}/logout
+POST /api/v1/authentication/clients/{clientId}/credentials/password/change
+POST /api/v1/authentication/clients/{clientId}/recovery/password
 ```
 
 Credential administration is protected by the existing fail-closed administration
@@ -155,7 +158,10 @@ PUT  /api/v1/identity-scopes/{scope}/applications/{app}/users/{user}/password-cr
 - logout revokes the exact session only;
 - authentication routing uses the registered authentication context and never scans every database;
 - operation-local state is not held in global mutable current-user fields;
-- all asynchronous application contracts require explicit cancellation tokens.
+- all asynchronous application contracts require explicit cancellation tokens;
+- self-service password change verifies the current password and, when MFA is Required, recent session MFA assurance;
+- successful password change or recovery invalidates existing local sessions and OIDC refresh-token continuity;
+- recovery-code account recovery returns the same public failure for account/factor/proof rejection states.
 
 ## Deliberate limitations
 
@@ -165,8 +171,4 @@ This version is not OpenID Connect and does not expose `/connect/authorize` or
 It does not yet install an ASP.NET Core authentication handler for administrative
 controllers and does not replace the existing fail-closed administration authorizer.
 
-It does not implement MFA, passkeys, recovery codes, password reset, email verification,
-external identity providers, refresh tokens, consent, or OIDC authorization codes.
-
-The next authentication increment can build the trusted HTTP/session context and OIDC
-protocol layer on top of these persisted account and session primitives.
+The original 0.14.0 increment did not implement MFA, passkeys, recovery codes, password reset, refresh tokens, or OIDC. Later increments now provide those capabilities. The current credential-security extension is documented in `ACCOUNT_RECOVERY_AND_CREDENTIAL_SECURITY.md`. External identity providers, email/SMS delivery channels, and password-history storage remain outside this foundation.

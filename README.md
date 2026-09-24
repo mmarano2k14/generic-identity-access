@@ -16,7 +16,7 @@ The repository is application-agnostic. Consuming systems define their own resou
 - Permission policies, statements, and scoped group-policy bindings.
 - Persistent whole-segment wildcard capability patterns.
 - Neutral RBAC adapter boundary with external wildcard evaluation.
-- Local password credential management, lockout, opaque sessions, and registered redirect URIs.
+- Local password credential management, lockout, opaque sessions, registered redirect URIs, sensitive self-service password change, and recovery-code-backed account recovery.
 - Provider-neutral MFA policy and authenticator lifecycle with pluggable TOTP, recovery-code, and WebAuthn providers, policy-enforced provider execution, effective user MFA state, and hardened lost-factor administration.
 - Class-composed TypeScript / Next.js connector with separated system, authentication, OIDC, authorization, and administration responsibility classes, bounded core collection reads, and a premium multi-page server-first administration control center.
 
@@ -234,7 +234,7 @@ The service currently provides a local authentication foundation with:
 - session validation and logout;
 - registered login and post-logout redirect URIs.
 
-OAuth 2.0 / OpenID Connect Authorization Code + PKCE, rotating refresh tokens, process-pinned multi-key RSA signing-key rotation, and Bearer access-token validation for protected administration APIs are implemented for registered public clients. Bearer authentication revalidates the referenced local session and current active user before entering the existing RBAC pipeline. The provider-neutral MFA policy/authenticator foundation, optional TOTP provider, hash-only single-use recovery-code provider, and WebAuthn/passkey registration/authentication provider are implemented. Concrete provider execution is constrained by the current application MFA policy, administration exposes effective user MFA state, normal revocation protects the final non-recovery verification factor required by a Required policy, and explicit lost-factor revocation revokes active local sessions. Local sessions now persist password-only or multi-factor assurance, exact-session TOTP/recovery/WebAuthn step-up can raise that assurance, and OIDC authorization enforces current Required-MFA freshness while pinning `auth_time`, `acr`, and `amr` into issued grants and tokens. A generic declarative step-up requirement for arbitrary non-OIDC business operations remains application policy rather than a repository-wide controller attribute.
+OAuth 2.0 / OpenID Connect Authorization Code + PKCE, rotating refresh tokens, process-pinned multi-key RSA signing-key rotation, and Bearer access-token validation for protected administration APIs are implemented for registered public clients. Bearer authentication revalidates the referenced local session and current active user before entering the existing RBAC pipeline. The provider-neutral MFA policy/authenticator foundation, optional TOTP provider, hash-only single-use recovery-code provider, and WebAuthn/passkey registration/authentication provider are implemented. Concrete provider execution is constrained by the current application MFA policy, administration exposes effective user MFA state, normal revocation protects the final non-recovery verification factor required by a Required policy, and explicit lost-factor revocation revokes active local sessions. Local sessions now persist password-only or multi-factor assurance, exact-session TOTP/recovery/WebAuthn step-up can raise that assurance, and OIDC authorization enforces current Required-MFA freshness while pinning `auth_time`, `acr`, and `amr` into issued grants and tokens. Self-service password change re-authenticates the current password, requires recent MFA when the current policy is `Required`, rejects direct current-password reuse, and revokes existing sessions plus refresh-token continuity. Recovery codes can perform a pre-authentication password recovery through the registered client route with atomic single-use consumption and the same session/refresh invalidation. A generic declarative step-up requirement for arbitrary non-OIDC business operations remains application policy rather than a repository-wide controller attribute.
 
 See [`docs/LOCAL_AUTHENTICATION_FOUNDATION.md`](docs/LOCAL_AUTHENTICATION_FOUNDATION.md).
 
@@ -266,6 +266,7 @@ See [`docs/LOCAL_AUTHENTICATION_FOUNDATION.md`](docs/LOCAL_AUTHENTICATION_FOUNDA
 - [`docs/WEBAUTHN_AUTHENTICATION.md`](docs/WEBAUTHN_AUTHENTICATION.md) — WebAuthn/passkey assertion verification, signature counters, backup state, and atomic challenge consumption.
 - [`docs/MFA_INTEGRATION_HARDENING.md`](docs/MFA_INTEGRATION_HARDENING.md) — cross-provider policy enforcement, effective user state, safe revocation, and lost-factor administration.
 - [`docs/MFA_SESSION_ASSURANCE_OIDC.md`](docs/MFA_SESSION_ASSURANCE_OIDC.md) — durable local-session assurance, provider step-up, OIDC MFA freshness, and `auth_time`/`acr`/`amr` propagation.
+- [`docs/ACCOUNT_RECOVERY_AND_CREDENTIAL_SECURITY.md`](docs/ACCOUNT_RECOVERY_AND_CREDENTIAL_SECURITY.md) — self-service password replacement, recovery-code account recovery, and credential-change invalidation.
 - [`docs/CONTROLLER_API_AND_SWAGGER.md`](docs/CONTROLLER_API_AND_SWAGGER.md) — controller and OpenAPI conventions.
 - [`docs/SOURCE_LAYOUT.md`](docs/SOURCE_LAYOUT.md) — C# source conventions.
 - [`docs/VALIDATION.md`](docs/VALIDATION.md) — validation procedures.
@@ -311,8 +312,7 @@ See `docs/OBSERVABILITY_AND_SECURITY_AUDIT.md`.
 ## Session Lifecycle
 
 Local sessions are validated against current account state. User suspension invalidates
-existing sessions, password change revokes subject sessions, and administration endpoints
-support user-wide and registered-client-wide revocation.
+existing sessions, password change revokes subject sessions and refresh-token continuity, recovery-code account recovery invalidates both, and administration endpoints support user-wide and registered-client-wide revocation.
 
 See `docs/SESSION_LIFECYCLE.md`.
 

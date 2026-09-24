@@ -35,6 +35,9 @@ try {
     & (Join-Path $root "scripts/verify-mfa-session-assurance-source-consistency.ps1")
     if (-not $?) { throw "MFA session assurance source consistency validation failed." }
 
+    & (Join-Path $root "scripts/verify-credential-security-source-consistency.ps1")
+    if (-not $?) { throw "Credential security source consistency validation failed." }
+
     & (Join-Path $root "scripts/verify-typescript-source-consistency.ps1")
     if (-not $?) { throw "TypeScript source consistency validation failed." }
 

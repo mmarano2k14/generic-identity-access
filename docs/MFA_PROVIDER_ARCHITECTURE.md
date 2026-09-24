@@ -193,3 +193,7 @@ Version `0.48.0` adds a generic policy guard used by all concrete provider servi
 Version `0.49.0` adds durable local-session authentication assurance, exact-session provider step-up, and OIDC MFA freshness/claim propagation. See `MFA_SESSION_ASSURANCE_OIDC.md` for the persistence and protocol contract.
 
 Session assurance and OIDC MFA integration are implemented in `0.49.0`; see `MFA_SESSION_ASSURANCE_OIDC.md` for exact boundaries.
+
+## Backend security closure
+
+The provider/core sequence is followed by session-assurance/OIDC integration (`0.49.0`) and account-recovery/credential-security hardening (`0.50.0`). `0.50.0` is the final planned backend/security milestone in this sequence; subsequent planned work is UI/UX refinement rather than another MFA provider.

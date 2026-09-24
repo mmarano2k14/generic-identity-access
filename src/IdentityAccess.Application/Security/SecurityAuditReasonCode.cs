@@ -12,6 +12,10 @@ namespace IdentityAccess.Application.Security
         /// <summary>The supplied authentication-factor proof was invalid.</summary>
         InvalidAuthenticationFactorProof = 4,
         /// <summary>An authentication-factor proof reused an already consumed replay boundary.</summary>
-        AuthenticationFactorReplayDetected = 5
+        AuthenticationFactorReplayDetected = 5,
+        /// <summary>A sensitive operation requires a recent multi-factor proof.</summary>
+        RecentAuthenticationRequired = 6,
+        /// <summary>The proposed replacement password matches the current password.</summary>
+        PasswordReuseRejected = 7
     }
 }

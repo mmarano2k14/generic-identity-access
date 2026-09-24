@@ -60,6 +60,26 @@ namespace IdentityAccess.Application.Authentication
             ValidatePassword(password);
             var route = await ResolveAsync(identityScopeId, application, cancellationToken).ConfigureAwait(false);
             var subject = new SubjectReference(identityScopeId, userId);
+            var current = await credentials.GetBySubjectAsync(route, subject, cancellationToken).ConfigureAwait(false)
+                ?? throw new InvalidOperationException("The credential subject does not have a password credential.");
+
+            if (passwordHasher.Verify(subject, current.Value.PasswordHash, password) != PasswordHashVerification.Failed)
+            {
+                await auditWriter.TryWriteAsync(
+                    route,
+                    new SecurityAuditEvent(
+                        SecurityAuditEventType.PasswordChangeRejected,
+                        SecurityAuditOutcome.Denied,
+                        identityScopeId,
+                        userId: userId,
+                        application: application,
+                        targetId: userId.ToString("D"),
+                        reasonCode: SecurityAuditReasonCode.PasswordReuseRejected),
+                    cancellationToken).ConfigureAwait(false);
+
+                throw new ArgumentException("The replacement password must differ from the current password.", nameof(password));
+            }
+
             var login = new LoginIdentifier(loginIdentifier);
             var hash = passwordHasher.Hash(subject, password);
             var updated = await credentialMutations.UpdatePasswordAndRevokeSessionsAsync(

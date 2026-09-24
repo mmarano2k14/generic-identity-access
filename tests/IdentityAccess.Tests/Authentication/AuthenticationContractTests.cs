@@ -1,6 +1,7 @@
 using System.Reflection;
 using IdentityAccess.Application.Authentication;
 using IdentityAccess.Domain;
+using IdentityAccess.Mfa.Recovery;
 
 namespace IdentityAccess.Tests.Authentication
 {
@@ -10,6 +11,8 @@ namespace IdentityAccess.Tests.Authentication
         [Theory]
         [InlineData(typeof(ILocalAuthenticationService))]
         [InlineData(typeof(ICredentialAdministrationService))]
+        [InlineData(typeof(ISelfServiceCredentialService))]
+        [InlineData(typeof(IRecoveryPasswordResetService))]
         [InlineData(typeof(IPasswordCredentialStore))]
         [InlineData(typeof(IAuthenticationSessionStore))]
         [InlineData(typeof(ISessionAdministrationService))]

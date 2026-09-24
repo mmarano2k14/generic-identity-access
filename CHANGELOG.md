@@ -1,3 +1,18 @@
+# 0.50.0 - Account recovery and credential security hardening
+
+- Added authenticated self-service password replacement bound to the exact validated local session, current-password reauthentication, and the current trusted database route.
+- Added `SensitiveOperationMfaMaxAgeMinutes` with a bounded 1-60 minute range; when the application MFA policy is `Required`, self-service password replacement requires fresh persisted MFA assurance.
+- Added direct current-password reuse rejection for both self-service and administrative password replacement without introducing a password-history store.
+- Hardened successful password mutation so existing local sessions and unrevoked OIDC refresh tokens are invalidated only after the optimistic-concurrency password update succeeds; refresh tokens use categorical reason `credential_changed`.
+- Added recovery-code-backed password reset for registered authentication clients using login identifier + recovery code + replacement password, with no caller-supplied authenticator identifier and no second reset-token format.
+- Reused the one-active-recovery-authenticator invariant to resolve the provider-owned recovery set server-side and kept raw recovery proofs outside durable storage and audit payloads.
+- Added atomic PostgreSQL recovery reset with row locking, single-use code consumption, password replacement, failed-attempt/lockout reset, local-session revocation, and refresh-token revocation with categorical reason `account_recovery`.
+- Collapsed unknown account, inactive account, unavailable recovery authenticator, invalid code, consumed code, and password-reuse recovery failures into one public account-recovery rejection while retaining categorical internal audit.
+- Added migration `0020_credential_security_hardening.sql` to extend the constrained refresh-token revocation reasons with `credential_changed` and `account_recovery`.
+- Added TypeScript class-client operations for self-service password change and recovery-code account recovery while keeping credentials and recovery proofs out of URLs.
+- Added focused credential-security contract tests, a dedicated source-consistency gate, live PostgreSQL constraint validation, and `docs/ACCOUNT_RECOVERY_AND_CREDENTIAL_SECURITY.md`.
+- This is the final planned backend/security milestone in the current Identity Access foundation sequence; after GREEN verification, planned work moves to reusable administration/login/security UI and UX refinement.
+
 # 0.49.0 - MFA session assurance and OIDC integration
 
 - Added durable authentication assurance to local sessions with explicit PasswordOnly and MultiFactor levels, stable method references, a verification timestamp, and service-defined ACR values.

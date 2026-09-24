@@ -287,6 +287,220 @@ namespace IdentityAccess.Mfa.Recovery
             return RecoveryCodeStoreMutationResult.Succeeded;
         }
 
+        public async Task<RecoveryPasswordResetStoreResult> TryResetPasswordAsync(
+            ResolvedDatabaseRoute route,
+            Guid identityScopeId,
+            Guid userId,
+            byte[] codeHash,
+            string passwordHash,
+            DateTimeOffset occurredAt,
+            CancellationToken cancellationToken)
+        {
+            ArgumentNullException.ThrowIfNull(route);
+            if (identityScopeId == Guid.Empty) throw new ArgumentException("Identity scope is required.", nameof(identityScopeId));
+            if (userId == Guid.Empty) throw new ArgumentException("User identifier is required.", nameof(userId));
+            ArgumentNullException.ThrowIfNull(codeHash);
+            ArgumentException.ThrowIfNullOrWhiteSpace(passwordHash);
+            if (codeHash.Length != 32)
+                throw new ArgumentException("Recovery-code hash must be SHA-256.", nameof(codeHash));
+
+            await using var connection = await _connectionFactory.OpenAsync(route, cancellationToken).ConfigureAwait(false);
+            await using var transaction = await connection.BeginTransactionAsync(cancellationToken).ConfigureAwait(false);
+
+            short userStatus;
+            Guid authenticatorId;
+            await using (var subjectLock = connection.CreateCommand())
+            {
+                subjectLock.Transaction = transaction;
+                subjectLock.CommandText = """
+                    SELECT u.status, a.authenticator_id
+                    FROM identity_access.users AS u
+                    INNER JOIN identity_access.password_credentials AS p
+                        ON p.identity_scope_id = u.identity_scope_id
+                       AND p.user_id = u.user_id
+                    INNER JOIN identity_access.user_authenticators AS a
+                        ON a.identity_scope_id = u.identity_scope_id
+                       AND a.user_id = u.user_id
+                    INNER JOIN identity_access.recovery_code_sets AS s
+                        ON s.identity_scope_id = a.identity_scope_id
+                       AND s.authenticator_id = a.authenticator_id
+                    WHERE u.identity_scope_id = @scope
+                      AND u.user_id = @user_id
+                      AND a.provider_key = @provider
+                      AND a.status = @active_status
+                    FOR UPDATE OF u, p, a, s;
+                    """;
+                AddParameter(subjectLock, "scope", identityScopeId);
+                AddParameter(subjectLock, "user_id", userId);
+                AddParameter(subjectLock, "provider", RecoveryAuthenticationFactorProviderKey.Value);
+                AddParameter(subjectLock, "active_status", (short)UserAuthenticatorStatus.Active);
+
+                await using var reader = await subjectLock.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
+                if (!await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
+                {
+                    await transaction.RollbackAsync(cancellationToken).ConfigureAwait(false);
+                    return RecoveryPasswordResetStoreResult.NotFound;
+                }
+
+                userStatus = reader.GetInt16(0);
+                authenticatorId = reader.GetGuid(1);
+            }
+
+            if (userStatus != (short)UserStatus.Active)
+            {
+                await transaction.RollbackAsync(cancellationToken).ConfigureAwait(false);
+                return RecoveryPasswordResetStoreResult.InactiveUser;
+            }
+
+            DateTimeOffset? existingConsumedAt;
+            await using (var codeLock = connection.CreateCommand())
+            {
+                codeLock.Transaction = transaction;
+                codeLock.CommandText = """
+                    SELECT consumed_at
+                    FROM identity_access.recovery_codes
+                    WHERE identity_scope_id = @scope
+                      AND authenticator_id = @authenticator_id
+                      AND code_hash = @code_hash
+                    FOR UPDATE;
+                    """;
+                AddParameter(codeLock, "scope", identityScopeId);
+                AddParameter(codeLock, "authenticator_id", authenticatorId);
+                AddParameter(codeLock, "code_hash", codeHash);
+
+                await using var reader = await codeLock.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
+                if (!await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
+                {
+                    await transaction.RollbackAsync(cancellationToken).ConfigureAwait(false);
+                    return RecoveryPasswordResetStoreResult.InvalidCode;
+                }
+
+                existingConsumedAt = reader.IsDBNull(0)
+                    ? null
+                    : reader.GetFieldValue<DateTimeOffset>(0);
+            }
+
+            if (existingConsumedAt is not null)
+            {
+                await transaction.RollbackAsync(cancellationToken).ConfigureAwait(false);
+                return RecoveryPasswordResetStoreResult.AlreadyConsumed;
+            }
+
+            await using (var consumeCode = connection.CreateCommand())
+            {
+                consumeCode.Transaction = transaction;
+                consumeCode.CommandText = """
+                    UPDATE identity_access.recovery_codes
+                    SET consumed_at = @occurred_at
+                    WHERE identity_scope_id = @scope
+                      AND authenticator_id = @authenticator_id
+                      AND code_hash = @code_hash
+                      AND consumed_at IS NULL;
+                    """;
+                AddParameter(consumeCode, "occurred_at", occurredAt);
+                AddParameter(consumeCode, "scope", identityScopeId);
+                AddParameter(consumeCode, "authenticator_id", authenticatorId);
+                AddParameter(consumeCode, "code_hash", codeHash);
+                if (await consumeCode.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false) != 1)
+                    throw new InvalidOperationException("Recovery-code password reset lost its locked code row.");
+            }
+
+            await using (var updateSet = connection.CreateCommand())
+            {
+                updateSet.Transaction = transaction;
+                updateSet.CommandText = """
+                    UPDATE identity_access.recovery_code_sets
+                    SET row_version = row_version + 1,
+                        updated_at = transaction_timestamp()
+                    WHERE identity_scope_id = @scope
+                      AND authenticator_id = @authenticator_id;
+                    """;
+                AddParameter(updateSet, "scope", identityScopeId);
+                AddParameter(updateSet, "authenticator_id", authenticatorId);
+                await updateSet.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
+            }
+
+            await using (var updateAuthenticator = connection.CreateCommand())
+            {
+                updateAuthenticator.Transaction = transaction;
+                updateAuthenticator.CommandText = """
+                    UPDATE identity_access.user_authenticators
+                    SET last_used_at = @occurred_at,
+                        row_version = row_version + 1,
+                        updated_at = transaction_timestamp()
+                    WHERE identity_scope_id = @scope
+                      AND user_id = @user_id
+                      AND authenticator_id = @authenticator_id
+                      AND provider_key = @provider
+                      AND status = @active_status;
+                    """;
+                AddParameter(updateAuthenticator, "occurred_at", occurredAt);
+                AddParameter(updateAuthenticator, "scope", identityScopeId);
+                AddParameter(updateAuthenticator, "user_id", userId);
+                AddParameter(updateAuthenticator, "authenticator_id", authenticatorId);
+                AddParameter(updateAuthenticator, "provider", RecoveryAuthenticationFactorProviderKey.Value);
+                AddParameter(updateAuthenticator, "active_status", (short)UserAuthenticatorStatus.Active);
+                if (await updateAuthenticator.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false) != 1)
+                    throw new InvalidOperationException("Recovery-code password reset lost its locked authenticator row.");
+            }
+
+            await using (var updateCredential = connection.CreateCommand())
+            {
+                updateCredential.Transaction = transaction;
+                updateCredential.CommandText = """
+                    UPDATE identity_access.password_credentials
+                    SET password_hash = @password_hash,
+                        failed_access_count = 0,
+                        lockout_until = NULL,
+                        row_version = row_version + 1,
+                        updated_at = transaction_timestamp()
+                    WHERE identity_scope_id = @scope
+                      AND user_id = @user_id;
+                    """;
+                AddParameter(updateCredential, "password_hash", passwordHash);
+                AddParameter(updateCredential, "scope", identityScopeId);
+                AddParameter(updateCredential, "user_id", userId);
+                if (await updateCredential.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false) != 1)
+                    throw new InvalidOperationException("Recovery-code password reset lost its locked credential row.");
+            }
+
+            await using (var revokeSessions = connection.CreateCommand())
+            {
+                revokeSessions.Transaction = transaction;
+                revokeSessions.CommandText = """
+                    UPDATE identity_access.user_sessions
+                    SET revoked_at = @occurred_at
+                    WHERE identity_scope_id = @scope
+                      AND user_id = @user_id
+                      AND revoked_at IS NULL;
+                    """;
+                AddParameter(revokeSessions, "occurred_at", occurredAt);
+                AddParameter(revokeSessions, "scope", identityScopeId);
+                AddParameter(revokeSessions, "user_id", userId);
+                await revokeSessions.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
+            }
+
+            await using (var revokeRefreshTokens = connection.CreateCommand())
+            {
+                revokeRefreshTokens.Transaction = transaction;
+                revokeRefreshTokens.CommandText = """
+                    UPDATE identity_access.oidc_refresh_tokens
+                    SET revoked_at = @occurred_at,
+                        revocation_reason = 'account_recovery'
+                    WHERE identity_scope_id = @scope
+                      AND user_id = @user_id
+                      AND revoked_at IS NULL;
+                    """;
+                AddParameter(revokeRefreshTokens, "occurred_at", occurredAt);
+                AddParameter(revokeRefreshTokens, "scope", identityScopeId);
+                AddParameter(revokeRefreshTokens, "user_id", userId);
+                await revokeRefreshTokens.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
+            }
+
+            await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
+            return RecoveryPasswordResetStoreResult.Succeeded;
+        }
+
         private static void AddParameter(DbCommand command, string name, object value)
         {
             var parameter = command.CreateParameter();

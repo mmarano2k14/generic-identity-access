@@ -1,26 +1,25 @@
 Generic Identity Access delta
-Version: 0.49.0
-Baseline: 0.48.0 MFA integration and hardening GREEN tree
+Version: 0.50.0
+Baseline: 0.49.0 MFA session assurance and OIDC integration GREEN tree
 
 Added files:
-A docs/MFA_SESSION_ASSURANCE_OIDC.md
-A scripts/postgresql/verify-session-assurance.ps1
-A scripts/verify-mfa-session-assurance-source-consistency.ps1
-A src/IdentityAccess.Api/Controllers/AuthenticationAssuranceResponse.cs
-A src/IdentityAccess.Api/Controllers/MfaSessionController.cs
-A src/IdentityAccess.Api/Controllers/RecoverySessionStepUpRequest.cs
-A src/IdentityAccess.Api/Controllers/TotpSessionStepUpRequest.cs
-A src/IdentityAccess.Api/Controllers/WebAuthnSessionAuthenticationRequest.cs
-A src/IdentityAccess.Application/Authentication/AuthenticationAssurance.cs
-A src/IdentityAccess.Application/Authentication/AuthenticationAssuranceEvaluation.cs
-A src/IdentityAccess.Application/Authentication/AuthenticationAssuranceLevel.cs
-A src/IdentityAccess.Application/Authentication/AuthenticationAssuranceService.cs
-A src/IdentityAccess.Application/Authentication/AuthenticationMethodReferences.cs
-A src/IdentityAccess.Application/Authentication/IAuthenticationAssuranceService.cs
-A src/IdentityAccess.Infrastructure.PostgreSql/Migrations/0019_session_authentication_assurance.sql
-A tests/IdentityAccess.Tests/Authentication/AuthenticationAssuranceTests.cs
-A tests/IdentityAccess.Tests/Authentication/OidcTestAuthenticationAssuranceService.cs
-A tests/IdentityAccess.Tests/PostgreSql/PostgreSqlAuthenticationAssuranceSchemaTests.cs
+A docs/ACCOUNT_RECOVERY_AND_CREDENTIAL_SECURITY.md
+A scripts/postgresql/validate-credential-security-hardening.sql
+A scripts/postgresql/verify-credential-security-hardening.ps1
+A scripts/verify-credential-security-source-consistency.ps1
+A src/IdentityAccess.Api/Controllers/RecoveryPasswordResetController.cs
+A src/IdentityAccess.Api/Controllers/RecoveryPasswordResetRequest.cs
+A src/IdentityAccess.Api/Controllers/SelfServiceCredentialsController.cs
+A src/IdentityAccess.Api/Controllers/SelfServicePasswordChangeRequest.cs
+A src/IdentityAccess.Application/Authentication/ISelfServiceCredentialService.cs
+A src/IdentityAccess.Application/Authentication/SelfServiceCredentialService.cs
+A src/IdentityAccess.Application/Authentication/SelfServicePasswordChangeDecision.cs
+A src/IdentityAccess.Infrastructure.PostgreSql/Migrations/0020_credential_security_hardening.sql
+A src/IdentityAccess.Mfa.Recovery/IRecoveryPasswordResetService.cs
+A src/IdentityAccess.Mfa.Recovery/RecoveryPasswordResetDecision.cs
+A src/IdentityAccess.Mfa.Recovery/RecoveryPasswordResetService.cs
+A src/IdentityAccess.Mfa.Recovery/RecoveryPasswordResetStoreResult.cs
+A tests/IdentityAccess.Tests/Authentication/CredentialSecurityHardeningContractTests.cs
 
 Modified files:
 M CHANGELOG.md
@@ -28,58 +27,36 @@ M Directory.Build.props
 M README.md
 M SOURCE_MANIFEST.sha256
 M clients/typescript/src/client/IdentityAccessAuthenticationClient.ts
-M clients/typescript/src/client/IdentityAccessProtocolCodec.ts
 M clients/typescript/src/contracts.ts
-M clients/typescript/src/index.ts
 M clients/typescript/test/client.test.mjs
-M docs/MFA_INTEGRATION_HARDENING.md
+M config/authentication.local.example.json
+M docs/LOCAL_AUTHENTICATION_FOUNDATION.md
 M docs/MFA_PROVIDER_ARCHITECTURE.md
-M docs/OIDC_AUTHORIZATION_CODE_PKCE.md
-M docs/PRODUCTION_QUALIFICATION.md
+M docs/RECOVERY_PROVIDER.md
 M docs/SESSION_LIFECYCLE.md
 M docs/VALIDATION.md
 M scripts/verify.ps1
 M src/IdentityAccess.Api/ApiFeatureRegistration.cs
-M src/IdentityAccess.Api/Controllers/AuthenticationController.cs
-M src/IdentityAccess.Api/Controllers/PasswordLoginResponse.cs
-M src/IdentityAccess.Api/Controllers/SessionValidationResponse.cs
-M src/IdentityAccess.Api/Oidc/OidcRedirectBuilder.cs
-M src/IdentityAccess.Application/Authentication/AuthenticatedSessionContext.cs
-M src/IdentityAccess.Application/Authentication/AuthenticationSession.cs
-M src/IdentityAccess.Application/Authentication/IAuthenticationSessionStore.cs
-M src/IdentityAccess.Application/Authentication/LocalAuthenticationService.cs
-M src/IdentityAccess.Application/Authentication/OidcAccessTokenIssueRequest.cs
-M src/IdentityAccess.Application/Authentication/OidcAccessTokenSessionValidator.cs
-M src/IdentityAccess.Application/Authentication/OidcAuthorizationCodeGrant.cs
-M src/IdentityAccess.Application/Authentication/OidcAuthorizationFailureCode.cs
-M src/IdentityAccess.Application/Authentication/OidcAuthorizationService.cs
-M src/IdentityAccess.Application/Authentication/OidcOptions.cs
-M src/IdentityAccess.Application/Authentication/OidcRefreshTokenGrant.cs
-M src/IdentityAccess.Application/Authentication/OidcTokenIssueRequest.cs
-M src/IdentityAccess.Application/Authentication/PasswordLoginResult.cs
-M src/IdentityAccess.Application/Authentication/ValidatedOidcAccessToken.cs
+M src/IdentityAccess.Application/Authentication/AuthenticationOptions.cs
+M src/IdentityAccess.Application/Authentication/CredentialAdministrationService.cs
 M src/IdentityAccess.Application/Security/SecurityAuditEventType.cs
+M src/IdentityAccess.Application/Security/SecurityAuditReasonCode.cs
 M src/IdentityAccess.Infrastructure.Authentication/AuthenticationServiceCollectionExtensions.cs
-M src/IdentityAccess.Infrastructure.Authentication/RsaOidcAccessTokenValidator.cs
-M src/IdentityAccess.Infrastructure.Authentication/RsaOidcTokenIssuer.cs
-M src/IdentityAccess.Infrastructure.PostgreSql/Authentication/PostgreSqlAuthenticationSessionStore.cs
-M src/IdentityAccess.Infrastructure.PostgreSql/Authentication/PostgreSqlOidcAuthorizationCodeStore.cs
-M src/IdentityAccess.Infrastructure.PostgreSql/Authentication/PostgreSqlOidcRefreshTokenStore.cs
-M tests/IdentityAccess.Tests/Architecture/SessionLifecycleArchitectureTests.cs
-M tests/IdentityAccess.Tests/Authentication/AuthenticationApiTests.cs
-M tests/IdentityAccess.Tests/Authentication/FixedSessionStore.cs
-M tests/IdentityAccess.Tests/Authentication/OidcAccessTokenSessionValidatorTests.cs
-M tests/IdentityAccess.Tests/Authentication/OidcAuthorizationServiceTests.cs
-M tests/IdentityAccess.Tests/Authentication/OidcOptionsTests.cs
-M tests/IdentityAccess.Tests/Authentication/OidcTestAuthorizationCodeStore.cs
-M tests/IdentityAccess.Tests/Authentication/OidcTestRefreshTokenStore.cs
-M tests/IdentityAccess.Tests/Authentication/RsaOidcTokenIssuerTests.cs
+M src/IdentityAccess.Infrastructure.PostgreSql/Authentication/PostgreSqlCredentialMutationStore.cs
+M src/IdentityAccess.Mfa.Recovery/IRecoveryCodeStore.cs
+M src/IdentityAccess.Mfa.Recovery/PostgreSqlRecoveryCodeStore.cs
+M src/IdentityAccess.Mfa.Recovery/RecoveryServiceCollectionExtensions.cs
+M tests/IdentityAccess.Tests/Api/RecordRequestValidationMetadataTests.cs
+M tests/IdentityAccess.Tests/Authentication/AuthenticationContractTests.cs
+M tests/IdentityAccess.Tests/Mfa/Recovery/RecoveryTestStore.cs
 
 Deleted files:
 
-Apply this ZIP as an overlay on the 0.48.0 GREEN tree.
-This increment adds durable local-session authentication assurance, exact-session TOTP/recovery/WebAuthn step-up, Required-MFA freshness enforcement for OIDC authorization, and auth_time/acr/amr propagation with assurance pinned across authorization-code and refresh-token grants.
-PostgreSQL migration 0019_session_authentication_assurance.sql adds bounded assurance state to user_sessions, oidc_authorization_codes, and oidc_refresh_tokens.
-Refresh-token rotation preserves the assurance pinned to the family; later local-session elevation does not silently elevate an existing refresh family.
-Bearer validation requires the current local session to retain at least the signed token assurance.
-Run .\scripts\verify.ps1 after overlay. Do not treat 0.49.0 as GREEN until that command succeeds in the target .NET 10 environment.
+Apply this ZIP as an overlay on the 0.49.0 GREEN tree.
+This increment closes the planned backend/security sequence with authenticated self-service password replacement, recovery-code-backed account recovery, and credential-continuity invalidation.
+Self-service password replacement revalidates the exact local session, current password, trusted route, optimistic credential version, and recent MFA when the current application MFA policy is Required.
+Recovery-code account recovery accepts login identifier + recovery code + replacement password; the server resolves the single active recovery authenticator and does not require its identifier from the caller.
+Successful password replacement revokes active local sessions and unrevoked OIDC refresh tokens; account recovery consumes the recovery code, replaces the password, clears lockout state, and performs both revocations in one PostgreSQL transaction.
+Migration 0020_credential_security_hardening.sql expands the constrained refresh-token revocation reasons with credential_changed and account_recovery.
+Run .\scripts\verify.ps1 after overlay. Do not treat 0.50.0 as GREEN until that command succeeds in the target .NET 10 environment.
+After 0.50.0 is GREEN, the planned next phase is reusable administration/login/security UI and UX refinement; any verification defect remains a 0.50.x corrective patch.

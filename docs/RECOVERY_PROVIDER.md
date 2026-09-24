@@ -126,8 +126,15 @@ Verification
 Recovery
 ```
 
-`Recovery` means the proof may be used by a future account-recovery / MFA recovery flow. This release
-does not itself change password login, OIDC token issuance, or step-up orchestration.
+`Recovery` identifies a proof suitable for recovery flows. Version `0.50.0` uses the active recovery-code set for password recovery without adding a second reset-token format.
+
+## Account recovery integration
+
+Version `0.50.0` adds recovery-code-backed password replacement through the registered authentication-client route. The public request supplies only the login identifier, one recovery code, and the new password; the server resolves the user's one active recovery authenticator.
+
+The PostgreSQL mutation locks the active set and matching code, consumes the code once, replaces the password, clears lockout state, revokes active local sessions, and revokes unrevoked OIDC refresh tokens in the same transaction. Invalid account, authenticator, and proof states are collapsed into one public recovery rejection.
+
+See `ACCOUNT_RECOVERY_AND_CREDENTIAL_SECURITY.md`.
 
 ## Server registration
 
@@ -187,18 +194,14 @@ The full repository gate remains:
 .\scripts\verify.ps1
 ```
 
-## Explicit non-goals of 0.45.0
+## Original 0.45.0 non-goals
 
 This increment does not add:
 
 ```text
-password-login MFA orchestration
-OIDC MFA enforcement
-step-up authentication
-lost-factor administration workflow
-email/SMS recovery
-WebAuthn/passkeys
+email/SMS recovery delivery
+password-history storage
 browser exposure of raw recovery-code storage
 ```
 
-Those remain integration or later-provider work.
+Later increments delivered MFA/OIDC/WebAuthn integration. The remaining entries above are still outside the provider boundary.

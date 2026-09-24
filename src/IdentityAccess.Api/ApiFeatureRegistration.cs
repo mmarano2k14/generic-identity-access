@@ -31,11 +31,13 @@ namespace IdentityAccess.Api
             Register<IIdentityScopeAuthorityAdministrationService>(builder.Services);
             Register<ILocalAuthenticationService>(builder.Services);
             Register<ICredentialAdministrationService>(builder.Services);
+            Register<ISelfServiceCredentialService>(builder.Services);
             Register<ISessionAdministrationService>(builder.Services);
             Register<IMfaAdministrationService>(builder.Services);
             Register<IAuthenticationAssuranceService>(builder.Services);
             Register<ITotpAuthenticationFactorService>(builder.Services);
             Register<IRecoveryAuthenticationFactorService>(builder.Services);
+            Register<IRecoveryPasswordResetService>(builder.Services);
             Register<IWebAuthnAuthenticationService>(builder.Services);
             Register<IOidcAuthorizationService>(builder.Services);
         }
