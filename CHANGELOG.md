@@ -1,3 +1,27 @@
+# 0.53.0 - Administration visual and interaction polish
+
+- Refined reusable administration tables with client-only status filtering, optional presentation sorting, one-action filter reset, and live result counts while keeping all data loading and authorization server-owned.
+- Added accessible table captions, explicit column scopes, full identifier tooltips, and responsive data labels without changing the typed administration contracts.
+- Reworked narrow-screen collection tables into readable card-style records so names, identifiers, lifecycle state, versions, and record actions remain usable without horizontal navigation.
+- Improved mutation dialogs with explicit accessible title/description relationships, pending-state semantics, clearer submit affordances, and dedicated security-sensitive change guidance.
+- Added focused destructive-action presentation without changing the existing server-side confirmation phrase, optimistic concurrency, revalidation, or authorization behavior.
+- Added sticky collection headers, keyboard focus-within treatment, refined toolbar controls, mobile dialog composition, and reduced visual friction across dense administration surfaces.
+- Extended the TypeScript source-consistency gate to pin responsive table semantics, client-only filter/sort behavior, accessible mutation dialogs, and the single shared stylesheet ownership rule.
+- No backend, PostgreSQL schema, routing, OIDC, MFA-provider, RBAC, or public TypeScript client contract changes are introduced in this increment.
+
+# 0.52.0 - Administration CRUD and relationship-management experience
+
+- Expanded the reusable Next.js administration experience from create-only collection flows to server-confirmed create and edit operations for users, tenants, tenant memberships, groups, policies, resource scopes, identity-scope authority objects, and application MFA policy.
+- Added reusable per-record table action rendering, compact mutation controls, and optimistic-concurrency edit dialogs while keeping all API access in server-only orchestration.
+- Added group management workspaces for tenant-membership edges and policy bindings, including explicit add and confirmed remove operations over the existing typed backend contracts.
+- Added policy statement management with explicit add/remove operations; policy containers remain lifecycle-managed and are not hard-deleted.
+- Added identity-scope authority maintenance for group members, policy statements, and group-policy bindings, including confirmed destructive edge removal.
+- Added MFA policy creation/editing from installed provider metadata and authenticator revocation actions, including the distinct lost-factor recovery-revocation path.
+- Preserved deliberate lifecycle semantics where the backend does not expose hard delete: stable users, tenants, memberships, groups, policies, and resource scopes are edited or deactivated rather than silently deleted.
+- Added shared checkbox/select controls and responsive management-list styling while preserving the single custom stylesheet rule and dependency-free UI runtime.
+- Extended TypeScript source-consistency validation to pin the edit/remove administration surfaces and server-only mutation boundary.
+- No backend, PostgreSQL schema, routing, OIDC, MFA-provider, or RBAC contract changes are introduced in this increment.
+
 # 0.51.1 - Recovery surface stylesheet consistency fix
 
 - Added an explicit `.ia-recovery-shell` rule to the single shared administration stylesheet so the recovery surface satisfies the existing UI source-consistency contract.

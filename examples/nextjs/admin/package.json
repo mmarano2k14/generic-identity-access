@@ -1,6 +1,6 @@
 {
   "name": "@identity-access/admin-host",
-  "version": "0.51.1",
+  "version": "0.53.0",
   "private": true,
   "scripts": {
     "prepare:client": "node scripts/build-local-client.mjs",

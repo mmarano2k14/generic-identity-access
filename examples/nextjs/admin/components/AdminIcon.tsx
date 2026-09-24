@@ -20,7 +20,10 @@ export type AdminIconName =
   | "eye-off"
   | "key"
   | "back"
-  | "check";
+  | "check"
+  | "edit"
+  | "trash"
+  | "manage";
 
 /** Dependency-free icon set so the copyable administration module has no UI runtime dependency. */
 export function AdminIcon({ name, className = "ia-icon" }: { readonly name: AdminIconName; readonly className?: string }) {
@@ -80,5 +83,11 @@ export function AdminIcon({ name, className = "ia-icon" }: { readonly name: Admi
       return <svg {...common}><path d="M19 12H5"/><path d="M11 18l-6-6 6-6"/></svg>;
     case "check":
       return <svg {...common}><path d="M5 12l4 4 10-10"/></svg>;
+    case "edit":
+      return <svg {...common}><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4z"/></svg>;
+    case "trash":
+      return <svg {...common}><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 15H6L5 6"/><path d="M10 11v5"/><path d="M14 11v5"/></svg>;
+    case "manage":
+      return <svg {...common}><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-2.8 2.8-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6V21h-4v-.1a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1L4.2 17l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.6-1H3v-4h.1a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9L4.2 7 7 4.2l.1.1a1.7 1.7 0 0 0 1.9.3 1.7 1.7 0 0 0 1-1.6V3h4v.1a1.7 1.7 0 0 0 1 1.6 1.7 1.7 0 0 0 1.9-.3l.1-.1L19.8 7l-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.6 1h.1v4H21a1.7 1.7 0 0 0-1.6 1z"/></svg>;
   }
 }

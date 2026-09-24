@@ -1,19 +1,26 @@
 Generic Identity Access delta
-Version: 0.51.1
-Baseline: 0.51.0 administration navigation and account recovery UX foundation
+Version: 0.53.0
+Baseline: 0.52.0 administration CRUD and relationship-management tree
 
 Added files:
 
 Modified files:
 M CHANGELOG.md
+M DELTA_MANIFEST.txt
 M Directory.Build.props
 M README.md
 M SOURCE_MANIFEST.sha256
+M docs/ADMINISTRATION_UI_UX.md
+M examples/nextjs/admin/components/AdminEntityTable.tsx
+M examples/nextjs/admin/components/AdminMutationDialog.tsx
 M examples/nextjs/admin/package.json
 M examples/nextjs/admin/styles/identity-access-admin.css
+M scripts/verify-typescript-source-consistency.ps1
 
 Deleted files:
 
-Apply this ZIP as an overlay on the 0.51.0 tree.
-This corrective increment adds the explicit recovery-shell style required by the existing TypeScript source-consistency gate without changing authentication, recovery, authorization, MFA, OIDC, PostgreSQL, or routing behavior.
-Run .\scripts\verify.ps1 after overlay. Do not treat 0.51.1 as GREEN until that command succeeds in the target environment.
+Apply this ZIP as an overlay on the supplied 0.52.0 administration CRUD tree.
+This increment adds presentation-only filtering/sorting, responsive collection-table composition, accessible table semantics, and clearer security-sensitive mutation-dialog interaction without changing authorization ownership or backend contracts.
+No PostgreSQL migration or backend API/routing/OIDC/MFA-provider/RBAC/public TypeScript client contract change is introduced.
+TypeScript strict typecheck passed during generation. The Next.js production build could not be completed in the generation environment because the uploaded Windows node_modules tree does not contain the Linux SWC binary and network package download is unavailable.
+Run .\scripts\verify.ps1 after overlay. Do not treat 0.53.0 as GREEN until that command succeeds in the target Windows/.NET 10 environment.

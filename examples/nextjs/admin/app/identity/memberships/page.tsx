@@ -4,7 +4,7 @@ import { AdminMutationDialog } from "../../../components/AdminMutationDialog";
 import { AdminPageHeader } from "../../../components/AdminPageHeader";
 import { AdminSecurityBanner } from "../../../components/AdminSecurityBanner";
 import { IdentityAccessAdminRequest } from "../../../server/IdentityAccessAdminRequest";
-import { createTenantMembershipAction } from "../actions";
+import { createTenantMembershipAction, updateTenantMembershipAction } from "../actions";
 
 export default async function MembershipsPage({ searchParams }: { readonly searchParams: Promise<{ readonly userId?: string }> }) {
   const request = await IdentityAccessAdminRequest.fromCurrentRequest();
@@ -17,6 +17,14 @@ export default async function MembershipsPage({ searchParams }: { readonly searc
     </AdminMutationDialog>
   );
 
+  const edit = membership ? (
+    <AdminMutationDialog title="Edit tenant membership" description="Change only the lifecycle state of this explicit tenant relationship." triggerLabel="Edit membership" submitLabel="Save changes" action={updateTenantMembershipAction} triggerVariant="secondary" triggerIcon="edit">
+      <input type="hidden" name="membershipId" value={membership.membershipId} />
+      <input type="hidden" name="expectedVersion" value={membership.version} />
+      <AdminStatusField name="status" defaultValue={String(membership.status)} />
+    </AdminMutationDialog>
+  ) : null;
+
   const fields = membership ? [
     { label: "Membership ID", value: membership.membershipId, mono: true },
     { label: "User ID", value: membership.userId, mono: true },
@@ -27,7 +35,7 @@ export default async function MembershipsPage({ searchParams }: { readonly searc
 
   return (
     <section className="ia-page">
-      <AdminPageHeader eyebrow="Tenant access" badge="Tenant scoped" title="Memberships" description="Resolve and manage the explicit relationship between a stable identity and the current tenant boundary." actions={create} />
+      <AdminPageHeader eyebrow="Tenant access" badge="Tenant scoped" title="Memberships" description="Resolve and manage the explicit relationship between a stable identity and the current tenant boundary." actions={<div className="ia-action-row">{create}{edit}</div>} />
       <section className="ia-card ia-lookup-card">
         <div className="ia-card-heading"><div><p className="ia-card-kicker">Lookup</p><h2>Inspect membership by user</h2><p>Use a stable user identifier to resolve its membership in this tenant.</p></div></div>
         <form className="ia-inline-form" method="get">

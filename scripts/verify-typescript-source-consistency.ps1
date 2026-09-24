@@ -197,6 +197,15 @@ $overviewPage = Get-Content (Join-Path $nextAdmin "app/identity/page.tsx") -Raw
 $adminCss = Get-Content (Join-Path $nextAdmin "styles/identity-access-admin.css") -Raw
 $detailCard = Get-Content (Join-Path $nextAdmin "components/AdminDetailCard.tsx") -Raw
 $adminField = Get-Content (Join-Path $nextAdmin "components/AdminField.tsx") -Raw
+$entityTable = Get-Content (Join-Path $nextAdmin "components/AdminEntityTable.tsx") -Raw
+$usersPage = Get-Content (Join-Path $nextAdmin "app/identity/users/page.tsx") -Raw
+$tenantsPage = Get-Content (Join-Path $nextAdmin "app/identity/tenants/page.tsx") -Raw
+$membershipsPage = Get-Content (Join-Path $nextAdmin "app/identity/memberships/page.tsx") -Raw
+$groupsPage = Get-Content (Join-Path $nextAdmin "app/identity/groups/page.tsx") -Raw
+$policiesPage = Get-Content (Join-Path $nextAdmin "app/identity/policies/page.tsx") -Raw
+$resourceScopesPage = Get-Content (Join-Path $nextAdmin "app/identity/resource-scopes/page.tsx") -Raw
+$mfaPage = Get-Content (Join-Path $nextAdmin "app/identity/mfa/page.tsx") -Raw
+$authorityPage = Get-Content (Join-Path $nextAdmin "app/identity/authority/page.tsx") -Raw
 $localClientBuild = Get-Content (Join-Path $nextAdmin "scripts/build-local-client.mjs") -Raw
 function Get-NextAdminOwnedFiles {
     param(
@@ -236,6 +245,36 @@ if ($actions -notmatch '^"use server";') { throw "Next.js administration actions
 if ($actions -match '\.client\.') { throw "Next.js Server Action adapters must delegate through IdentityAccessAdminMutationService instead of calling IdentityAccessClient directly." }
 if ($mutationService -notmatch 'requireConfirmation') { throw "Security-sensitive administration mutations must retain explicit confirmation validation." }
 if ($sessionsPage -notmatch 'confirmation' -or $sessionsPage -notmatch 'dangerous') { throw "Session revocation UI must retain explicit destructive confirmation." }
+if ($entityTable -notmatch 'actions\?:\s*ReactNode' -or $entityTable -notmatch 'ia-row-actions') { throw "Administration entity tables must expose reusable per-record action surfaces." }
+if ($entityTable -notmatch 'aria-live' -or $entityTable -notmatch 'All statuses' -or $entityTable -notmatch 'Newest version' -or $entityTable -notmatch 'data-label="Identifier"') { throw "Administration entity tables must retain accessible filtering, presentation sorting, live result counts, and responsive data labels." }
+foreach ($actionName in @(
+    "updateUserAction", "updateTenantAction", "updateTenantMembershipAction", "updateGroupAction",
+    "addGroupMemberAction", "removeGroupMemberAction", "updatePolicyAction", "addPolicyStatementAction",
+    "removePolicyStatementAction", "addGroupPolicyBindingAction", "removeGroupPolicyBindingAction",
+    "updateResourceScopeAction", "updateScopeAuthorityGroupAction", "addScopeAuthorityMemberAction",
+    "removeScopeAuthorityMemberAction", "updateScopeAuthorityPolicyAction", "addScopeAuthorityPolicyStatementAction",
+    "removeScopeAuthorityPolicyStatementAction", "addScopeAuthorityPolicyBindingAction", "removeScopeAuthorityPolicyBindingAction",
+    "createMfaPolicyAction", "updateMfaPolicyAction", "revokeMfaAuthenticatorAction", "recoveryRevokeMfaAuthenticatorAction"
+)) {
+    if ($actions -notmatch [regex]::Escape($actionName)) { throw "Administration Server Actions are missing $actionName." }
+}
+foreach ($methodName in @(
+    "updateUser", "updateTenant", "updateTenantMembership", "updateGroup", "addGroupMember", "removeGroupMember",
+    "updatePolicy", "addPolicyStatement", "removePolicyStatement", "addGroupPolicyBinding", "removeGroupPolicyBinding",
+    "updateResourceScope", "updateScopeAuthorityGroup", "addScopeAuthorityMember", "removeScopeAuthorityMember",
+    "updateScopeAuthorityPolicy", "addScopeAuthorityPolicyStatement", "removeScopeAuthorityPolicyStatement",
+    "addScopeAuthorityPolicyBinding", "removeScopeAuthorityPolicyBinding", "createMfaPolicy", "updateMfaPolicy",
+    "revokeMfaAuthenticator", "recoveryRevokeMfaAuthenticator"
+)) {
+    if ($mutationService -notmatch ("\b" + [regex]::Escape($methodName) + "\s*\(")) { throw "IdentityAccessAdminMutationService is missing $methodName." }
+}
+if ($usersPage -notmatch 'updateUserAction' -or $tenantsPage -notmatch 'updateTenantAction' -or $membershipsPage -notmatch 'updateTenantMembershipAction') { throw "Directory administration must expose server-confirmed edit operations." }
+if ($groupsPage -notmatch 'addGroupMemberAction' -or $groupsPage -notmatch 'removeGroupMemberAction' -or $groupsPage -notmatch 'addGroupPolicyBindingAction' -or $groupsPage -notmatch 'removeGroupPolicyBindingAction') { throw "Group administration must expose add/remove member and policy-binding operations." }
+if ($policiesPage -notmatch 'addPolicyStatementAction' -or $policiesPage -notmatch 'removePolicyStatementAction' -or $policiesPage -notmatch 'updatePolicyAction') { throw "Policy administration must expose edit and statement add/remove operations." }
+if ($resourceScopesPage -notmatch 'updateResourceScopeAction') { throw "Resource-scope administration must expose optimistic-concurrency editing." }
+if ($authorityPage -notmatch 'addScopeAuthorityMemberAction' -or $authorityPage -notmatch 'removeScopeAuthorityMemberAction' -or $authorityPage -notmatch 'addScopeAuthorityPolicyBindingAction' -or $authorityPage -notmatch 'removeScopeAuthorityPolicyBindingAction') { throw "Scope-authority administration must expose relationship add/remove operations." }
+if ($mfaPage -notmatch 'createMfaPolicyAction' -or $mfaPage -notmatch 'updateMfaPolicyAction' -or $mfaPage -notmatch 'revokeMfaAuthenticatorAction') { throw "MFA administration must expose policy mutation and authenticator revocation controls." }
+if ($mutationService -notmatch 'requireLiteralConfirmation' -or $groupsPage -notmatch 'placeholder="REMOVE"' -or $policiesPage -notmatch 'placeholder="REMOVE"') { throw "Relationship removal UI must retain explicit destructive confirmation." }
 $rootLayout = Get-Content (Join-Path $nextAdmin "app/layout.tsx") -Raw
 $hostSession = Get-Content (Join-Path $nextAdmin "server/IdentityAccessHostSessionService.ts") -Raw
 $hostConnector = Get-Content (Join-Path $nextAdmin "server/IdentityAccessServerConnector.ts") -Raw
@@ -245,6 +284,7 @@ $loginForm = Get-Content (Join-Path $nextAdmin "app/login/LoginForm.tsx") -Raw
 $recoveryActions = Get-Content (Join-Path $nextAdmin "app/recovery/actions.ts") -Raw
 $recoveryPage = Get-Content (Join-Path $nextAdmin "app/recovery/page.tsx") -Raw
 $recoveryForm = Get-Content (Join-Path $nextAdmin "app/recovery/RecoveryForm.tsx") -Raw
+$mutationDialog = Get-Content (Join-Path $nextAdmin "components/AdminMutationDialog.tsx") -Raw
 $activeNavigation = Get-Content (Join-Path $nextAdmin "components/AdminNavigationActiveLink.tsx") -Raw
 $currentSection = Get-Content (Join-Path $nextAdmin "components/AdminCurrentSection.tsx") -Raw
 $hostPackage = Get-Content (Join-Path $nextAdmin "package.json") -Raw
@@ -274,6 +314,7 @@ if ($recoveryForm -match 'authenticatorId') { throw "Public account recovery mus
 if ($hostSession -notmatch '\.client\.authentication\.recoverPasswordWithCode') { throw "Runnable host account recovery must use the composed authentication client recovery contract." }
 if ($activeNavigation -notmatch 'usePathname' -or $activeNavigation -notmatch 'aria-current') { throw "Administration navigation must expose client-only active-route state with aria-current." }
 if ($currentSection -notmatch 'usePathname') { throw "Administration top-bar context must resolve the current visible workspace from the current route." }
+if ($mutationDialog -notmatch 'aria-labelledby' -or $mutationDialog -notmatch 'aria-describedby' -or $mutationDialog -notmatch 'aria-busy' -or $mutationDialog -notmatch 'ia-destructive-notice') { throw "Administration mutation dialogs must retain accessible dialog relationships, pending semantics, and explicit security-sensitive guidance." }
 if ($layout -notmatch 'AdminCurrentSection' -or $layout -notmatch 'ia-mobile-navigation' -or $layout -notmatch 'id="identity-main"') { throw "Protected administration layout must retain current-workspace context, compact mobile navigation, and a skip target." }
 if ($hostPackage -notmatch '"@identity-access/client"\s*:\s*"file:\.\./\.\./\.\./clients/typescript"') { throw "Runnable host must consume the local class-based TypeScript client package." }
 if ($hostPackage -notmatch '"next"\s*:\s*"16\.3\.6"') { throw "Runnable host must pin the qualified Next.js Active LTS security release." }
@@ -298,6 +339,8 @@ if ($adminCss -notmatch '@media\s*\(prefers-reduced-motion:\s*reduce\)') { throw
 if ($adminCss -notmatch '\.ia-login-shell' -or $adminCss -notmatch '\.ia-login-card') { throw "The runnable administration host login surface is missing from the single shared stylesheet." }
 if ($adminCss -notmatch '\.ia-navigation-link-active' -or $adminCss -notmatch '\.ia-mobile-navigation-popover') { throw "Administration active-route and compact mobile navigation styles are missing." }
 if ($adminCss -notmatch '\.ia-recovery-shell' -or $adminCss -notmatch '\.ia-password-toggle') { throw "Authentication recovery and password-control styles are missing from the single shared stylesheet." }
+if ($adminCss -notmatch '\.ia-management-workspace' -or $adminCss -notmatch '\.ia-row-actions' -or $adminCss -notmatch '\.ia-checkbox-field') { throw "Administration CRUD and relationship-management styles are missing from the single shared stylesheet." }
+if ($adminCss -notmatch '\.ia-table-toolbar-controls' -or $adminCss -notmatch '\.ia-destructive-notice' -or $adminCss -notmatch '@keyframes\s+ia-dialog-enter') { throw "Administration visual and interaction polish styles are missing from the single shared stylesheet." }
 $cssFiles = @(Get-NextAdminOwnedFiles -Extensions @(".css"))
 if ($cssFiles.Count -ne 1) { throw "Next.js administration must own exactly one CSS file; found $($cssFiles.Count)." }
 if ($cssFiles[0].Name -ne 'identity-access-admin.css') { throw "The single administration CSS file must be identity-access-admin.css." }

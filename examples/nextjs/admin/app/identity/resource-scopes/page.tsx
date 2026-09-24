@@ -3,7 +3,7 @@ import { AdminField, AdminStatusField } from "../../../components/AdminField";
 import { AdminMutationDialog } from "../../../components/AdminMutationDialog";
 import { AdminPageHeader } from "../../../components/AdminPageHeader";
 import { IdentityAccessAdminRequest } from "../../../server/IdentityAccessAdminRequest";
-import { createResourceScopeAction } from "../actions";
+import { createResourceScopeAction, updateResourceScopeAction } from "../actions";
 
 export default async function ResourceScopesPage() {
   const request = await IdentityAccessAdminRequest.fromCurrentRequest();
@@ -21,7 +21,29 @@ export default async function ResourceScopesPage() {
   return (
     <section className="ia-page">
       <AdminPageHeader eyebrow="Tenant access" badge="Hierarchy" title="Resource scopes" description="Application-defined resources form explicit hierarchies for scoped policy bindings without leaking business types into the identity core." actions={create} />
-      <AdminEntityTable title="Resource hierarchy" description="Browse resource scopes registered by the consuming application in the current tenant." entityLabel="scopes" rows={scopes.map((scope) => ({ id: scope.resourceScopeId, name: scope.displayName, status: scope.status === 1 ? "Active" : "Inactive", version: scope.version }))} />
+      <AdminEntityTable
+        title="Resource hierarchy"
+        description="Create and edit registered resource scopes. Hard deletion is not exposed because bindings may depend on stable scope identity."
+        entityLabel="scopes"
+        rows={scopes.map((scope) => ({
+          id: scope.resourceScopeId,
+          name: scope.displayName,
+          status: scope.status === 1 ? "Active" : "Inactive",
+          version: scope.version,
+          actions: (
+            <AdminMutationDialog title="Edit resource scope" description="Update hierarchy metadata while preserving stable resource-scope identity." triggerLabel="Edit" submitLabel="Save changes" action={updateResourceScopeAction} triggerVariant="secondary" triggerIcon="edit" compact>
+              <input type="hidden" name="resourceScopeId" value={scope.resourceScopeId} />
+              <input type="hidden" name="expectedVersion" value={scope.version} />
+              <AdminField label="Security model version" name="modelVersion" type="number" min={1} step={1} defaultValue={scope.modelVersion} required />
+              <AdminField label="Scope type" name="scopeType" defaultValue={scope.scopeType} required maxLength={128} />
+              <AdminField label="External resource ID" name="externalResourceId" defaultValue={scope.externalResourceId} required maxLength={256} />
+              <AdminField label="Display name" name="displayName" defaultValue={scope.displayName} required maxLength={200} />
+              <AdminField label="Parent resource scope ID" name="parentResourceScopeId" defaultValue={scope.parentResourceScopeId ?? ""} />
+              <AdminStatusField name="status" defaultValue={String(scope.status)} />
+            </AdminMutationDialog>
+          ),
+        }))}
+      />
     </section>
   );
 }
