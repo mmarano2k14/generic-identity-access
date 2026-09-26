@@ -133,3 +133,26 @@ The new stores are server-side infrastructure only.
 No public permission-management endpoint, authentication endpoint, OIDC flow, MFA operation, TRN compiler, or RBAC evaluator is exposed by this version.
 
 A stored capability, policy statement, or binding is never proof that a request is currently authorized.
+
+
+## Manifest-backed catalog registration
+
+Version `0.60.0` adds the application-owned authoring layer that was intentionally absent from the original persistence foundation. A consuming project declares its supported security vocabulary in a JSON manifest and registers an immutable version in Identity Access. See `APPLICATION_SECURITY_MANIFESTS.md`.
+
+The current separation is:
+
+```text
+project JSON manifest
+    -> RBAC project + allowed namespaces
+    -> concrete resource / feature / action capabilities
+    -> immutable registered database projection
+    -> policy statements pinned to model version
+    -> existing TRN compiler / external RBAC
+```
+
+`CapabilityKey` remains a concrete `resource / feature / action` tuple. Project and namespace remain RBAC execution context and are not copied into capability keys. The administration Policy Builder reads the registered catalog and no longer requires free-text exact capability coordinates for new statements. Persisting a selected statement still does not constitute an authorization decision.
+
+
+## Managed-policy catalog evolution
+
+Repository version `0.62.0` introduces a separate tenant-independent managed-policy catalog without changing the active tenant-scoped binding path in the same increment. The new managed policy identity is `IdentityScopeId / ApplicationKey / PolicyId`, with policy versions pinned to application security-model versions. See `MANAGED_POLICY_CATALOG.md`.

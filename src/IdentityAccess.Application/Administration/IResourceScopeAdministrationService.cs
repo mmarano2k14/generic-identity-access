@@ -22,7 +22,7 @@ namespace IdentityAccess.Application.Administration
 
         /// <summary>Lists resource scopes for the requested tenant and application.</summary>
         Task<IReadOnlyList<VersionedRecord<ResourceScope>>> ListAsync(Guid identityScopeId, Guid tenantId,
-            ApplicationKey application, CancellationToken cancellationToken);
+            ApplicationKey application, string? search, int offset, int limit, CancellationToken cancellationToken);
 
         /// <summary>Creates a resource scope.</summary>
         Task<VersionedRecord<ResourceScope>> CreateAsync(Guid identityScopeId, Guid tenantId,

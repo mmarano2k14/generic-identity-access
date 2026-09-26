@@ -7,6 +7,7 @@ import type {
   IdentityAdministrationContext,
   IdentityAdministrationListOptions,
   IdentityTenantAdministrationContext,
+  IdentityTenantUserListOptions,
 } from "../admin-contracts.js";
 import { IdentityAccessClientError } from "../errors.js";
 import { IdentityAccessValueCodec } from "./IdentityAccessValueCodec.js";
@@ -76,8 +77,32 @@ export class IdentityAccessPathBuilder {
     return `api/v1/identity-scopes/${scope}/applications/${application}/tenants/${tenant}/memberships`;
   }
 
+  public static tenantUsersPath(context: IdentityTenantAdministrationContext): string {
+    const scope = IdentityAccessValueCodec.uuid(context.identityScopeId);
+    const tenant = IdentityAccessValueCodec.uuid(context.tenantId);
+    const application = IdentityAccessValueCodec.slug(context.applicationKey);
+    IdentityAccessPathBuilder.credentialHeaders(context.credential);
+    return `api/v1/identity-scopes/${scope}/tenants/${tenant}/applications/${application}/users`;
+  }
+
   public static scopeAuthorityPath(context: IdentityAdministrationContext): string {
     return `${IdentityAccessPathBuilder.administrationBasePath(context)}/scope-authority`;
+  }
+
+  public static tenantUserListQuery(options: IdentityTenantUserListOptions | undefined): string {
+    if (options === undefined) return "";
+
+    const base = IdentityAccessPathBuilder.administrationListQuery(options);
+    const query = new URLSearchParams(base.startsWith("?") ? base.slice(1) : base);
+    if (options.activeMembershipsOnly !== undefined) {
+      query.set(
+        "activeMembershipsOnly",
+        IdentityAccessValueCodec.boolean(options.activeMembershipsOnly) ? "true" : "false",
+      );
+    }
+
+    const value = query.toString();
+    return value.length === 0 ? "" : `?${value}`;
   }
 
   public static administrationListQuery(options: IdentityAdministrationListOptions | undefined): string {
@@ -95,6 +120,13 @@ export class IdentityAccessPathBuilder {
         throw new IdentityAccessClientError("configuration");
       }
       query.set("limit", String(options.limit));
+    }
+    if (options.search !== undefined) {
+      const search = options.search.trim();
+      if (search.length < 3 || search.length > 128) {
+        throw new IdentityAccessClientError("configuration");
+      }
+      query.set("search", search);
     }
 
     const value = query.toString();

@@ -13,7 +13,7 @@ namespace IdentityAccess.Application.Storage
 
         /// <summary>Lists a bounded window of users in the resolved identity scope.</summary>
         Task<IReadOnlyList<VersionedRecord<User>>> ListAsync(ResolvedDatabaseRoute route, Guid identityScopeId,
-            int offset, int limit, CancellationToken cancellationToken);
+            string? search, int offset, int limit, CancellationToken cancellationToken);
 
         /// <summary>Creates a user record in the resolved database route.</summary>
         Task<VersionedRecord<User>> CreateAsync(ResolvedDatabaseRoute route, User user,

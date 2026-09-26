@@ -35,7 +35,7 @@ namespace IdentityAccess.Infrastructure.PostgreSql.Directory
 
         /// <summary>Lists a bounded window of permission policies in the resolved database route.</summary>
         public async Task<IReadOnlyList<VersionedRecord<PermissionPolicy>>> ListAsync(ResolvedDatabaseRoute route,
-            TenantReference tenant, ApplicationKey application, int offset, int limit,
+            TenantReference tenant, ApplicationKey application, string? search, int offset, int limit,
             CancellationToken cancellationToken)
         {
             ArgumentNullException.ThrowIfNull(tenant);
@@ -48,12 +48,16 @@ namespace IdentityAccess.Infrastructure.PostgreSql.Directory
                 WHERE identity_scope_id = @scope
                   AND tenant_id = @tenant_id
                   AND application_key = @application_key
+                  AND (@search_pattern IS NULL
+                       OR lower(display_name) LIKE @search_pattern
+                       OR policy_id = @search_id)
                 ORDER BY policy_id
                 LIMIT @limit OFFSET @offset;
                 """, connection);
             command.Parameters.AddWithValue("scope", tenant.IdentityScopeId);
             command.Parameters.AddWithValue("tenant_id", tenant.TenantId);
             command.Parameters.AddWithValue("application_key", application.Value);
+            PostgreSqlAdministrationSearch.AddParameters(command, search);
             command.Parameters.AddWithValue("limit", limit);
             command.Parameters.AddWithValue("offset", offset);
             var records = new List<VersionedRecord<PermissionPolicy>>();

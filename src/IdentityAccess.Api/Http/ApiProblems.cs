@@ -53,6 +53,27 @@ namespace IdentityAccess.Api.Http
                 "Policy administration unavailable",
                 "Routing and PostgreSQL persistence must be configured before policy administration can execute.");
 
+        /// <summary>Creates the application security-catalog administration unavailable response.</summary>
+        public static ObjectResult SecurityCatalogAdministrationUnavailable() =>
+            Result(
+                StatusCodes.Status503ServiceUnavailable,
+                "Application security catalog unavailable",
+                "Routing and PostgreSQL persistence must be configured before application security manifests can be registered or queried.");
+
+        /// <summary>Creates the managed-policy administration unavailable response.</summary>
+        public static ObjectResult ManagedPolicyAdministrationUnavailable() =>
+            Result(
+                StatusCodes.Status503ServiceUnavailable,
+                "Managed policy administration unavailable",
+                "Routing and managed-policy persistence must be configured before the shared policy catalog can be administered.");
+
+        /// <summary>Creates the managed-policy-binding administration unavailable response.</summary>
+        public static ObjectResult ManagedPolicyBindingAdministrationUnavailable() =>
+            Result(
+                StatusCodes.Status503ServiceUnavailable,
+                "Managed policy binding administration unavailable",
+                "Routing, shared managed-policy persistence, and managed binding persistence must be configured before bindings can be administered.");
+
         /// <summary>Creates the resource-scope administration unavailable response.</summary>
         public static ObjectResult ResourceScopeAdministrationUnavailable() =>
             Result(
@@ -66,6 +87,13 @@ namespace IdentityAccess.Api.Http
                 StatusCodes.Status503ServiceUnavailable,
                 "Identity-scope authority administration unavailable",
                 "Routing, PostgreSQL persistence, and scope-authority stores must be configured before authority administration can execute.");
+
+        /// <summary>Creates the security-audit administration unavailable response.</summary>
+        public static ObjectResult SecurityAuditUnavailable() =>
+            Result(
+                StatusCodes.Status503ServiceUnavailable,
+                "Security audit unavailable",
+                "Security audit persistence must be configured before audit records can be queried.");
 
         /// <summary>Creates the credential-administration unavailable response.</summary>
         public static ObjectResult CredentialAdministrationUnavailable() =>

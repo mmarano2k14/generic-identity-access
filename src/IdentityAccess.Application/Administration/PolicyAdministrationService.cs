@@ -26,12 +26,14 @@ namespace IdentityAccess.Application.Administration
 
         /// <summary>Lists permission policies in a bounded deterministic window.</summary>
         public async Task<IReadOnlyList<VersionedRecord<PermissionPolicy>>> ListPoliciesAsync(Guid identityScopeId,
-            Guid tenantId, ApplicationKey application, int offset, int limit, CancellationToken cancellationToken)
+            Guid tenantId, ApplicationKey application, string? search, int offset, int limit, CancellationToken cancellationToken)
         {
             AdministrationPaging.EnsureValid(offset, limit);
+            var normalizedSearch = AdministrationSearch.Normalize(search);
+            var boundedLimit = AdministrationSearch.Limit(normalizedSearch, limit);
             var route = await ResolveAsync(identityScopeId, application, cancellationToken);
             return await policies.ListAsync(route, new TenantReference(identityScopeId, tenantId), application,
-                offset, limit, cancellationToken);
+                normalizedSearch, offset, boundedLimit, cancellationToken);
         }
 
         /// <summary>Creates a permission policy.</summary>

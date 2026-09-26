@@ -1,4 +1,5 @@
 import type {
+  IdentityAdministrationListOptions,
   IdentityCreateResourceScopeRequest,
   IdentityResourceScopeRecord,
   IdentityTenantAdministrationContext,
@@ -18,9 +19,10 @@ export class IdentityAccessResourceScopesClient {
 
   public async list(
     context: IdentityTenantAdministrationContext,
+    options?: IdentityAdministrationListOptions,
     signal?: AbortSignal,
   ): Promise<readonly IdentityResourceScopeRecord[]> {
-    const path = `${IdentityAccessPathBuilder.tenantApplicationPath(context)}/resource-scopes`;
+    const path = `${IdentityAccessPathBuilder.tenantApplicationPath(context)}/resource-scopes${IdentityAccessPathBuilder.administrationListQuery(options)}`;
     return this.#admin.get(path, context, (value) => IdentityAccessValueCodec.array(value, IdentityAccessAdministrationCodec.resourceScopeRecord), signal);
   }
 

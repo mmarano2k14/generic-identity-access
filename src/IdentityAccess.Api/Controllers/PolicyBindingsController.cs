@@ -9,7 +9,7 @@ namespace IdentityAccess.Api.Controllers
 {
 
     /// <summary>Exposes HTTP endpoints for policy bindings.</summary>
-    [ApiController]
+    [NonController]
     [Route("api/v1/identity-scopes/{identityScopeId:guid}/tenants/{tenantId:guid}/applications/{applicationKey}/groups/{groupId:guid}/policy-bindings")]
     [Produces("application/json")]
     public sealed class PolicyBindingsController(OptionalFeature<IPolicyAdministrationService> feature) : ControllerBase

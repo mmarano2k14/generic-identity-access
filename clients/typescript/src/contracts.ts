@@ -147,9 +147,11 @@ export type IdentityAccessAdminUiSection =
   | "memberships"
   | "groups"
   | "policies"
+  | "security-models"
   | "resource-scopes"
   | "mfa"
   | "sessions"
+  | "security-audit"
   | "scope-authority";
 
 export interface IdentityAccessAdminUiEntry {

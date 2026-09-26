@@ -35,6 +35,10 @@ The TypeScript source-consistency gate also pins the class-only runtime architec
 
 For the Next.js administration module it additionally requires server-only class-based mutation orchestration, thin Server Action adapters, destructive session-revocation confirmation, loading/error state files, a real `/identity` overview, structured record-detail presentation, and exactly one custom stylesheet at `examples/nextjs/admin/styles/identity-access-admin.css`. CSS Modules, component-local style blocks, React inline style objects, and raw JSON record dumps are rejected. The central stylesheet must retain premium design tokens, automatic dark-mode support, and reduced-motion handling.
 
+The same gate pins the `0.58.0` failure boundary: mutation services must not own transport-error presentation, Server Actions delegate safe classification to `IdentityAccessAdminFailurePresentation`, structured action state distinguishes recovery guidance, stale `409` responses require current-state reload, invalid protected sessions route back to sign-in, and session investigation must not infer state when audit evidence is technically unavailable.
+
+Version `0.59.0` extends the same source-consistency gate for the final administration presentation boundary. It requires route-aware compact-navigation disclosure state, automatic mobile-menu close after navigation, a focusable skip target, mutation-dialog trigger focus restoration, explicit shared-field hint relationships, pending-state semantics on public authentication forms, and single-stylesheet forced-colors, increased-contrast, dynamic-viewport, and main-focus treatment.
+
 ## External RBAC Compatibility
 
 Build the supported external RBAC distribution first, then run:
@@ -62,10 +66,8 @@ Recommended sequence:
 .\scripts\postgresql\verify-migration-integrity.ps1
 .\scripts\postgresql\verify-default-database.ps1
 .\scripts\postgresql\verify-directory-persistence.ps1
-.\scripts\postgresql\verify-permission-persistence.ps1
 .\scripts\postgresql\verify-assigned-capability-projection.ps1
 .\scripts\postgresql\verify-rbac-capability-alignment.ps1
-.\scripts\postgresql\verify-wildcard-policy-patterns.ps1
 .\scripts\postgresql\verify-authentication-foundation.ps1
 .\scripts\postgresql\verify-resource-scope-hierarchy.ps1
 .\scripts\postgresql\verify-atomic-mutations.ps1
@@ -75,6 +77,18 @@ Recommended sequence:
 `verify-migration-integrity.ps1` should run immediately after schema application so later
 live tests execute against a migration set whose names and SHA-256 checksums have already
 been validated.
+
+`verify-assigned-capability-projection.ps1` requires the managed-policy schema introduced by
+migrations `0023` through `0025`. It performs a table preflight and reports the missing managed
+tables with an instruction to run `apply-default-schema.ps1` when the local database has not
+yet been advanced. The projection verifier does not apply schema mutations itself.
+
+The historical `verify-permission-persistence.ps1` and `verify-wildcard-policy-patterns.ps1`
+scripts remain in the repository only to preserve validation coverage for the retained legacy
+schema. They are no longer production-qualification gates because runtime authorization and
+administration are managed-policy only. Wildcard compatibility of the external RBAC engine is
+validated by `verify-multiplexed-rbac.ps1`; managed policy statements themselves are selected
+from concrete registered capabilities.
 
 `verify-atomic-mutations.ps1` uses rollback-scoped fixtures and must not leave test rows in
 the database.
@@ -427,3 +441,34 @@ Version `0.51.0` keeps the UI refinement phase inside the existing TypeScript/Ne
 - the single shared stylesheet to own active-route, mobile-navigation, password-visibility, and recovery presentation.
 
 The normal `scripts/verify.ps1` path continues to run the TypeScript source-consistency gate, client tests/typecheck, and a production Next.js build. No frontend-only success should be described as repository GREEN until the complete verification command succeeds.
+
+
+## 0.60.0 application security-manifest validation
+
+Version `0.60.0` adds `scripts/verify-security-catalog-source-consistency.ps1` to the primary repository verification chain. The gate pins the following architectural invariants:
+
+- `CapabilityKey` remains exactly `resource / feature / action`;
+- RBAC project and namespace remain context and are not added to the capability key;
+- `RbacTrnCompiler` retains `trn:{project}:{namespace}:{resource}:{feature}:{action}`;
+- manifest-backed catalog registration persists project, namespaces, normalized fingerprint, and concrete capabilities;
+- catalog registration does not evaluate RBAC authority;
+- the application-security controller remains protected through the centralized administration-capability boundary.
+
+The TypeScript source-consistency gate additionally requires the focused security-model list/get/register client, separate Policy Builder read and mutation services, catalog-backed statement selection, and a read-only Security Models workspace. It rejects free-text exact capability coordinates in the Policy Builder and rejects browser-side authorization evaluation.
+
+Migration `0021_application_security_manifest_catalog.sql` extends the PostgreSQL model with manifest registration provenance and allowed RBAC namespaces. The complete Windows/.NET verification remains:
+
+```powershell
+.\scripts\verify.ps1
+```
+
+A source-consistency pass or TypeScript-only pass is not a substitute for the complete .NET 10 and live-environment validation configured by the repository.
+
+
+Version `0.60.5` extends TypeScript source-consistency validation for relationship reference UX. The gate requires the shared `AdminEntityAutocomplete`, the focused `IdentityAccessAdminEntityReferencePresentation` mapper, and autocomplete usage for the covered editable foreign identifiers while allowing opaque technical IDs to remain text input. It also pins the new bounded membership and identity-scope authority list client methods used to populate those selectors.
+
+## 0.60.6 administration reference search validation
+
+Version `0.60.6` pins server-backed relationship autocomplete behavior. The TypeScript source-consistency gate requires a three-character minimum, bounded results, debounce/cancellation, a focused server-only search class, the thin `/api/identity/entity-references` route, and explicit Tenant + User selection for tenant-membership creation. It rejects preloaded `options={...}` usage on `AdminEntityAutocomplete` and raw editable administrable foreign-ID fields.
+
+The public TypeScript client exposes optional bounded `search` on administration list options; client tests verify query encoding and reject terms shorter than three or longer than 128 characters before transport. PostgreSQL migration `0022_administration_search_indexes.sql` supports the display-name and resource external-ID prefix searches. Complete Windows/.NET verification remains `./scripts/verify.ps1`; TypeScript-only validation is not repository GREEN.

@@ -1,6 +1,6 @@
 {
   "name": "@identity-access/client",
-  "version": "0.10.0",
+  "version": "0.21.0",
   "private": true,
   "type": "module",
   "description": "Class-composed TypeScript connector with provider-neutral MFA administration and separated system, authentication, OIDC, authorization, administration, and Next.js responsibilities.",

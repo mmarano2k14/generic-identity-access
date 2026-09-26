@@ -4,46 +4,84 @@ BEGIN;
 INSERT INTO identity_access.users
 (identity_scope_id, user_id, display_name, status)
 VALUES
-('37111111-1111-1111-1111-111111111111',
- '37aaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
- 'OIDC User',
- 1);
+(
+    '37111111-1111-1111-1111-111111111111',
+    '37aaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+    'OIDC User',
+    1
+);
 
 INSERT INTO identity_access.user_sessions
-(identity_scope_id, session_id, user_id, client_id, application_key,
- authentication_context_key, token_hash, created_at, expires_at)
+(
+    identity_scope_id,
+    session_id,
+    user_id,
+    client_id,
+    application_key,
+    authentication_context_key,
+    token_hash,
+    created_at,
+    expires_at,
+    assurance_level,
+    assurance_methods,
+    assurance_verified_at
+)
 VALUES
-('37111111-1111-1111-1111-111111111111',
- '37bbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb',
- '37aaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
- 'web-client',
- 'app-a',
- 'app-a-primary',
- decode(repeat('11', 32), 'hex'),
- transaction_timestamp() - interval '1 minute',
- transaction_timestamp() + interval '1 hour');
+(
+    '37111111-1111-1111-1111-111111111111',
+    '37bbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb',
+    '37aaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+    'web-client',
+    'app-a',
+    'app-a-primary',
+    decode(repeat('11', 32), 'hex'),
+    transaction_timestamp() - interval '1 minute',
+    transaction_timestamp() + interval '1 hour',
+    1,
+    ARRAY['pwd']::text[],
+    transaction_timestamp() - interval '1 minute'
+);
 
 INSERT INTO identity_access.oidc_authorization_codes
-(identity_scope_id, code_id, code_hash, user_id, session_id, client_id,
- application_key, authentication_context_key, redirect_uri, scope,
- code_challenge, code_challenge_method, nonce, authenticated_at, issued_at, expires_at)
+(
+    identity_scope_id,
+    code_id,
+    code_hash,
+    user_id,
+    session_id,
+    client_id,
+    application_key,
+    authentication_context_key,
+    redirect_uri,
+    scope,
+    code_challenge,
+    code_challenge_method,
+    nonce,
+    authenticated_at,
+    issued_at,
+    expires_at,
+    assurance_level,
+    assurance_methods
+)
 SELECT
-'37111111-1111-1111-1111-111111111111',
-'37cccccc-cccc-cccc-cccc-cccccccccccc',
-decode(repeat('22', 32), 'hex'),
-'37aaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
-'37bbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb',
-'web-client',
-'app-a',
-'app-a-primary',
-'https://client.example.test/callback',
-'openid',
-repeat('A', 43),
-'S256',
-'nonce-12345678',
-s.created_at,
-transaction_timestamp(),
-transaction_timestamp() + interval '2 minutes'
+    '37111111-1111-1111-1111-111111111111',
+    '37cccccc-cccc-cccc-cccc-cccccccccccc',
+    decode(repeat('22', 32), 'hex'),
+    '37aaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+    '37bbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb',
+    'web-client',
+    'app-a',
+    'app-a-primary',
+    'https://client.example.test/callback',
+    'openid',
+    repeat('A', 43),
+    'S256',
+    'nonce-12345678',
+    s.created_at,
+    transaction_timestamp(),
+    transaction_timestamp() + interval '2 minutes',
+    s.assurance_level,
+    s.assurance_methods
 FROM identity_access.user_sessions AS s
 JOIN identity_access.users AS u
   ON u.identity_scope_id = s.identity_scope_id
@@ -144,26 +182,45 @@ END
 $$;
 
 INSERT INTO identity_access.oidc_authorization_codes
-(identity_scope_id, code_id, code_hash, user_id, session_id, client_id,
- application_key, authentication_context_key, redirect_uri, scope,
- code_challenge, code_challenge_method, nonce, authenticated_at, issued_at, expires_at)
+(
+    identity_scope_id,
+    code_id,
+    code_hash,
+    user_id,
+    session_id,
+    client_id,
+    application_key,
+    authentication_context_key,
+    redirect_uri,
+    scope,
+    code_challenge,
+    code_challenge_method,
+    nonce,
+    authenticated_at,
+    issued_at,
+    expires_at,
+    assurance_level,
+    assurance_methods
+)
 SELECT
-'37111111-1111-1111-1111-111111111111',
-'37dddddd-dddd-dddd-dddd-dddddddddddd',
-decode(repeat('33', 32), 'hex'),
-'37aaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
-'37bbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb',
-'web-client',
-'app-a',
-'app-a-primary',
-'https://client.example.test/callback',
-'openid',
-repeat('B', 43),
-'S256',
-'nonce-87654321',
-s.created_at,
-transaction_timestamp(),
-transaction_timestamp() + interval '2 minutes'
+    '37111111-1111-1111-1111-111111111111',
+    '37dddddd-dddd-dddd-dddd-dddddddddddd',
+    decode(repeat('33', 32), 'hex'),
+    '37aaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+    '37bbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb',
+    'web-client',
+    'app-a',
+    'app-a-primary',
+    'https://client.example.test/callback',
+    'openid',
+    repeat('B', 43),
+    'S256',
+    'nonce-87654321',
+    s.created_at,
+    transaction_timestamp(),
+    transaction_timestamp() + interval '2 minutes',
+    s.assurance_level,
+    s.assurance_methods
 FROM identity_access.user_sessions AS s
 JOIN identity_access.users AS u
   ON u.identity_scope_id = s.identity_scope_id
@@ -179,28 +236,46 @@ SET revoked_at = transaction_timestamp()
 WHERE identity_scope_id = '37111111-1111-1111-1111-111111111111'
   AND session_id = '37bbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb';
 
-
 INSERT INTO identity_access.oidc_authorization_codes
-(identity_scope_id, code_id, code_hash, user_id, session_id, client_id,
- application_key, authentication_context_key, redirect_uri, scope,
- code_challenge, code_challenge_method, nonce, authenticated_at, issued_at, expires_at)
+(
+    identity_scope_id,
+    code_id,
+    code_hash,
+    user_id,
+    session_id,
+    client_id,
+    application_key,
+    authentication_context_key,
+    redirect_uri,
+    scope,
+    code_challenge,
+    code_challenge_method,
+    nonce,
+    authenticated_at,
+    issued_at,
+    expires_at,
+    assurance_level,
+    assurance_methods
+)
 SELECT
-'37111111-1111-1111-1111-111111111111',
-'37eeeeee-eeee-eeee-eeee-eeeeeeeeeeee',
-decode(repeat('44', 32), 'hex'),
-'37aaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
-'37bbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb',
-'web-client',
-'app-a',
-'app-a-primary',
-'https://client.example.test/callback',
-'openid',
-repeat('C', 43),
-'S256',
-'nonce-11223344',
-s.created_at,
-transaction_timestamp(),
-transaction_timestamp() + interval '2 minutes'
+    '37111111-1111-1111-1111-111111111111',
+    '37eeeeee-eeee-eeee-eeee-eeeeeeeeeeee',
+    decode(repeat('44', 32), 'hex'),
+    '37aaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+    '37bbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb',
+    'web-client',
+    'app-a',
+    'app-a-primary',
+    'https://client.example.test/callback',
+    'openid',
+    repeat('C', 43),
+    'S256',
+    'nonce-11223344',
+    s.created_at,
+    transaction_timestamp(),
+    transaction_timestamp() + interval '2 minutes',
+    s.assurance_level,
+    s.assurance_methods
 FROM identity_access.user_sessions AS s
 JOIN identity_access.users AS u
   ON u.identity_scope_id = s.identity_scope_id

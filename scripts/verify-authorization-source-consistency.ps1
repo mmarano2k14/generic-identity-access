@@ -125,6 +125,39 @@ Require-Text `
     "routeVersion: 1"
 
 
+
+Require-Text `
+    "src/IdentityAccess.Api/Security/RbacAdministrationRequestAuthorizer.cs" `
+    "AuthorizeTenantTargetAsync"
+
+Require-Text `
+    "src/IdentityAccess.Api/Security/RbacAdministrationRequestAuthorizer.cs" `
+    "AuthorizeIdentityScopeAsync"
+
+Require-Text `
+    "src/IdentityAccess.Api/Security/RbacAdministrationRequestAuthorizer.cs" `
+    "scopeResult.Decision == IdentityAuthorizationDecision.Allowed"
+
+Require-Text `
+    "tests/IdentityAccess.Tests/Authorization/RbacAdministrationRequestAuthorizerTests.cs" `
+    "Tenant_route_scope_allow_bypasses_tenant_authority"
+
+Require-Text `
+    "tests/IdentityAccess.Tests/Authorization/RbacAdministrationRequestAuthorizerTests.cs" `
+    "Tenant_route_scope_deny_falls_back_to_tenant_allow"
+
+Require-Text `
+    "tests/IdentityAccess.Tests/Authorization/RbacAdministrationRequestAuthorizerTests.cs" `
+    "Tenant_route_scope_technical_failure_with_tenant_deny_is_unavailable"
+
+Require-Text `
+    "scripts/authentication/bootstrap-dev-admin.ps1" `
+    "Local Identity Scope Administration"
+
+Require-Text `
+    "scripts/authentication/bootstrap-dev-admin.ps1" `
+    "'identity-access', '*', '*'"
+
 Require-Text `
     "src/IdentityAccess.Rbac/RbacAuthorizationFailureCode.cs" `
     "ExternalLoadFailed"

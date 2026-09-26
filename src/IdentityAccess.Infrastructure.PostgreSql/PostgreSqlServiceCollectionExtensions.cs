@@ -99,14 +99,17 @@ namespace IdentityAccess.Infrastructure.PostgreSql
             services.AddSingleton<IUserDirectoryStore, PostgreSqlUserDirectoryStore>();
             services.AddSingleton<ITenantDirectoryStore, PostgreSqlTenantDirectoryStore>();
             services.AddSingleton<ITenantMembershipStore, PostgreSqlTenantMembershipStore>();
+            services.AddSingleton<ITenantUserReadStore, PostgreSqlTenantUserReadStore>();
             services.AddSingleton<IUserGroupStore, PostgreSqlUserGroupStore>();
             services.AddSingleton<IGroupMembershipStore, PostgreSqlGroupMembershipStore>();
             services.AddSingleton<IGroupMembershipMutationStore, PostgreSqlGroupMembershipMutationStore>();
             services.AddSingleton<IApplicationSecurityModelStore, PostgreSqlApplicationSecurityModelStore>();
-            services.AddSingleton<IPermissionPolicyStore, PostgreSqlPermissionPolicyStore>();
-            services.AddSingleton<IPolicyStatementStore, PostgreSqlPolicyStatementStore>();
-            services.AddSingleton<IGroupPolicyBindingStore, PostgreSqlGroupPolicyBindingStore>();
-            services.AddSingleton<IGroupPolicyBindingMutationStore, PostgreSqlGroupPolicyBindingMutationStore>();
+            services.AddSingleton<IApplicationSecurityCatalogStore, PostgreSqlApplicationSecurityCatalogStore>();
+            services.AddSingleton<IManagedPolicyStore, PostgreSqlManagedPolicyStore>();
+            services.AddSingleton<IManagedPolicyVersionStore, PostgreSqlManagedPolicyVersionStore>();
+            services.AddSingleton<IManagedPolicyStatementStore, PostgreSqlManagedPolicyStatementStore>();
+            services.AddSingleton<IManagedGroupPolicyBindingStore, PostgreSqlManagedGroupPolicyBindingStore>();
+            services.AddSingleton<IManagedGroupPolicyBindingMutationStore, PostgreSqlManagedGroupPolicyBindingMutationStore>();
             services.AddSingleton<IApplicationScopeTypeStore, PostgreSqlApplicationScopeTypeStore>();
             services.AddSingleton<IResourceScopeStore, PostgreSqlResourceScopeStore>();
             services.AddSingleton<IAssignedCapabilityReader, PostgreSqlAssignedCapabilityReader>();
@@ -124,6 +127,7 @@ namespace IdentityAccess.Infrastructure.PostgreSql
             services.AddSingleton<IMfaPolicyStore, PostgreSqlMfaPolicyStore>();
             services.AddSingleton<IUserAuthenticatorStore, PostgreSqlUserAuthenticatorStore>();
             services.AddSingleton<ISecurityAuditWriter, PostgreSqlSecurityAuditWriter>();
+            services.AddSingleton<ISecurityAuditReader, PostgreSqlSecurityAuditReader>();
 
             return services;
         }

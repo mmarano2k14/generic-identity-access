@@ -4,7 +4,7 @@ namespace IdentityAccess.Application.Authorization
 {
 
     /// <summary>
-    /// Provenance-rich capability assignment derived from current active directory and policy state.
+    /// Provenance-rich capability assignment derived from current active directory and published managed-policy state.
     /// The pattern may contain one of the supported whole-segment wildcard forms.
     /// A null TargetScope means tenant-wide. Wildcard evaluation remains external.
     /// </summary>
@@ -18,8 +18,8 @@ namespace IdentityAccess.Application.Authorization
         public ApplicationKey Application { get; }
         /// <summary>Gets the group.</summary>
         public GroupReference Group { get; }
-        /// <summary>Gets the policy.</summary>
-        public PermissionPolicyReference Policy { get; }
+        /// <summary>Gets the published managed-policy version that produced this grant.</summary>
+        public ManagedPolicyVersionReference ManagedPolicyVersion { get; }
         /// <summary>Gets the statement identifier.</summary>
         public Guid StatementId { get; }
         /// <summary>Gets the model.</summary>
@@ -31,13 +31,13 @@ namespace IdentityAccess.Application.Authorization
         /// <summary>Gets the include descendants.</summary>
         public bool IncludeDescendants { get; }
 
-        /// <summary>Initializes a new instance of <see cref="AssignedCapabilityGrant"/>.</summary>
+        /// <summary>Initializes a published managed-policy version grant.</summary>
         public AssignedCapabilityGrant(
             SubjectReference subject,
             TenantReference tenant,
             ApplicationKey application,
             GroupReference group,
-            PermissionPolicyReference policy,
+            ManagedPolicyVersionReference managedPolicyVersion,
             Guid statementId,
             ApplicationSecurityModelReference model,
             CapabilityPattern pattern,
@@ -48,7 +48,7 @@ namespace IdentityAccess.Application.Authorization
             ArgumentNullException.ThrowIfNull(tenant);
             ArgumentNullException.ThrowIfNull(application);
             ArgumentNullException.ThrowIfNull(group);
-            ArgumentNullException.ThrowIfNull(policy);
+            ArgumentNullException.ThrowIfNull(managedPolicyVersion);
             ArgumentNullException.ThrowIfNull(model);
             ArgumentNullException.ThrowIfNull(pattern);
             if (statementId == Guid.Empty)
@@ -57,10 +57,14 @@ namespace IdentityAccess.Application.Authorization
                 throw new ArgumentException("Tenant-wide grants cannot carry descendant expansion.", nameof(includeDescendants));
 
             if (subject.IdentityScopeId != tenant.IdentityScopeId ||
-                group.Tenant != tenant || policy.Tenant != tenant || model.IdentityScopeId != tenant.IdentityScopeId)
+                group.Tenant != tenant ||
+                model.IdentityScopeId != tenant.IdentityScopeId ||
+                managedPolicyVersion.Policy.IdentityScopeId != tenant.IdentityScopeId)
                 throw new ArgumentException("Assigned capability provenance must stay inside one identity scope and tenant.");
 
-            if (group.Application != application || policy.Application != application || model.Application != application)
+            if (group.Application != application ||
+                model.Application != application ||
+                managedPolicyVersion.Policy.Application != application)
                 throw new ArgumentException("Assigned capability provenance must stay inside one application.");
 
             if (targetScope is not null && (targetScope.Tenant != tenant || targetScope.Application != application))
@@ -70,7 +74,7 @@ namespace IdentityAccess.Application.Authorization
             Tenant = tenant;
             Application = application;
             Group = group;
-            Policy = policy;
+            ManagedPolicyVersion = managedPolicyVersion;
             StatementId = statementId;
             Model = model;
             Pattern = pattern;
@@ -78,19 +82,19 @@ namespace IdentityAccess.Application.Authorization
             IncludeDescendants = includeDescendants;
         }
 
-        /// <summary>Initializes a new instance of <see cref="AssignedCapabilityGrant"/>.</summary>
+        /// <summary>Initializes a published managed-policy version grant.</summary>
         public AssignedCapabilityGrant(
             SubjectReference subject,
             TenantReference tenant,
             ApplicationKey application,
             GroupReference group,
-            PermissionPolicyReference policy,
+            ManagedPolicyVersionReference managedPolicyVersion,
             Guid statementId,
             ApplicationSecurityModelReference model,
             CapabilityKey capability,
             ResourceScopeReference? targetScope = null,
             bool includeDescendants = false)
-            : this(subject, tenant, application, group, policy, statementId, model,
+            : this(subject, tenant, application, group, managedPolicyVersion, statementId, model,
                 new CapabilityPattern(capability), targetScope, includeDescendants)
         {
         }

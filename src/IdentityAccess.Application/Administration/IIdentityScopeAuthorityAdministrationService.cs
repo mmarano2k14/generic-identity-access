@@ -10,6 +10,10 @@ namespace IdentityAccess.Application.Administration
         Task<VersionedRecord<IdentityScopeAdministrationGroup>?> GetGroupAsync(
             Guid identityScopeId, ApplicationKey application, Guid groupId, CancellationToken cancellationToken);
 
+        /// <summary>Lists scope-administration groups in a bounded deterministic window.</summary>
+        Task<IReadOnlyList<VersionedRecord<IdentityScopeAdministrationGroup>>> ListGroupsAsync(
+            Guid identityScopeId, ApplicationKey application, string? search, int offset, int limit, CancellationToken cancellationToken);
+
         /// <summary>Creates a scope-administration group.</summary>
         Task<VersionedRecord<IdentityScopeAdministrationGroup>> CreateGroupAsync(
             Guid identityScopeId, ApplicationKey application, Guid groupId, string displayName,
@@ -37,6 +41,10 @@ namespace IdentityAccess.Application.Administration
         /// <summary>Gets a scope-administration policy.</summary>
         Task<VersionedRecord<IdentityScopeAdministrationPolicy>?> GetPolicyAsync(
             Guid identityScopeId, ApplicationKey application, Guid policyId, CancellationToken cancellationToken);
+
+        /// <summary>Lists scope-administration policies in a bounded deterministic window.</summary>
+        Task<IReadOnlyList<VersionedRecord<IdentityScopeAdministrationPolicy>>> ListPoliciesAsync(
+            Guid identityScopeId, ApplicationKey application, string? search, int offset, int limit, CancellationToken cancellationToken);
 
         /// <summary>Creates a scope-administration policy.</summary>
         Task<VersionedRecord<IdentityScopeAdministrationPolicy>> CreatePolicyAsync(

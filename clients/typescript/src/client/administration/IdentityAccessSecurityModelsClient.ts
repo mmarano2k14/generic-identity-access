@@ -1,6 +1,9 @@
 import type {
   IdentityAddScopeTypeRequest,
   IdentityAdministrationContext,
+  IdentityApplicationSecurityManifestRequest,
+  IdentityApplicationSecurityModelRecord,
+  IdentityApplicationSecurityModelSummaryRecord,
   IdentityScopeTypeRecord,
 } from "../../admin-contracts.js";
 import { IdentityAccessAdministrationCodec } from "../IdentityAccessAdministrationCodec.js";
@@ -13,6 +16,53 @@ export class IdentityAccessSecurityModelsClient {
 
   public constructor(admin: IdentityAccessAdministrationTransport) {
     this.#admin = admin;
+  }
+
+  public async list(
+    context: IdentityAdministrationContext,
+    signal?: AbortSignal,
+  ): Promise<readonly IdentityApplicationSecurityModelSummaryRecord[]> {
+    const path = `${IdentityAccessPathBuilder.administrationBasePath(context)}/security-models`;
+    return this.#admin.get(
+      path,
+      context,
+      (value) => IdentityAccessValueCodec.array(
+        value,
+        (entry) => IdentityAccessAdministrationCodec.applicationSecurityModelSummaryRecord(entry),
+      ),
+      signal,
+    );
+  }
+
+  public async get(
+    context: IdentityAdministrationContext,
+    modelVersionValue: number,
+    signal?: AbortSignal,
+  ): Promise<IdentityApplicationSecurityModelRecord | null> {
+    const modelVersion = IdentityAccessValueCodec.positiveInteger(modelVersionValue);
+    const path = `${IdentityAccessPathBuilder.administrationBasePath(context)}/security-models/${modelVersion}`;
+    return this.#admin.getNullable(
+      path,
+      context,
+      (value) => IdentityAccessAdministrationCodec.applicationSecurityModelRecord(value),
+      signal,
+    );
+  }
+
+  public async registerManifest(
+    context: IdentityAdministrationContext,
+    request: IdentityApplicationSecurityManifestRequest,
+    signal?: AbortSignal,
+  ): Promise<IdentityApplicationSecurityModelRecord> {
+    const modelVersion = IdentityAccessValueCodec.positiveInteger(request.modelVersion);
+    const path = `${IdentityAccessPathBuilder.administrationBasePath(context)}/security-models/${modelVersion}`;
+    return this.#admin.put(
+      path,
+      context,
+      IdentityAccessAdministrationCodec.applicationSecurityManifestBody(request),
+      (value) => IdentityAccessAdministrationCodec.applicationSecurityModelRecord(value),
+      signal,
+    );
   }
 
   public async listScopeTypes(

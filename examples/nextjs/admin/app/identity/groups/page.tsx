@@ -1,91 +1,185 @@
 import Link from "next/link";
-import { AdminCheckboxField, AdminField, AdminSelectField, AdminStatusField } from "../../../components/AdminField";
+import { AdminCheckboxField, AdminField, AdminStatusField } from "../../../components/AdminField";
+import { AdminCreateGroupDialog } from "../../../components/AdminCreateGroupDialog";
+import { AdminEntityAutocomplete } from "../../../components/AdminEntityAutocomplete";
 import { AdminEntityTable } from "../../../components/AdminEntityTable";
 import { AdminMutationDialog } from "../../../components/AdminMutationDialog";
 import { AdminPageHeader } from "../../../components/AdminPageHeader";
+import { AdminRecordContext } from "../../../components/AdminRecordContext";
 import { AdminSecurityBanner } from "../../../components/AdminSecurityBanner";
+import { AdminTenantContextSelector } from "../../../components/AdminTenantContextSelector";
+import { IdentityAccessAdminAuthorizedTenantService } from "../../../server/IdentityAccessAdminAuthorizedTenantService";
 import { IdentityAccessAdminRequest } from "../../../server/IdentityAccessAdminRequest";
+import { IdentityAccessAdminTenantAggregateLoader } from "../../../server/IdentityAccessAdminTenantAggregateLoader";
 import {
   addGroupMemberAction,
-  addGroupPolicyBindingAction,
-  createGroupAction,
+  addManagedGroupPolicyBindingAction,
   removeGroupMemberAction,
-  removeGroupPolicyBindingAction,
+  removeManagedGroupPolicyBindingAction,
   updateGroupAction,
 } from "../actions";
 
-export default async function GroupsPage({ searchParams }: { readonly searchParams: Promise<{ readonly groupId?: string }> }) {
-  const request = await IdentityAccessAdminRequest.fromCurrentRequest();
-  const { groupId } = await searchParams;
-  const context = request.tenantContext();
-  const groups = await request.client.administration.groups.list(context, { limit: 50 });
-  const selectedGroup = groupId ? groups.find((group) => group.groupId === groupId) ?? await request.client.administration.groups.get(context, groupId) : null;
-  const [members, bindings, policies, scopes] = selectedGroup ? await Promise.all([
-    request.client.administration.groups.listMembers(context, selectedGroup.groupId),
-    request.client.administration.policies.listBindings(context, selectedGroup.groupId),
-    request.client.administration.policies.list(context, { limit: 100 }),
-    request.client.administration.resourceScopes.list(context),
-  ]) : [[], [], [], []];
+type SearchParams = { readonly tenantId?: string; readonly tenantView?: string; readonly groupId?: string };
 
-  const create = (
-    <AdminMutationDialog title="Create group" description="Create a tenant-scoped group for explicit authorization assignments." triggerLabel="Create group" submitLabel="Create group" action={createGroupAction}>
-      <AdminField label="Display name" name="displayName" autoComplete="off" required maxLength={200} />
-      <AdminStatusField name="status" />
-    </AdminMutationDialog>
-  );
+export default async function GroupsPage({ searchParams }: { readonly searchParams: Promise<SearchParams> }) {
+  const request = await IdentityAccessAdminRequest.fromCurrentRequest();
+  const { tenantId, tenantView, groupId } = await searchParams;
+  const allTenants = tenantView === "all";
+  const context = allTenants ? undefined : request.selectedTenantContext(tenantId);
+  const create = <AdminCreateGroupDialog effectiveContext={request.effectiveContext} selectedTenantId={context?.tenantId} />;
+
+  if (context === undefined && !allTenants) {
+    return (
+      <section className="ia-page">
+        <AdminPageHeader eyebrow="Tenant access" badge="Tenant scoped" title="Groups" description="Select one authorized tenant or use All authorized tenants to browse groups without duplicating the workspace. Identity Scope Administrators can still create a group by choosing its concrete tenant inside the mutation dialog." actions={create} />
+        <AdminTenantContextSelector effectiveContext={request.effectiveContext} selectedTenantId={tenantId} actionPath="/identity/groups" />
+        <AdminSecurityBanner title="Tenant selection is not authorization." description="The selected tenant is validated against the trusted subject context and every protected API operation is independently authorized." />
+      </section>
+    );
+  }
+
+  const aggregateGroups = allTenants
+    ? await IdentityAccessAdminTenantAggregateLoader.load(
+      await new IdentityAccessAdminAuthorizedTenantService(request).list(),
+      (tenant) => request.client.administration.groups.list(tenant.context, { limit: 50 }),
+    )
+    : [];
+  const groups = context ? await request.client.administration.groups.list(context, { limit: 50 }) : [];
+  const selectedGroup = context && groupId
+    ? groups.find((group) => group.groupId === groupId) ?? await request.client.administration.groups.get(context, groupId)
+    : null;
+  const [members, managedBindings] = selectedGroup && context ? await Promise.all([
+    request.client.administration.groups.listMembers(context, selectedGroup.groupId),
+    request.client.administration.managedPolicyBindings.list(context, selectedGroup.groupId),
+  ]) : [[], []];
+  const scopeIds = Array.from(new Set(
+    managedBindings.flatMap((binding) => binding.resourceScopeId !== undefined ? [binding.resourceScopeId] : []),
+  ));
+  const [memberUsers, boundScopes, managedBoundPolicies] = selectedGroup && context ? await Promise.all([
+    Promise.all(members.map(async (member) => {
+      const matches = await request.client.administration.tenantUsers.list(context, {
+        search: member.tenantMembershipId,
+        limit: 20,
+      });
+      return matches.find((record) => record.membershipId === member.tenantMembershipId) ?? null;
+    })),
+    Promise.all(scopeIds.map((resourceScopeId) =>
+      request.client.administration.resourceScopes.get(context, resourceScopeId),
+    )),
+    Promise.all(managedBindings.map(async (binding) => {
+      const matches = await request.client.administration.managedPolicyBindings.listAvailablePolicies(context, {
+        search: binding.policyId,
+        limit: 20,
+      });
+      return matches.find((record) => record.policyId === binding.policyId) ?? null;
+    })),
+  ]) : [[], [], []];
+  const usersById = new Map(memberUsers.filter((user) => user !== null).map((user) => [user.userId, user]));
+  const managedPoliciesById = new Map(managedBoundPolicies.filter((policy) => policy !== null).map((policy) => [policy.policyId, policy]));
+  const scopesById = new Map(boundScopes.filter((scope) => scope !== null).map((scope) => [scope.resourceScopeId, scope]));
+
+  const rows = allTenants
+    ? aggregateGroups.map(({ tenant, record: group }) => ({
+      key: `${tenant.tenantId}:${group.groupId}`,
+      id: group.groupId,
+      name: group.displayName,
+      status: group.status === 1 ? "Active" : "Inactive",
+      version: group.version,
+      tenant: { tenantId: tenant.tenantId, displayName: tenant.displayName },
+      actions: (
+        <>
+          <Link className="ia-button ia-button-secondary ia-button-compact" href={`/identity/groups?tenantId=${encodeURIComponent(tenant.tenantId)}&groupId=${encodeURIComponent(group.groupId)}`}>Manage</Link>
+          <AdminMutationDialog title="Edit group" description="Update the group name or lifecycle state in its concrete tenant." triggerLabel="Edit" submitLabel="Save changes" action={updateGroupAction} triggerVariant="secondary" triggerIcon="edit" compact>
+            <input type="hidden" name="tenantId" value={tenant.tenantId} />
+            <input type="hidden" name="groupId" value={group.groupId} />
+            <input type="hidden" name="expectedVersion" value={group.version} />
+            <AdminField label="Display name" name="displayName" defaultValue={group.displayName} required maxLength={200} />
+            <AdminStatusField name="status" defaultValue={String(group.status)} />
+          </AdminMutationDialog>
+        </>
+      ),
+    }))
+    : groups.map((group) => ({
+      id: group.groupId,
+      name: group.displayName,
+      status: group.status === 1 ? "Active" : "Inactive",
+      version: group.version,
+      actions: (
+        <>
+          <Link className="ia-button ia-button-secondary ia-button-compact" href={`/identity/groups?tenantId=${encodeURIComponent(context!.tenantId)}&groupId=${encodeURIComponent(group.groupId)}`}>Manage</Link>
+          <AdminMutationDialog title="Edit group" description="Update the group name or lifecycle state." triggerLabel="Edit" submitLabel="Save changes" action={updateGroupAction} triggerVariant="secondary" triggerIcon="edit" compact>
+            <input type="hidden" name="tenantId" value={context!.tenantId} />
+            <input type="hidden" name="groupId" value={group.groupId} />
+            <input type="hidden" name="expectedVersion" value={group.version} />
+            <AdminField label="Display name" name="displayName" defaultValue={group.displayName} required maxLength={200} />
+            <AdminStatusField name="status" defaultValue={String(group.status)} />
+          </AdminMutationDialog>
+        </>
+      ),
+    }));
 
   return (
     <section className="ia-page">
-      <AdminPageHeader eyebrow="Tenant access" badge="Tenant scoped" title="Groups" description="Create groups, edit their lifecycle, manage membership, and attach or remove explicit policy bindings." actions={create} />
+      <AdminPageHeader eyebrow="Tenant access" badge={allTenants ? "Authorized aggregate" : "Tenant scoped"} title="Groups" description={allTenants ? "Browse authorization groups across every tenant where the current subject can perform this protected read. Every row retains concrete tenant ownership." : "Create groups, edit their lifecycle, manage membership, and attach or remove explicit policy bindings."} actions={create} />
+      <AdminTenantContextSelector effectiveContext={request.effectiveContext} selectedTenantId={context?.tenantId} allTenantsSelected={allTenants} actionPath="/identity/groups" />
       <AdminEntityTable
-        title="Authorization groups"
-        description="Groups collect members. Open Manage to maintain member and policy-binding edges; those edges support true removal while group identity remains lifecycle-managed."
+        title={allTenants ? "Authorization groups across authorized tenants" : "Authorization groups"}
+        description={allTenants ? "This is one aggregate collection surface. Create chooses one concrete tenant, row edits retain their row tenant, and Manage enters that tenant before relationship administration." : "Groups collect members. Open Manage to maintain member and policy-binding edges; those edges support true removal while group identity remains lifecycle-managed."}
         entityLabel="groups"
-        rows={groups.map((group) => ({
-          id: group.groupId,
-          name: group.displayName,
-          status: group.status === 1 ? "Active" : "Inactive",
-          version: group.version,
-          actions: (
-            <>
-              <Link className="ia-button ia-button-secondary ia-button-compact" href={`/identity/groups?groupId=${encodeURIComponent(group.groupId)}`}>Manage</Link>
-              <AdminMutationDialog title="Edit group" description="Update the group name or lifecycle state." triggerLabel="Edit" submitLabel="Save changes" action={updateGroupAction} triggerVariant="secondary" triggerIcon="edit" compact>
-                <input type="hidden" name="groupId" value={group.groupId} />
-                <input type="hidden" name="expectedVersion" value={group.version} />
-                <AdminField label="Display name" name="displayName" defaultValue={group.displayName} required maxLength={200} />
-                <AdminStatusField name="status" defaultValue={String(group.status)} />
-              </AdminMutationDialog>
-            </>
-          ),
-        }))}
+        selectedId={selectedGroup?.groupId}
+        rows={rows}
       />
 
-      {selectedGroup ? (
+      {selectedGroup && context ? (
         <section className="ia-management-workspace">
-          <div className="ia-management-heading">
-            <div><p className="ia-card-kicker">Selected group</p><h2>{selectedGroup.displayName}</h2><p><code className="ia-id-chip">{selectedGroup.groupId}</code></p></div>
-            <span className="ia-status ia-status-active"><span className="ia-status-dot" />Manage edges</span>
-          </div>
+          <AdminRecordContext
+            kicker="Selected group"
+            title={selectedGroup.displayName}
+            description="Maintain this group record and its explicit membership and policy-binding relationships from one bounded context."
+            identifier={selectedGroup.groupId}
+            status={selectedGroup.status === 1 ? "Active" : "Inactive"}
+            version={selectedGroup.version}
+            facts={[
+              { label: "Tenant", value: context.tenantId },
+              { label: "Members", value: members.length },
+              { label: "Policy bindings", value: managedBindings.length },
+            ]}
+            actions={(
+              <AdminMutationDialog title="Edit group" description="Update the group name or lifecycle state." triggerLabel="Edit group" submitLabel="Save changes" action={updateGroupAction} triggerVariant="secondary" triggerIcon="edit" compact>
+                <input type="hidden" name="tenantId" value={context.tenantId} />
+                <input type="hidden" name="groupId" value={selectedGroup.groupId} />
+                <input type="hidden" name="expectedVersion" value={selectedGroup.version} />
+                <AdminField label="Display name" name="displayName" defaultValue={selectedGroup.displayName} required maxLength={200} />
+                <AdminStatusField name="status" defaultValue={String(selectedGroup.status)} />
+              </AdminMutationDialog>
+            )}
+            closeHref={`/identity/groups?tenantId=${encodeURIComponent(context.tenantId)}`}
+          />
 
           <div className="ia-management-grid">
             <section className="ia-card">
               <div className="ia-card-heading">
                 <div><p className="ia-card-kicker">Membership</p><h2>Group members</h2><p>Add tenant memberships or remove existing membership edges.</p></div>
                 <AdminMutationDialog title="Add group member" description="Attach an existing tenant membership to this authorization group." triggerLabel="Add member" submitLabel="Add member" action={addGroupMemberAction} compact>
+                  <input type="hidden" name="tenantId" value={context.tenantId} />
                   <input type="hidden" name="groupId" value={selectedGroup.groupId} />
-                  <AdminField label="Tenant membership ID" name="tenantMembershipId" required autoComplete="off" />
+                  <AdminEntityAutocomplete label="Tenant member" name="tenantMembershipId" kind="tenant-membership" tenantId={context.tenantId} required hint="Type at least 3 characters of the user display name, or enter a full user/membership ID." />
                 </AdminMutationDialog>
               </div>
               {members.length === 0 ? <p className="ia-empty-inline">No members are assigned to this group.</p> : (
                 <div className="ia-manage-list">
                   {members.map((member) => (
                     <div className="ia-manage-row" key={member.tenantMembershipId}>
-                      <div><strong>{member.userId}</strong><code>{member.tenantMembershipId}</code></div>
-                      <AdminMutationDialog title="Remove group member" description="Remove only this group-membership edge. The tenant membership and user remain intact. Type REMOVE to confirm." triggerLabel="Remove" submitLabel="Remove member" action={removeGroupMemberAction} dangerous compact>
-                        <input type="hidden" name="groupId" value={selectedGroup.groupId} />
-                        <input type="hidden" name="tenantMembershipId" value={member.tenantMembershipId} />
-                        <AdminField label="Confirmation" name="confirmation" required placeholder="REMOVE" autoComplete="off" />
-                      </AdminMutationDialog>
+                      <div><strong>{usersById.get(member.userId)?.displayName ?? member.userId}</strong><span>{member.userId}</span><code>{member.tenantMembershipId}</code></div>
+                      <div className="ia-row-actions">
+                        <Link className="ia-button ia-button-secondary ia-button-compact" href={`/identity/users?tenantId=${encodeURIComponent(context.tenantId)}&userId=${encodeURIComponent(member.userId)}`}>Access insight</Link>
+                        <AdminMutationDialog title="Remove group member" description="Remove only this group-membership edge. The tenant membership and user remain intact. Type REMOVE to confirm." triggerLabel="Remove" submitLabel="Remove member" action={removeGroupMemberAction} dangerous compact>
+                          <input type="hidden" name="tenantId" value={context.tenantId} />
+                          <input type="hidden" name="groupId" value={selectedGroup.groupId} />
+                          <input type="hidden" name="tenantMembershipId" value={member.tenantMembershipId} />
+                          <AdminField label="Confirmation" name="confirmation" required placeholder="REMOVE" autoComplete="off" />
+                        </AdminMutationDialog>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -94,33 +188,30 @@ export default async function GroupsPage({ searchParams }: { readonly searchPara
 
             <section className="ia-card">
               <div className="ia-card-heading">
-                <div><p className="ia-card-kicker">Authorization</p><h2>Policy bindings</h2><p>Attach policy containers to this group, optionally under one resource scope.</p></div>
-                <AdminMutationDialog title="Add policy binding" description="Grant one existing policy to this group in the selected resource scope." triggerLabel="Add binding" submitLabel="Add binding" action={addGroupPolicyBindingAction} compact>
+                <div><p className="ia-card-kicker">Authorization</p><h2>Managed policy bindings</h2><p>Attach one reusable application-managed policy to this tenant group, optionally under one tenant resource scope.</p></div>
+                <AdminMutationDialog title="Add managed policy binding" description="Grant the selected shared managed policy at its published default version. The binding remains owned by this tenant group." triggerLabel="Add binding" submitLabel="Add binding" action={addManagedGroupPolicyBindingAction} compact>
+                  <input type="hidden" name="tenantId" value={context.tenantId} />
                   <input type="hidden" name="groupId" value={selectedGroup.groupId} />
-                  <AdminSelectField label="Policy" name="policyId" required defaultValue="">
-                    <option value="" disabled>Select a policy</option>
-                    {policies.map((policy) => <option key={policy.policyId} value={policy.policyId}>{policy.displayName} ({policy.policyId})</option>)}
-                  </AdminSelectField>
-                  <AdminSelectField label="Resource scope" name="resourceScopeId" defaultValue="" hint="Leave empty for a binding without a resource-scope restriction.">
-                    <option value="">No resource scope</option>
-                    {scopes.map((scope) => <option key={scope.resourceScopeId} value={scope.resourceScopeId}>{scope.displayName}</option>)}
-                  </AdminSelectField>
+                  <AdminEntityAutocomplete label="Managed policy" name="managedPolicyId" kind="managed-policy" tenantId={context.tenantId} required hint="Type at least 3 characters of the shared policy display name/key, or enter its full ID. Only active policies with a published default version are selectable." />
+                  <AdminEntityAutocomplete label="Resource scope" name="resourceScopeId" kind="resource-scope" tenantId={context.tenantId} emptyLabel="No resource scope" hint="Optional. Resource scopes remain tenant-owned even though the managed policy definition is shared." />
                   <AdminCheckboxField label="Include descendants" name="includeDescendants" hint="Apply the binding to descendants of the selected resource scope." />
                 </AdminMutationDialog>
               </div>
-              {bindings.length === 0 ? <p className="ia-empty-inline">No policies are bound to this group.</p> : (
+              {managedBindings.length === 0 ? <p className="ia-empty-inline">No managed policies are bound to this group.</p> : (
                 <div className="ia-manage-list">
-                  {bindings.map((binding) => {
-                    const key = `${binding.policyId}:${binding.resourceScopeId ?? "root"}`;
-                    const policy = policies.find((item) => item.policyId === binding.policyId);
-                    const scope = binding.resourceScopeId ? scopes.find((item) => item.resourceScopeId === binding.resourceScopeId) : undefined;
+                  {managedBindings.map((binding) => {
+                    const key = `${binding.policyId}:v${binding.policyVersion}:${binding.resourceScopeId ?? "root"}`;
+                    const policy = managedPoliciesById.get(binding.policyId);
+                    const scope = binding.resourceScopeId !== undefined ? scopesById.get(binding.resourceScopeId) : undefined;
                     return (
                       <div className="ia-manage-row" key={key}>
-                        <div><strong>{policy?.displayName ?? binding.policyId}</strong><span>{scope?.displayName ?? "No resource scope"}{binding.includeDescendants ? " · descendants" : ""}</span></div>
-                        <AdminMutationDialog title="Remove policy binding" description="Remove this explicit policy binding from the group. Type REMOVE to confirm." triggerLabel="Remove" submitLabel="Remove binding" action={removeGroupPolicyBindingAction} dangerous compact>
+                        <div><strong>{policy?.displayName ?? binding.policyId}</strong><span>Managed policy · v{binding.policyVersion} · {scope?.displayName ?? "No resource scope"}{binding.includeDescendants ? " · descendants" : ""}</span></div>
+                        <AdminMutationDialog title="Remove managed policy binding" description="Remove only this tenant-scoped binding. The shared managed policy remains available to other authorized tenants. Type REMOVE to confirm." triggerLabel="Remove" submitLabel="Remove binding" action={removeManagedGroupPolicyBindingAction} dangerous compact>
+                          <input type="hidden" name="tenantId" value={context.tenantId} />
                           <input type="hidden" name="groupId" value={selectedGroup.groupId} />
-                          <input type="hidden" name="policyId" value={binding.policyId} />
-                          {binding.resourceScopeId ? <input type="hidden" name="resourceScopeId" value={binding.resourceScopeId} /> : null}
+                          <input type="hidden" name="managedPolicyId" value={binding.policyId} />
+                          <input type="hidden" name="policyVersion" value={binding.policyVersion} />
+                          {binding.resourceScopeId !== undefined ? <input type="hidden" name="resourceScopeId" value={binding.resourceScopeId} /> : null}
                           <AdminField label="Confirmation" name="confirmation" required placeholder="REMOVE" autoComplete="off" />
                         </AdminMutationDialog>
                       </div>
@@ -131,6 +222,8 @@ export default async function GroupsPage({ searchParams }: { readonly searchPara
             </section>
           </div>
         </section>
+      ) : allTenants ? (
+        <AdminSecurityBanner title="All authorized tenants is a collection context." description="Records remain tenant-owned. Open Manage to enter one concrete tenant context before changing relationships, members, or bindings." />
       ) : (
         <AdminSecurityBanner title="Select a group to manage assignments." description="Edit the group record from the table or open Manage to add/remove membership and policy-binding edges using the existing server-authorized contracts." />
       )}

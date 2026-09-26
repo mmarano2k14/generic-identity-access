@@ -11,7 +11,7 @@ namespace IdentityAccess.Application.Administration
         Task<VersionedRecord<User>?> GetUserAsync(Guid identityScopeId, ApplicationKey application,
             Guid userId, CancellationToken cancellationToken);
         /// <summary>Lists users in a bounded deterministic window.</summary>
-        Task<IReadOnlyList<VersionedRecord<User>>> ListUsersAsync(Guid identityScopeId, ApplicationKey application,
+        Task<IReadOnlyList<VersionedRecord<User>>> ListUsersAsync(Guid identityScopeId, ApplicationKey application, string? search,
             int offset, int limit, CancellationToken cancellationToken);
         /// <summary>Creates a user.</summary>
         Task<VersionedRecord<User>> CreateUserAsync(Guid identityScopeId, ApplicationKey application,
@@ -24,7 +24,7 @@ namespace IdentityAccess.Application.Administration
         Task<VersionedRecord<Tenant>?> GetTenantAsync(Guid identityScopeId, ApplicationKey application,
             Guid tenantId, CancellationToken cancellationToken);
         /// <summary>Lists tenants in a bounded deterministic window.</summary>
-        Task<IReadOnlyList<VersionedRecord<Tenant>>> ListTenantsAsync(Guid identityScopeId, ApplicationKey application,
+        Task<IReadOnlyList<VersionedRecord<Tenant>>> ListTenantsAsync(Guid identityScopeId, ApplicationKey application, string? search,
             int offset, int limit, CancellationToken cancellationToken);
         /// <summary>Creates a tenant.</summary>
         Task<VersionedRecord<Tenant>> CreateTenantAsync(Guid identityScopeId, ApplicationKey application,
@@ -39,6 +39,9 @@ namespace IdentityAccess.Application.Administration
         /// <summary>Finds a tenant membership for the requested user.</summary>
         Task<VersionedRecord<TenantMembership>?> FindTenantMembershipByUserAsync(Guid identityScopeId,
             ApplicationKey application, Guid tenantId, Guid userId, CancellationToken cancellationToken);
+        /// <summary>Lists tenant memberships in a bounded deterministic window.</summary>
+        Task<IReadOnlyList<VersionedRecord<TenantMembership>>> ListTenantMembershipsAsync(Guid identityScopeId,
+            ApplicationKey application, Guid tenantId, string? search, int offset, int limit, CancellationToken cancellationToken);
         /// <summary>Creates a tenant membership.</summary>
         Task<VersionedRecord<TenantMembership>> CreateTenantMembershipAsync(Guid identityScopeId,
             ApplicationKey application, Guid tenantId, Guid membershipId, Guid userId, MembershipStatus status,
@@ -53,7 +56,7 @@ namespace IdentityAccess.Application.Administration
             ApplicationKey application, Guid groupId, CancellationToken cancellationToken);
         /// <summary>Lists user groups in a bounded deterministic window.</summary>
         Task<IReadOnlyList<VersionedRecord<UserGroup>>> ListGroupsAsync(Guid identityScopeId, Guid tenantId,
-            ApplicationKey application, int offset, int limit, CancellationToken cancellationToken);
+            ApplicationKey application, string? search, int offset, int limit, CancellationToken cancellationToken);
         /// <summary>Creates a user group.</summary>
         Task<VersionedRecord<UserGroup>> CreateGroupAsync(Guid identityScopeId, Guid tenantId,
             ApplicationKey application, Guid groupId, string displayName, GroupStatus status,

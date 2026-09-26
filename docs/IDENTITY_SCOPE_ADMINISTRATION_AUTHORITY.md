@@ -20,19 +20,21 @@ They do not have a tenant target.
 Using an arbitrary tenant membership to authorize these operations would allow tenant
 authority to escape its boundary.
 
-Identity Access therefore maintains two explicit authorization paths:
+Identity Access therefore maintains two explicit authority sources:
 
 ```text
-tenant/resource operation
-    -> tenant groups/policies
-    -> IdentityAuthorizationService
-
-identity-scope operation
-    -> identity-scope administration groups/policies
+identity-scope administration groups/policies
     -> IdentityScopeAuthorizationService
+
+tenant groups/policies
+    -> IdentityAuthorizationService
 ```
 
-Both paths delegate final wildcard evaluation to the same external RBAC engine.
+Identity-scope authority is the broader administration boundary inside one identity scope. It may
+authorize tenant/resource administration when the same requested capability is granted. Tenant
+authority remains the narrower fallback and is never promoted upward into identity-scope authority.
+
+Both authority sources delegate final wildcard evaluation to the same external RBAC engine.
 
 ## Persistence Model
 
@@ -69,9 +71,18 @@ For routes with a tenant:
 
 ```text
 AdministrationRequestContext
-    -> TenantReference
-    -> tenant grant projection
+    -> identity-scope grant projection
     -> external RBAC
+        |
+        +-- Allow -> request allowed
+        |
+        +-- Deny / technical failure
+                -> tenant grant projection
+                -> external RBAC
+                    |
+                    +-- Allow -> request allowed
+                    +-- Deny + scope Deny -> request denied
+                    +-- otherwise -> technical unavailability
 ```
 
 For routes without a tenant:
@@ -83,7 +94,10 @@ AdministrationRequestContext
     -> external RBAC
 ```
 
-The HTTP authorizer never converts a tenant grant into scope authority.
+This inheritance is one-way. Identity-scope authority can authorize tenant/resource operations
+inside the same trusted identity scope when it owns the requested capability. Tenant grants are
+never converted into identity-scope authority and are never consulted for identity-scope-only
+routes.
 
 ## Bootstrap
 

@@ -1,3 +1,326 @@
+# 0.62.6 - Managed policy compatibility closure
+
+- Repair: converted the retired `AdminCreatePolicyDialog.tsx` source into an inert overlay tombstone so cumulative ZIP overlays cannot leave a stale `createPolicyAction` import from an earlier working tree.
+- Repair: extended the compatibility-closure source gate to pin that tombstone and reject reactivation of the legacy policy-creation dialog.
+- Repair: added a managed-schema preflight to the assigned-capability PostgreSQL gate so databases that have not yet applied migrations `0023`-`0025` fail with the exact schema-application command instead of a raw missing-relation error.
+
+- Closed the runtime authorization compatibility path: assigned-capability projection now reads only published managed-policy versions and no longer unions tenant-owned `permission_policies`, `policy_statements`, or `group_policy_bindings`.
+- Tightened `AssignedCapabilityGrant` provenance so every projected grant requires one concrete `ManagedPolicyVersionReference`; legacy permission-policy provenance can no longer enter the authorization bridge through the public application contract.
+- Removed legacy tenant-policy persistence and administration composition from active dependency injection and made the historical legacy policy controllers non-discoverable while preserving their source and previously published PostgreSQL migrations.
+- Removed `administration.policies` from the public TypeScript administration composition and removed legacy group-policy binding types from the package root exports; the TypeScript client advances to `0.21.0`.
+- Completed the Next.js managed-only transition: Groups no longer reads or removes legacy bindings, relation lookup no longer exposes the legacy policy kind, and Access Insight resolves exact managed-policy versions and their statements.
+- Updated the live PostgreSQL assigned-capability validation to prove both positive managed projection and the negative invariant that surviving legacy rows produce zero grants after the managed binding is removed.
+- Added a compatibility-closure source gate that prevents legacy runtime fallback, DI/API re-registration, public TypeScript re-composition, or legacy Next.js surfaces from returning while explicitly preserving identity-scope `scopeAuthority`.
+- Moved the local development tenant-administrator bootstrap and resource-scope qualification fixtures onto published managed-policy versions; retired tenant-policy persistence/wildcard scripts remain historical schema checks but are no longer production-qualification gates.
+- Updated RBAC capability-alignment and restore qualification to treat managed policy tables as active required schema while preserving the historical legacy tables for migration continuity.
+- No PostgreSQL migration is required; historical legacy tables remain intact and the latest migration remains `0025_managed_policy_publication.sql`.
+
+# 0.62.5 - Managed policy catalog administration UI
+
+- Replaced the tenant-owned Policies workspace with the shared managed-policy catalog; policy definitions are now administered only at identity-scope/application scope and no tenant selector is present.
+- Added focused server-only managed-policy read and mutation orchestration for metadata, draft versions, capability statements, publication, and default-version selection.
+- Added complete managed-policy lifecycle UX: create shared policy definitions, create security-model-pinned drafts, edit draft statements from the registered capability catalog, publish immutable versions, and select a published default.
+- Kept tenant grants separate: Groups continue to attach published managed-policy versions through tenant-scoped managed bindings, while legacy tenant-policy bindings remain compatibility-only and removable.
+- Changed the public administration UI builder so the Policies navigation entry is evaluated against identity-scope authorization even when trusted tenant contexts are available; the TypeScript client advances to `0.20.0`.
+- Removed tenant aggregate semantics from the Policies workspace and overview navigation; `All authorized tenants` remains relevant only to tenant-owned collections.
+- Added source-consistency coverage preventing tenant ownership, legacy policy creation, or free-text capability coordinates from returning to the managed-policy workspace.
+- No PostgreSQL migration is required in this increment; the latest migration remains `0025_managed_policy_publication.sql`.
+
+# 0.62.4 - Managed policy binding administration
+
+- Added a focused tenant-scoped administration service and API for binding groups to shared managed-policy versions without adding tenant ownership to policy definitions.
+- Added a tenant-authorized `available-policies` query that filters active managed policies with a published default version in PostgreSQL before paging.
+- Added a public TypeScript `managedPolicyBindings` client and advanced the client to `0.19.0`.
+- Changed new Group policy-binding creation to select from the shared managed-policy catalog and pin the published default version at attachment time.
+- Kept resource scopes and bindings tenant-scoped while managed policy identity remains identity-scope/application scoped.
+- Kept existing legacy tenant-policy bindings readable and removable during migration, but removed their creation path from the Group administration UI.
+- Added managed-binding audit events, API contract coverage, and source-consistency gates for the shared-policy/tenant-binding administration boundary.
+- No PostgreSQL migration is required in this increment; the latest migration remains `0025_managed_policy_publication.sql`.
+
+# 0.62.3 - Managed policy administration API
+
+- Added a focused application-layer administration service for reusable managed policies without introducing tenant ownership into policy definitions.
+- Added identity-scope/application HTTP routes for bounded managed-policy discovery, metadata create/update, draft version creation, draft statement editing, and explicit publication.
+- Kept shared catalog administration on identity-scope authority: the managed-policy route contains no tenant identifier and tenant-scoped grants do not become authority to mutate shared policy definitions.
+- Added draft statement removal while preserving PostgreSQL publication guards that make published versions and statements immutable.
+- Added security-audit event categories for managed-policy metadata, version, publication, and statement mutations.
+- Added a focused public TypeScript `managedPolicies` administration client and advanced the client to `0.18.0`.
+- Added API, application-contract, client, and source-consistency coverage for the tenant-independent managed-policy administration boundary.
+- Kept the active tenant binding UI unchanged; tenant groups still use the migration compatibility path until the dedicated managed-binding administration surface is introduced.
+- No PostgreSQL migration is required in this increment; the latest migration remains `0025_managed_policy_publication.sql`.
+
+# 0.62.2 - Managed policy publication and authorization projection
+
+- Added explicit draft-to-published lifecycle state for managed-policy versions while preserving immutable application security-model pinning.
+- Added PostgreSQL migration `0025_managed_policy_publication.sql` with database guards that freeze published versions and statements, require published default versions, and reject bindings to unpublished managed-policy versions.
+- Preserved pre-publication compatibility by marking any existing version already selected as a default or referenced by a managed binding as published at its original creation timestamp before the new guards become active.
+- Added an explicit managed-policy version publication persistence operation and restricted statement writes to unpublished versions.
+- Tightened managed group-policy binding creation so only active managed policies with published pinned versions can be bound.
+- Extended assigned-capability provenance so shared managed-policy versions remain distinguishable from legacy tenant-owned policy references without acquiring tenant ownership.
+- Activated published managed group-policy bindings in the tenant authorization projection while retaining legacy bindings as an independent compatibility source during migration.
+- Preserved tenant-scoped group/resource boundaries, external RBAC wildcard evaluation, and the existing 401/403/503 failure distinction.
+- Kept the public TypeScript client at `0.17.0`; no administration UI contract changes are included in this increment.
+
+# 0.62.1 - Managed policy binding foundation
+
+- Added a tenant-scoped managed group-policy binding model that references one concrete shared managed-policy version without adding tenant ownership to the managed policy definition.
+- Added PostgreSQL migration `0024_managed_policy_bindings.sql` with tenant-scoped group/resource boundaries and a tenant-independent foreign key to `managed_policy_versions`.
+- Added atomic managed-binding mutation validation for active groups, active managed policies, existing policy versions, and optional active resource scopes.
+- Added focused managed-policy binding persistence contracts while keeping the existing tenant-owned permission-policy binding path operational.
+- Added security-mutation ledger capture for managed group-policy binding changes.
+- Added source-consistency and domain/persistence contract coverage for the shared-policy/tenant-binding boundary.
+- Kept the administration service, UI, and authorization projection on the existing binding path in this increment; activation of managed bindings is deferred to a separate verified change.
+
+# 0.62.0 - Managed policy catalog foundation
+
+- Added a tenant-independent managed policy identity scoped by identity scope and application.
+- Added stable managed policy keys and explicit default-version selection without tenant ownership.
+- Added managed policy versions pinned to registered application security-model versions.
+- Added managed policy statements constrained by the registered capability catalog.
+- Added PostgreSQL migration `0023_managed_policy_catalog.sql` with managed policy, version, and statement tables that contain no tenant key.
+- Added dedicated PostgreSQL persistence contracts and implementations for managed policy metadata, versions, and statements.
+- Added source-consistency and domain/persistence contract coverage preventing tenant ownership from leaking into managed policy definitions.
+- Kept the existing tenant-scoped permission-policy and binding path unchanged while the reusable catalog is introduced independently.
+
+# 0.61.3 - Concrete tenant mutation targeting
+
+- Extended tenant-owned creation from aggregate administration collections without introducing a synthetic `all` tenant or duplicating tenant workspaces.
+- Added explicit tenant-target Policy and Resource Scope creation alongside the existing Group flow; Identity Scope Administrators use server-backed tenant lookup and membership-limited subjects remain restricted to active membership tenants.
+- Removed implicit first-tenant selection when a membership-limited subject has multiple active memberships; one concrete tenant must now be selected explicitly.
+- Bound Resource Scope parent lookup dynamically to the selected owning tenant and reset the parent selector when that tenant changes, preventing cross-tenant hierarchy selection in the UI while preserving server-side validation.
+- Clarified aggregate UX semantics: `tenantView=all` is a collection context only, while every create/edit/detail operation carries one concrete tenant target and remains independently authorized.
+- Preserved the public TypeScript client at `0.17.0`, the PostgreSQL schema at migration `0022`, and the existing RBAC evaluator and 401/403/503 failure distinction.
+
+# 0.61.2 - Authorized tenant aggregate collections
+
+- Added a read-only `All authorized tenants` collection mode for tenant-scoped administration workspaces without introducing a synthetic tenant identity.
+- Distinguished Identity Scope Administrator aggregate targets from membership-limited aggregate targets while preserving per-operation RBAC authorization.
+- Added bounded server-side tenant fan-out that skips explicit tenant-level authorization denials and preserves authentication, transport, and technical authorization failures.
+- Added tenant ownership metadata to aggregate rows for users, groups, policies, and resource scopes.
+- Preserved concrete tenant ownership for every mutation and detail route; aggregate context never becomes a mutation target.
+- Added aggregate overview metrics and workspace links while keeping identity-scope directory semantics available outside aggregate mode.
+
+# 0.61.1 - Tenant administration context UX
+
+- Made tenant ownership explicit when creating tenant-scoped authorization groups. Identity Scope Administrators can choose a tenant through the existing server-backed tenant autocomplete even before a workspace tenant is selected; membership-limited subjects can target only active membership tenants returned by the trusted effective administration context.
+- Distinguished identity-scope administration from membership-limited tenant context in the reusable administration selector without changing the underlying RBAC evaluator or treating UI selection as authorization.
+- Added the selected tenant identifier to group management detail context so tenant ownership remains visible while maintaining group memberships and policy bindings.
+- Preserved server-side tenant revalidation for every group mutation; browser-submitted tenant identifiers remain requested context only.
+- Added source-consistency coverage for explicit tenant-target group creation and administration-scope presentation.
+
+# 0.61.0 - Multi-tenant administration context
+
+- Added a trusted effective administration-context projection derived from the authenticated subject, active identity-scope authority, and active tenant memberships.
+- Removed the fixed `IDENTITY_ACCESS_TENANT_ID` runtime boundary from the reusable Next.js administration host.
+- Added tenant-target enforcement to the API authorization path: an identity-scope RBAC allow may authorize cross-tenant administration, while tenant-local fallback now requires an active membership in the requested tenant.
+- Preserved fail-safe authorization composition: an unresolved identity-scope authorization decision is not collapsed into a tenant-visibility denial.
+- Added a direct tenant-constrained user read projection backed by `tenant_memberships JOIN users`, with tenant/search/lifecycle filtering applied in PostgreSQL before paging.
+- Replaced tenant-member autocomplete composition over scope-wide users with the tenant-constrained user projection; group member search now returns active memberships only.
+- Existing group-member display resolution no longer performs scope-wide user reads and instead resolves through the tenant-constrained projection.
+- Kept the shared entity-reference presentation contract unchanged and mapped the new tenant-user read model through a dedicated focused presentation class.
+- Added typed TypeScript administration-context and tenant-user clients and advanced the public client to `0.17.0`; tenant-aware administration navigation now uses tenant authorization when available and scope authorization before a tenant is selected.
+- Added subject-scoped PostgreSQL tenant-membership reads used for tenant visibility resolution.
+- Preserved the existing identity-scope-to-tenant RBAC hierarchy, one-way authority, and the 401/403/503 security distinction.
+- Added explicit tenant-context selection to tenant-scoped administration workspaces: scope-wide operators use server-backed tenant search, one active membership resolves automatically, and multiple memberships expose only the trusted active membership set.
+- Tenant-scoped read and mutation flows now carry the requested tenant explicitly and reconstruct `tenantContextFor(...)` server-side before every protected operation; browser-supplied tenant identifiers remain request context only.
+- Membership-limited user administration now reads the tenant-constrained user projection instead of the identity-scope user directory, while scope-wide directory access remains available to authorized scope administrators.
+- Retired the remaining example `IDENTITY_ACCESS_TENANT_ID` setting so no reusable Next.js example suggests a fixed runtime tenant boundary.
+- No PostgreSQL migration is required; the existing tenant-membership and administration-search indexes support the new joined read path.
+
+# 0.60.9 - Optional resource-scope binding read repair
+
+- Corrected the Groups administration workspace so policy bindings without a resource scope do not attempt to resolve an undefined resource-scope identifier through the typed client.
+- Aligned the page with the public `IdentityGroupPolicyBindingRecord` contract, where an absent resource scope is represented by an omitted/undefined property rather than `null`.
+- Added source-consistency validation that pins the optional resource-scope guard and prevents regression to a null-only check.
+- Advanced the repository and runnable administration host to `0.60.9`; the public TypeScript client remains `0.14.0` because no public client contract changed.
+- No backend endpoint, PostgreSQL migration, RBAC decision behavior, TRN grammar, OIDC behavior, MFA behavior, session behavior, or database-routing behavior changed.
+
+---
+
+# 0.60.8 - Entity autocomplete selected-state consistency
+
+- Corrected the shared administration entity autocomplete so a resolved selection does not reopen an empty result list or display `No matching records.` when no search is active.
+- Preserved server-backed search behavior: searches still begin after three characters, debounce for 250 ms, cancel superseded requests, and return at most 20 authorized results.
+- Preserved stable-ID-only form submission and the existing server-side authorization and lookup boundaries.
+- Extended source-consistency validation to pin the resolved-selection behavior in the shared autocomplete.
+- Advanced the repository and runnable administration host to `0.60.8`; the public TypeScript client remains `0.14.0` because no public client contract changed.
+- No backend endpoint, PostgreSQL migration, RBAC decision behavior, TRN grammar, OIDC behavior, MFA behavior, session behavior, or database-routing behavior changed.
+
+---
+
+# 0.60.7 - Identity-scope administration inheritance
+
+- Extended protected tenant/resource administration authorization so identity-scope administration grants may authorize the same requested capability across tenants inside the trusted identity scope.
+- Preserved one-way authority: tenant grants remain tenant/resource scoped and are never promoted into identity-scope authority or consulted for identity-scope-only routes.
+- Added deterministic composition of identity-scope and tenant decisions: either independent Allow is sufficient; dual Deny remains Deny; otherwise any unresolved technical authorization failure remains service unavailable rather than collapsing to Deny.
+- Preserved the existing external RBAC engine as the sole wildcard and final capability evaluator; no TRN grammar, capability catalog, policy persistence, or database-routing semantics changed.
+- Extended authorization tests and source-consistency gates for scope-admin tenant access, tenant fallback, technical-failure composition, and the development root-administrator wildcard bootstrap.
+- Updated administration authorization documentation to describe the trusted identity-scope-to-tenant hierarchy.
+- Advanced the repository and runnable administration host to `0.60.7`; the public TypeScript client remains `0.14.0` because no public client contract changed.
+- No PostgreSQL migration, public TypeScript API change, OIDC behavior, MFA behavior, session behavior, or application-security-manifest schema change is part of this increment.
+
+---
+
+# 0.60.6 - Server-backed administration reference search
+
+- Reworked the shared administration entity autocomplete so relationship selectors never preload directory collections into the browser. Searches start only after three characters, debounce for 250 ms, cancel superseded requests, and return at most 20 authorized results.
+- Added a focused server-only entity-reference search service and a thin Next.js route adapter. React owns only query interaction, keyboard/listbox behavior, and stable-ID selection; typed administration clients and the .NET API remain the data and authorization boundary.
+- Added bounded `search` support to administration list contracts for users, tenants, tenant memberships, groups, policies, resource scopes, and identity-scope authority groups/policies. Search normalization is centralized and server-side PostgreSQL queries filter before paging.
+- Added PostgreSQL migration `0022_administration_search_indexes.sql` for bounded display-name and resource external-ID lookup paths.
+- Changed tenant-membership creation and lookup UX to select both the tenant and user explicitly through server-backed autocomplete rather than relying on an implicit configured tenant.
+- Removed remaining preloaded autocomplete option collections from MFA and scope-authority administration. Existing relationship rows resolve only the records they actually reference instead of loading whole catalogs.
+- Preserved opaque technical identifiers such as OIDC client ID, correlation ID, and external resource ID as text input because they are not selectable Identity Access entity references.
+- Advanced the repository and runnable administration host to `0.60.6` and the public TypeScript client to `0.14.0` because list options now expose bounded server-side search.
+- No RBAC decision behavior, TRN grammar, OIDC semantics, MFA semantics, session-revocation semantics, or trusted database-routing rule changed.
+
+---
+
+# 0.60.5 - Administration entity reference autocomplete
+
+- Added one shared `AdminEntityAutocomplete` component for administration relationships that previously required operators to copy and paste stable identifiers.
+- Replaced manual relationship-ID entry with display-name/ID search for users, tenant memberships, policies, resource scopes, parent resource scopes, identity-scope authority groups and policies, session/security-audit user references, tenant audit filters, and MFA user selection.
+- Added a focused `IdentityAccessAdminEntityReferencePresentation` class that maps typed administration records into the shared selector model while React remains a thin interaction layer.
+- Reused existing typed administration list clients wherever available and added bounded tenant-membership plus identity-scope authority group/policy list operations only where the lookup surface was missing.
+- Added matching bounded ASP.NET Core/application/storage list paths with existing administration capability checks, trusted multi-database routing, deterministic ordering, and explicit cancellation.
+- Preserved opaque technical identifiers such as OIDC client IDs, correlation IDs, and external resource IDs as text inputs because they are not references to selectable Identity Access records.
+- Extended source-consistency validation to pin the shared selector, focused presentation class, relationship-field coverage, and absence of raw editable foreign-identifier fields for the covered administration relationships.
+- Advanced the repository and runnable administration host to `0.60.5` and the public TypeScript client to `0.13.0` because bounded list methods were added to existing public administration clients.
+- No RBAC decision behavior, TRN grammar, OIDC semantics, MFA semantics, session-revocation semantics, PostgreSQL schema migration, or database-routing rule changed.
+
+---
+
+# 0.60.4 - Security model manifest registration UX
+
+- Added protected administration registration of complete project-owned JSON security manifests from the Security Models workspace without exposing free-text resource, feature, action, namespace, or model-version authoring fields.
+- Added a focused bounded JSON-file parser that validates manifest structure, schema version, application key, model version, RBAC context, concrete capability coordinates, duplicate capabilities, display metadata, file extension, and a 256 KiB input limit before typed client submission.
+- Added a focused server-only security-model mutation service that requires the manifest application key to match the configured administration application context and delegates registration through the existing typed `securityModels.registerManifest` client.
+- Added manifest-registration-specific failure presentation for immutable model-version conflicts while preserving the existing authentication, authorization, transport, timeout, availability, protocol, and validation failure distinctions.
+- Revalidated both Security Models and Policies after successful registration so a newly registered catalog becomes immediately available to the existing exact-capability Policy Builder.
+- Extended source-consistency validation to require file-based manifest registration, prohibit browser-authored capability-coordinate fields, preserve the external-RBAC boundary, and keep parsing, mutation orchestration, and failure presentation in separate classes.
+- Advanced the repository and runnable administration host to `0.60.4`; the public TypeScript client remains `0.12.0` because the existing public registration contract is reused unchanged.
+- No backend endpoint, PostgreSQL migration, manifest schema, TRN grammar, RBAC decision behavior, OIDC behavior, MFA behavior, session behavior, or database-routing behavior is changed.
+
+---
+
+# 0.60.3 - Policy catalog source-consistency repair
+
+- Corrected the policy-builder source-consistency gate to follow the focused policy read orchestration introduced for protected-read failure handling.
+- The gate now verifies that `IdentityAccessAdminPolicyReadService` composes `IdentityAccessAdminPolicyBuilderService` while the policy page still renders the catalog-backed `capability` selector.
+- Preserved the responsibility split between the policy page, protected read orchestration, catalog loading, mutation orchestration, and external RBAC evaluation.
+- No runtime authorization behavior, TRN grammar, manifest contract, PostgreSQL schema, endpoint, or public TypeScript client contract changed.
+- Advanced the repository and runnable administration host to `0.60.3`; the public TypeScript client remains `0.12.0`.
+
+---
+
+# 0.60.2 - Policy protected-read failure UX repair
+
+- Added a focused server-only `IdentityAccessAdminPolicyReadService` that orchestrates policy, statement, and registered security-model reads without performing RBAC evaluation.
+- Routed policy workspace read failures through the existing `IdentityAccessAdminFailurePresentation` so authenticated authorization failures render an explicit access-denied state instead of falling through to the generic route error boundary.
+- Refined read-only forbidden guidance to distinguish access denial from technical load failure while preserving server-owned authorization decisions.
+- Extended TypeScript source-consistency validation to pin the focused policy-read service, safe failure projection, and absence of client-side RBAC evaluation.
+- Advanced the repository and runnable administration host to `0.60.2`; the public TypeScript client remains `0.12.0` because no public client contract changed.
+- No backend endpoint, PostgreSQL migration, security-manifest contract, TRN grammar, RBAC decision behavior, OIDC behavior, MFA behavior, or database-routing behavior is changed.
+
+# 0.60.1 - Policy mutation source-consistency repair
+
+- Corrected the administration source-consistency policy-mutation guard so it detects only general permission-policy record/statement mutations instead of matching unrelated MFA and scope-authority client methods that also use `createPolicy` / `updatePolicy` names.
+- Preserved the focused `IdentityAccessAdminPolicyMutationService` boundary for permission-policy create, update, statement-add, and statement-remove operations without changing runtime authorization behavior or existing scope-authority and MFA orchestration.
+- Advanced the repository and runnable administration host to `0.60.1`; the public TypeScript client remains `0.12.0` because no public client contract changed.
+- No backend endpoint, PostgreSQL migration, security-manifest contract, TRN grammar, RBAC decision behavior, OIDC behavior, MFA behavior, or database-routing behavior is changed.
+
+# 0.60.0 - Application security manifest and policy builder foundation
+
+- Added project-owned JSON application security manifests that declare an immutable model version, external RBAC project, allowed RBAC namespaces, and concrete `resource / feature / action` capabilities without hardcoding reusable capability catalogs in C# source.
+- Added deterministic normalized-manifest SHA-256 fingerprinting and manifest-backed registration semantics: identical normalized content is idempotent while reuse of the same model version for different semantics is rejected as an optimistic-concurrency conflict.
+- Added PostgreSQL migration `0021_application_security_manifest_catalog.sql` with manifest registration provenance and namespace projection while preserving the existing `application_security_models` and `application_capabilities` capability catalog.
+- Added focused security-catalog storage and administration services plus protected list, get, and registration endpoints; registration remains routed through the existing trusted multi-database resolver.
+- Preserved the external RBAC contract: `CapabilityKey` remains `resource / feature / action`, project and namespace remain execution-context coordinates, and TRNs remain derived as `trn:{project}:{namespace}:{resource}:{feature}:{action}`.
+- Added focused TypeScript security-model list/get/register contracts and advanced the public TypeScript client to `0.12.0`.
+- Added a read-only `/identity/security-models` workspace that displays registered model provenance, RBAC context, concrete capabilities, and descriptive TRN previews without making authorization decisions.
+- Changed policy-statement creation in the administration host to select exact capabilities from registered security models and pin their model version instead of accepting free-text resource, feature, action, and model-version input.
+- Split policy catalog loading and policy mutation orchestration into focused server-only classes; the general administration mutation service no longer owns policy mutations.
+- Added source-consistency validation that pins the manifest/RBAC boundary, policy-builder responsibility split, read-only security-model UI, and absence of a second RBAC evaluator.
+- Added a generic application security-manifest example and technical documentation for JSON authoring, durable registration, policy building, and TRN derivation.
+- Moved the local administration bootstrap capability catalog to `config/identity-access-admin-security-manifest.json`; the bootstrap now projects and fingerprints the JSON manifest instead of maintaining a duplicate hardcoded feature/action list.
+- Advanced the repository and runnable administration host to `0.60.0`.
+
+# 0.59.0 - Accessibility, responsive, and final administration consistency
+
+- Added a focused client-only mobile-navigation disclosure component that reflects open/closed state, exposes explicit disclosure relationships, and closes automatically after route transitions while preserving server-filtered navigation ownership.
+- Made the protected administration skip target programmatically focusable so keyboard skip navigation lands on the main workspace with visible focus treatment.
+- Added explicit focus restoration to mutation-dialog triggers after controlled close, cancel, and successful server-confirmed mutation completion.
+- Strengthened shared form-field hint semantics with stable description identifiers while preserving caller-provided `aria-describedby` relationships.
+- Added pending-state semantics to login and recovery forms and explicitly described the recovery-code hint without changing the recovery security contract.
+- Added dynamic-viewport handling for mobile shells, dialogs, and navigation; refined very-narrow-screen action composition; and preserved the single shared stylesheet.
+- Added increased-contrast and forced-colors behavior for interactive controls, navigation state, security status markers, dialogs, and focus indicators.
+- Extended TypeScript source-consistency validation to pin the focus, disclosure, field-description, high-contrast, dynamic-viewport, and mobile route-transition behavior.
+- Advanced the repository and runnable administration host to `0.59.0`; the public TypeScript client remains `0.11.0` because no public client contract changed.
+- No backend endpoint, PostgreSQL migration, routing rule, OIDC behavior, MFA-provider behavior, session-revocation semantic, or RBAC decision change is introduced.
+
+# 0.58.0 - Production hardening and failure UX
+
+- Added a focused `IdentityAccessAdminFailurePresentation` class that projects transport, authentication, authorization, optimistic-concurrency, availability, timeout, protocol, configuration, cancellation, and validation failures into bounded secret-safe administration guidance.
+- Added structured administration action failure state and a dedicated `AdminFailureFeedback` presentation component so Client Components receive only safe failure categories and recovery guidance, never raw exception details or response bodies.
+- Removed transport/error presentation responsibility from the general and session mutation services; mutation services remain responsible for validated mutation orchestration only.
+- Added explicit stale-version handling for HTTP `409` responses, directing administrators to reload current state before retrying rather than presenting concurrency failure as a generic rejected operation.
+- Hardened timeout, cancellation, transport, and malformed-response UX so an absent usable response is never treated as proof of mutation success; ambiguous outcomes require current-state reload before retry.
+- Redirected invalid or expired protected administration contexts back to sign-in when the server-side navigation authorization boundary returns `unauthenticated`, with a non-secret re-authentication notice.
+- Hardened the sessions workspace to degrade independently when bounded security-audit evidence is technically unavailable while preserving separately authorized containment controls and explicitly refusing to infer session state from missing evidence.
+- Extended the single shared administration stylesheet and source-consistency gate to pin structured failure classification, recovery guidance, expired-session handling, session-evidence degradation, and separation of mutation from failure-presentation responsibilities.
+- Advanced the repository and runnable administration host to `0.58.0`; the public TypeScript client remains `0.11.0` because no public client contract changed.
+- No PostgreSQL migration, backend endpoint, OIDC protocol change, MFA-provider behavior change, refresh-token semantic change, database-routing change, or RBAC decision change is introduced.
+
+# 0.57.0 - Sessions and security operations administration
+
+- Expanded `/identity/sessions` into a server-first security-operations workspace that composes the existing session-revocation and security-audit contracts without introducing a new session inventory endpoint.
+- Added separate class responsibilities for session query normalization, bounded audit loading, presentation mapping, visible-window aggregation, and destructive session mutations.
+- Moved user-wide and client-wide session revocation out of the general administration mutation service into a focused session mutation service; the Next.js Server Actions remain thin adapters.
+- Added bounded session-security evidence for password-session issuance, exact/user/client revocation activity, session-assurance changes, refresh-token reuse detection, and refresh-token family revocation.
+- Preserved the contract boundary when active-session enumeration is unavailable: the UI explicitly avoids inferring active, expired, or revoked state from missing audit evidence.
+- Added user, MFA, security-audit, and correlation navigation from the session investigation workflow while keeping every destination independently server-authorized.
+- Kept containment limited to the existing user-wide and registered-client-wide revocation operations with explicit `REVOKE` confirmation and server-confirmed completion.
+- Kept security-audit read permission independent from session containment permission; an unavailable audit view does not manufacture evidence or bypass authorization, and technical failures remain distinct from authorization denial.
+- Extended the single shared administration stylesheet and source-consistency validation to pin the session responsibility split, prohibit browser-side RBAC evaluation and secret rendering, and prevent a cross-cutting session/security God service.
+- Advanced the repository and runnable administration host to `0.57.0`; the public TypeScript client remains `0.11.0` because no public client contract changed.
+- No PostgreSQL migration, new backend endpoint, OIDC flow change, MFA-provider change, database-routing change, RBAC decision change, exact-session administration operation, or manual refresh-token-family administration operation is introduced.
+
+# 0.56.0 - Security administration and audit experience
+
+- Added a dedicated read-only security-audit administration path over the existing `identity_access.security_events` store; no PostgreSQL migration is introduced.
+- Added separate audit read contracts for persistence and application administration so database access, trusted route resolution, HTTP authorization, client transport, query normalization, presentation, and summary aggregation remain distinct responsibilities.
+- Added a bounded PostgreSQL audit reader that filters by identity scope and application, supports exact tenant, user, event-type, outcome, and correlation filters, and returns newest-first secret-safe metadata only.
+- Added a dedicated `identity-access / security-audit / read` administration capability and controller surface; audit reads remain protected by the existing server-side administration authorization boundary.
+- Added `IdentityAccessSecurityAuditClient` as a focused TypeScript administration class and bumped the public TypeScript client package to `0.11.0`.
+- Added a server-first `/identity/security-audit` administration workspace with exact filters, bounded result windows, outcome summaries, categorical event presentation, user/tenant/correlation navigation, and no browser-owned authorization decision.
+- Split Next.js audit responsibilities across query, loading, presentation, summary, and timeline components instead of introducing a cross-cutting security God service.
+- Extended source-consistency validation to pin the class-separated audit architecture, prohibit RBAC evaluation inside audit loading, retain the single-stylesheet rule, and require the security-audit administration surface.
+- Audit responses do not expose passwords, password hashes, session/access/refresh tokens, connection strings, secret references, or arbitrary payloads.
+- No RBAC decision semantics, OIDC flow semantics, MFA-provider behavior, database-routing rules, or existing mutation contracts are changed.
+
+# 0.55.0 - Assigned access provenance and security insight
+
+- Added a server-only assigned-access insight service that composes existing tenant membership, group membership, policy binding, resource-scope, and policy-statement administration APIs for one selected user.
+- Added a reusable assignment-provenance surface to selected user administration, including tenant membership state, assigned groups, policy bindings, capability patterns, resource-scope context, and lifecycle blockers.
+- Kept the insight explicitly descriptive: it does not impersonate the selected user, evaluate wildcard matching, infer resource applicability, or produce an RBAC allow/deny result.
+- Added direct navigation from provenance paths into the existing group, policy, resource-scope, membership, MFA, and user administration contexts.
+- Added group-member shortcuts back to the selected user's access insight so administrators can move from a relationship edge to its wider assignment context.
+- Added explicit bounded-scan disclosure when the diagnostic group scan reaches its server-side administration limit instead of presenting a potentially incomplete view as exhaustive.
+- Added lifecycle-readiness cues for user, tenant membership, group, policy, and resource-scope state while preserving the external RBAC engine as the final authorization authority.
+- Extended TypeScript source-consistency validation to pin the server-only insight service, non-verdict language, existing-API composition, and single-stylesheet presentation.
+- No backend endpoint, PostgreSQL schema, routing, OIDC, MFA-provider, RBAC behavior, or public TypeScript client contract changes are introduced in this increment.
+
+# 0.54.0 - Administration detail and management context
+
+- Added a reusable server-renderable record-context surface for collection-to-detail administration flows without moving data loading, mutation, or authorization into browser code.
+- Added explicit record selection for users, tenants, groups, policies, and resource scopes, including selected-row presentation and stable identifier, lifecycle, and version context.
+- Added user detail shortcuts into tenant-membership and MFA administration so related security workflows can be opened without manually copying stable identifiers between pages.
+- Added tenant and resource-scope detail context with lifecycle and hierarchy metadata while preserving server-resolved database placement and application-defined resource semantics.
+- Consolidated group and policy management workspaces around the selected durable record, including relationship counts, edit actions, and explicit return-to-collection navigation.
+- Upgraded tenant-membership lookup results into a selected relationship context with direct navigation back to the stable user and its MFA state.
+- Extended collection tables with a presentation-only selected record state; selection does not widen server reads, bypass authorization, or alter mutation semantics.
+- Extended TypeScript source-consistency validation to pin the reusable record-context component, selected-row semantics, and single-stylesheet detail-management presentation.
+- No backend, PostgreSQL schema, routing, OIDC, MFA-provider, RBAC, or public TypeScript client contract changes are introduced in this increment.
+
 # 0.53.0 - Administration visual and interaction polish
 
 - Refined reusable administration tables with client-only status filtering, optional presentation sorting, one-action filter reset, and live result counts while keeping all data loading and authorization server-owned.

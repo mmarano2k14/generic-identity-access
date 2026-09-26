@@ -11,6 +11,33 @@ try {
     & (Join-Path $root "scripts/verify-authorization-source-consistency.ps1")
     if (-not $?) { throw "Authorization source consistency validation failed." }
 
+    & (Join-Path $root "scripts/verify-security-catalog-source-consistency.ps1")
+    if (-not $?) { throw "Application security-catalog source consistency validation failed." }
+
+    & (Join-Path $root "scripts/verify-managed-policy-catalog-source-consistency.ps1")
+    if (-not $?) { throw "Managed policy catalog source consistency validation failed." }
+
+    & (Join-Path $root "scripts/verify-managed-policy-binding-source-consistency.ps1")
+    if (-not $?) { throw "Managed policy binding source consistency validation failed." }
+
+    & (Join-Path $root "scripts/verify-managed-policy-publication-source-consistency.ps1")
+    if (-not $?) { throw "Managed policy publication source consistency validation failed." }
+
+    & (Join-Path $root "scripts/verify-managed-policy-administration-source-consistency.ps1")
+    if (-not $?) { throw "Managed policy administration source consistency validation failed." }
+
+    & (Join-Path $root "scripts/verify-managed-policy-binding-administration-source-consistency.ps1")
+    if (-not $?) { throw "Managed policy binding administration source consistency validation failed." }
+
+    & (Join-Path $root "scripts/verify-managed-policy-ui-source-consistency.ps1")
+    if (-not $?) { throw "Managed policy UI source consistency validation failed." }
+
+    & (Join-Path $root "scripts/verify-managed-policy-compatibility-closure-source-consistency.ps1")
+    if (-not $?) { throw "Managed policy compatibility closure source consistency validation failed." }
+
+    & (Join-Path $root "scripts/verify-multitenant-administration-context-source-consistency.ps1")
+    if (-not $?) { throw "Multi-tenant administration context source consistency validation failed." }
+
     & (Join-Path $root "scripts/verify-oidc-source-consistency.ps1")
     if (-not $?) { throw "OIDC source consistency validation failed." }
 

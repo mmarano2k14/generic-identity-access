@@ -1,6 +1,8 @@
 # Identity & Access TypeScript Client
 
-Version 0.9.0 replaces the previous monolithic `IdentityAccessClient` implementation with a class-composed client architecture. The root client is now a lightweight facade; transport, system diagnostics, local authentication, OIDC/PKCE, authorization, and each administration domain live in focused classes under `src/client/`.
+Version 0.21.0 closes the public legacy tenant-policy compatibility surface. `administration.managedPolicies` remains the identity-scope/application catalog administration surface, `administration.managedPolicyBindings` remains tenant-scoped for grants of published shared policy versions, and `administration.policies` is no longer composed by the public client. `scopeAuthority` remains a separate identity-scope administration model. The root client remains a lightweight facade; transport, system diagnostics, local authentication, OIDC/PKCE, authorization, and each administration domain live in focused classes under `src/client/`.
+
+Relationship lookup lists remain typed, authorized, and bounded. Search terms are trimmed, must contain between 3 and 128 characters, and are sent explicitly to the protected administration list routes. The client never performs browser-side authorization or substitutes local collection filtering for the server-side search boundary.
 
 All durable TypeScript runtime implementations remain class-based. The decorator surface remains the only deliberate function-shaped public API because TypeScript decorators are callable metadata declarations.
 
@@ -29,18 +31,24 @@ IdentityAccessClient
         │   └── IdentityAccessTenantsClient
         ├── memberships
         │   └── IdentityAccessMembershipsClient
+        ├── tenantUsers
+        │   └── IdentityAccessTenantUsersClient
         ├── groups
         │   └── IdentityAccessGroupsClient
-        ├── policies
-        │   └── IdentityAccessPoliciesClient
+        ├── managedPolicies
+        │   └── IdentityAccessManagedPoliciesClient
+        ├── managedPolicyBindings
+        │   └── IdentityAccessManagedPolicyBindingsClient
         ├── resourceScopes
         │   └── IdentityAccessResourceScopesClient
         ├── securityModels
         │   └── IdentityAccessSecurityModelsClient
         ├── sessions
         │   └── IdentityAccessSessionsClient
-        └── scopeAuthority
-            └── IdentityAccessScopeAuthorityClient
+        ├── scopeAuthority
+        │   └── IdentityAccessScopeAuthorityClient
+        └── securityAudit
+            └── IdentityAccessSecurityAuditClient
 ```
 
 Shared implementation responsibilities are also separated:
@@ -222,16 +230,16 @@ const group = await client.administration.groups.create(tenantContext, {
   displayName: "Billing Team",
 });
 
-await client.administration.policies.addStatement(
+const [managedPolicy] = await client.administration.managedPolicyBindings.listAvailablePolicies(
   tenantContext,
-  policyId,
-  {
-    modelVersion: 3,
-    resource: "billing",
-    feature: "*",
-    action: "refund",
-  },
+  { search: "billing", limit: 20 },
 );
+
+if (managedPolicy) {
+  await client.administration.managedPolicyBindings.add(tenantContext, group.groupId, {
+    policyId: managedPolicy.policyId,
+  });
+}
 ```
 
 Bounded collection reads:
@@ -240,7 +248,7 @@ Bounded collection reads:
 const users = await client.administration.users.list(context, { offset: 0, limit: 50 });
 const tenants = await client.administration.tenants.list(context, { limit: 50 });
 const groups = await client.administration.groups.list(tenantContext, { limit: 50 });
-const policies = await client.administration.policies.list(tenantContext, { limit: 50 });
+const policies = await client.administration.managedPolicies.list(context, { limit: 50 });
 ```
 
 The server accepts a maximum list size of 200 records per request.
@@ -252,16 +260,16 @@ users
  tenants
  tenant memberships
  groups + group memberships
- policies + statements + scoped bindings
+ managed policies + published versions + tenant-scoped managed bindings
  resource scopes
- security-model scope types
+ security models + capability catalogs + scope types
  bulk session revocation
  identity-scope authority groups/members/policies/statements/bindings
 ```
 
 Whole-segment wildcard patterns remain server-authoritative. TypeScript validates the supported shape but never evaluates wildcard authority locally.
 
-Direct application security-model/capability administration routes are not currently exposed by the backend; the client does not invent unsupported endpoints.
+Application security-model discovery and registration are exposed through the focused `securityModels` client. A project-owned manifest registers one immutable model version with its RBAC project, allowed namespaces, and concrete `resource / feature / action` capabilities. Reusing a model version with different normalized semantics is a server conflict. The client transports and validates these contracts but does not evaluate RBAC decisions.
 
 ## Administration UI builder
 
@@ -330,3 +338,16 @@ await client.administration.mfa.createPolicy(context, {
 ```
 
 The generic client does not calculate TOTP codes, verify WebAuthn assertions, or handle recovery-code material. Those behaviors are delivered by dedicated providers while the generic core owns policy and authenticator lifecycle metadata.
+
+## Security audit administration
+
+Security audit access is exposed through its own responsibility class:
+
+```typescript
+const events = await client.administration.securityAudit.list(
+  administrationContext,
+  { userId, outcome: "Denied", limit: 50 },
+);
+```
+
+The client only validates/encodes the bounded query and decodes the secret-safe API response. It does not evaluate authorization, infer permissions from events, retain audit state globally, or expose raw PostgreSQL access.

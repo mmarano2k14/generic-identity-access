@@ -1,17 +1,20 @@
+using IdentityAccess.Application.Administration;
 using IdentityAccess.Authorization;
 using IdentityAccess.Domain;
 
 namespace IdentityAccess.Api.Security
 {
     /// <summary>
-    /// Authorizes administration requests against the correct authority boundary: tenant/resource
-    /// routes use tenant grants, while identity-scope-only routes use dedicated scope
-    /// administration grants. Final wildcard-aware decisions remain external.
+    /// Authorizes administration requests against the trusted administration authority hierarchy.
+    /// Identity-scope grants may authorize tenant/resource routes inside the same identity scope;
+    /// tenant grants are then evaluated as the narrower fallback. Identity-scope-only routes never
+    /// borrow tenant authority. Final wildcard-aware decisions remain external.
     /// </summary>
     internal sealed class RbacAdministrationRequestAuthorizer(
         IAdministrationRequestContextResolver contextResolver,
         IIdentityAuthorizationService tenantAuthorizationService,
         IIdentityScopeAuthorizationService scopeAuthorizationService,
+        IAdministrationTenantVisibilityService tenantVisibilityService,
         AdministrationAuthorizationOptions options,
         ILogger<RbacAdministrationRequestAuthorizer> logger)
         : IAdministrationRequestAuthorizer
@@ -75,8 +78,6 @@ namespace IdentityAccess.Api.Security
                 feature,
                 action);
 
-            IdentityAuthorizationResult result;
-
             try
             {
                 if (AdministrationAuthorizationTargetResolver.TryResolve(
@@ -85,39 +86,35 @@ namespace IdentityAccess.Api.Security
                         out var tenantTarget) &&
                     tenantTarget is not null)
                 {
-                    result = await tenantAuthorizationService
-                        .AuthorizeAsync(
-                            new IdentityAuthorizationRequest(
-                                tenantTarget.Tenant,
-                                context.Subject,
-                                context.Application,
-                                options.RbacProject,
-                                options.RbacNamespace,
-                                capability,
-                                tenantTarget.ResourceScope),
+                    return await AuthorizeTenantTargetAsync(
+                            context,
+                            tenantTarget,
+                            capability,
+                            resource,
+                            feature,
+                            action,
                             cancellationToken)
                         .ConfigureAwait(false);
                 }
-                else if (!httpContext.Request.RouteValues.ContainsKey(
-                             "tenantId"))
+
+                if (!httpContext.Request.RouteValues.ContainsKey(
+                        "tenantId"))
                 {
-                    result = await scopeAuthorizationService
-                        .AuthorizeAsync(
-                            new IdentityScopeAuthorizationRequest(
-                                context.Subject.IdentityScopeId,
-                                context.Subject,
-                                context.Application,
-                                options.RbacProject,
-                                options.RbacNamespace,
-                                capability),
+                    var scopeResult = await AuthorizeIdentityScopeAsync(
+                            context,
+                            capability,
                             cancellationToken)
                         .ConfigureAwait(false);
+
+                    return MapResult(
+                        scopeResult,
+                        resource,
+                        feature,
+                        action);
                 }
-                else
-                {
-                    return AdministrationAccessResult.Unavailable(
-                        AdministrationAccessFailureCode.AuthorizationTargetUnavailable);
-                }
+
+                return AdministrationAccessResult.Unavailable(
+                    AdministrationAccessFailureCode.AuthorizationTargetUnavailable);
             }
             catch (OperationCanceledException)
             {
@@ -135,9 +132,114 @@ namespace IdentityAccess.Api.Security
                 return AdministrationAccessResult.Unavailable(
                     AdministrationAccessFailureCode.AuthorizationTechnicalFailure);
             }
+        }
 
-            return MapResult(
-                result,
+
+        private async ValueTask<AdministrationAccessResult> AuthorizeTenantTargetAsync(
+            AdministrationRequestContext context,
+            AdministrationAuthorizationTarget tenantTarget,
+            CapabilityKey capability,
+            string resource,
+            string feature,
+            string action,
+            CancellationToken cancellationToken)
+        {
+            var scopeResult = await AuthorizeIdentityScopeAsync(
+                    context,
+                    capability,
+                    cancellationToken)
+                .ConfigureAwait(false);
+
+            if (scopeResult.Decision == IdentityAuthorizationDecision.Allowed)
+            {
+                return AdministrationAccessResult.Allow();
+            }
+
+            var hasActiveTenantMembership = await tenantVisibilityService
+                .HasActiveMembershipAsync(
+                    context.Subject.IdentityScopeId,
+                    context.Application,
+                    context.Subject,
+                    tenantTarget.Tenant.TenantId,
+                    cancellationToken)
+                .ConfigureAwait(false);
+
+            if (!hasActiveTenantMembership)
+            {
+                if (scopeResult.Decision == IdentityAuthorizationDecision.Denied)
+                {
+                    return AdministrationAccessResult.Deny(
+                        AdministrationAccessFailureCode.TenantContextOutsideVisibility);
+                }
+
+                return AdministrationAccessResult.Unavailable(
+                    AdministrationAccessFailureCode.AuthorizationTechnicalFailure);
+            }
+
+            var tenantResult = await tenantAuthorizationService
+                .AuthorizeAsync(
+                    new IdentityAuthorizationRequest(
+                        tenantTarget.Tenant,
+                        context.Subject,
+                        context.Application,
+                        options.RbacProject,
+                        options.RbacNamespace,
+                        capability,
+                        tenantTarget.ResourceScope),
+                    cancellationToken)
+                .ConfigureAwait(false);
+
+            if (tenantResult.Decision == IdentityAuthorizationDecision.Allowed)
+            {
+                return AdministrationAccessResult.Allow();
+            }
+
+            if (scopeResult.Decision == IdentityAuthorizationDecision.Denied &&
+                tenantResult.Decision == IdentityAuthorizationDecision.Denied)
+            {
+                return AdministrationAccessResult.Deny();
+            }
+
+            LogComposedTechnicalFailure(
+                scopeResult,
+                tenantResult,
+                resource,
+                feature,
+                action);
+
+            return AdministrationAccessResult.Unavailable(
+                AdministrationAccessFailureCode.AuthorizationTechnicalFailure);
+        }
+
+        private ValueTask<IdentityAuthorizationResult> AuthorizeIdentityScopeAsync(
+            AdministrationRequestContext context,
+            CapabilityKey capability,
+            CancellationToken cancellationToken) =>
+            scopeAuthorizationService.AuthorizeAsync(
+                new IdentityScopeAuthorizationRequest(
+                    context.Subject.IdentityScopeId,
+                    context.Subject,
+                    context.Application,
+                    options.RbacProject,
+                    options.RbacNamespace,
+                    capability),
+                cancellationToken);
+
+        private void LogComposedTechnicalFailure(
+            IdentityAuthorizationResult scopeResult,
+            IdentityAuthorizationResult tenantResult,
+            string resource,
+            string feature,
+            string action)
+        {
+            logger.LogWarning(
+                "Administration authorization could not complete after identity-scope and tenant evaluation. Scope decision {ScopeDecision} ({ScopeFailureCode}/{ScopeRbacFailureCode}); tenant decision {TenantDecision} ({TenantFailureCode}/{TenantRbacFailureCode}); capability {Resource}/{Feature}/{Action}.",
+                scopeResult.Decision,
+                scopeResult.FailureCode,
+                scopeResult.RbacFailureCode,
+                tenantResult.Decision,
+                tenantResult.FailureCode,
+                tenantResult.RbacFailureCode,
                 resource,
                 feature,
                 action);

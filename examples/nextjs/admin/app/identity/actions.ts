@@ -2,8 +2,12 @@
 
 import { revalidatePath } from "next/cache";
 import type { AdminActionState } from "../../contracts/AdminActionState";
+import { IdentityAccessAdminFailurePresentation } from "../../server/IdentityAccessAdminFailurePresentation";
+import { IdentityAccessAdminManagedPolicyMutationService } from "../../server/IdentityAccessAdminManagedPolicyMutationService";
 import { IdentityAccessAdminMutationService } from "../../server/IdentityAccessAdminMutationService";
 import { IdentityAccessAdminRequest } from "../../server/IdentityAccessAdminRequest";
+import { IdentityAccessAdminSecurityModelFailurePresentation } from "../../server/IdentityAccessAdminSecurityModelFailurePresentation";
+import { IdentityAccessAdminSecurityModelMutationService } from "../../server/IdentityAccessAdminSecurityModelMutationService";
 
 export async function createUserAction(_state: AdminActionState, formData: FormData): Promise<AdminActionState> {
   return execute("/identity/users", "User created.", (service) => service.createUser(formData));
@@ -45,28 +49,49 @@ export async function removeGroupMemberAction(_state: AdminActionState, formData
   return execute("/identity/groups", "Group member removed.", (service) => service.removeGroupMember(formData));
 }
 
-export async function createPolicyAction(_state: AdminActionState, formData: FormData): Promise<AdminActionState> {
-  return execute("/identity/policies", "Policy created.", (service) => service.createPolicy(formData));
+export async function createManagedPolicyAction(_state: AdminActionState, formData: FormData): Promise<AdminActionState> {
+  return executeManagedPolicy("Managed policy created.", (service) => service.createPolicy(formData));
 }
 
-export async function updatePolicyAction(_state: AdminActionState, formData: FormData): Promise<AdminActionState> {
-  return execute("/identity/policies", "Policy updated.", (service) => service.updatePolicy(formData));
+export async function updateManagedPolicyAction(_state: AdminActionState, formData: FormData): Promise<AdminActionState> {
+  return executeManagedPolicy("Managed policy updated.", (service) => service.updatePolicy(formData));
 }
 
-export async function addPolicyStatementAction(_state: AdminActionState, formData: FormData): Promise<AdminActionState> {
-  return execute("/identity/policies", "Policy statement added.", (service) => service.addPolicyStatement(formData));
+export async function createManagedPolicyVersionAction(_state: AdminActionState, formData: FormData): Promise<AdminActionState> {
+  return executeManagedPolicy("Managed policy draft version created.", (service) => service.createVersion(formData));
 }
 
-export async function removePolicyStatementAction(_state: AdminActionState, formData: FormData): Promise<AdminActionState> {
-  return execute("/identity/policies", "Policy statement removed.", (service) => service.removePolicyStatement(formData));
+export async function publishManagedPolicyVersionAction(_state: AdminActionState, formData: FormData): Promise<AdminActionState> {
+  return executeManagedPolicy("Managed policy version published.", (service) => service.publishVersion(formData));
 }
 
-export async function addGroupPolicyBindingAction(_state: AdminActionState, formData: FormData): Promise<AdminActionState> {
-  return execute("/identity/groups", "Policy binding added.", (service) => service.addGroupPolicyBinding(formData));
+export async function addManagedPolicyStatementAction(_state: AdminActionState, formData: FormData): Promise<AdminActionState> {
+  return executeManagedPolicy("Managed policy statement added.", (service) => service.addStatementFromCatalog(formData));
 }
 
-export async function removeGroupPolicyBindingAction(_state: AdminActionState, formData: FormData): Promise<AdminActionState> {
-  return execute("/identity/groups", "Policy binding removed.", (service) => service.removeGroupPolicyBinding(formData));
+export async function removeManagedPolicyStatementAction(_state: AdminActionState, formData: FormData): Promise<AdminActionState> {
+  return executeManagedPolicy("Managed policy statement removed.", (service) => service.removeStatement(formData));
+}
+
+export async function registerSecurityModelManifestAction(_state: AdminActionState, formData: FormData): Promise<AdminActionState> {
+  try {
+    const request = await IdentityAccessAdminRequest.fromCurrentRequest();
+    const service = new IdentityAccessAdminSecurityModelMutationService(request);
+    const message = await service.registerManifest(formData);
+    revalidatePath("/identity/security-models");
+    revalidatePath("/identity/policies");
+    return { status: "success", message };
+  } catch (error) {
+    return { status: "error", failure: IdentityAccessAdminSecurityModelFailurePresentation.fromRegistration(error) };
+  }
+}
+
+export async function addManagedGroupPolicyBindingAction(_state: AdminActionState, formData: FormData): Promise<AdminActionState> {
+  return execute("/identity/groups", "Managed policy binding added.", (service) => service.addManagedGroupPolicyBinding(formData));
+}
+
+export async function removeManagedGroupPolicyBindingAction(_state: AdminActionState, formData: FormData): Promise<AdminActionState> {
+  return execute("/identity/groups", "Managed policy binding removed.", (service) => service.removeManagedGroupPolicyBinding(formData));
 }
 
 export async function createResourceScopeAction(_state: AdminActionState, formData: FormData): Promise<AdminActionState> {
@@ -133,20 +158,6 @@ export async function recoveryRevokeMfaAuthenticatorAction(_state: AdminActionSt
   return execute("/identity/mfa", "Lost authenticator revoked and sessions contained.", (service) => service.recoveryRevokeMfaAuthenticator(formData));
 }
 
-export async function revokeUserSessionsAction(_state: AdminActionState, formData: FormData): Promise<AdminActionState> {
-  return execute("/identity/sessions", "User sessions revoked.", async (service) => {
-    const count = await service.revokeUserSessions(formData);
-    return `${count} session${count === 1 ? "" : "s"} revoked.`;
-  });
-}
-
-export async function revokeClientSessionsAction(_state: AdminActionState, formData: FormData): Promise<AdminActionState> {
-  return execute("/identity/sessions", "Client sessions revoked.", async (service) => {
-    const count = await service.revokeClientSessions(formData);
-    return `${count} session${count === 1 ? "" : "s"} revoked.`;
-  });
-}
-
 async function execute(
   revalidationPath: string,
   defaultSuccessMessage: string,
@@ -159,6 +170,22 @@ async function execute(
     revalidatePath(revalidationPath);
     return { status: "success", message: typeof result === "string" ? result : defaultSuccessMessage };
   } catch (error) {
-    return { status: "error", message: IdentityAccessAdminMutationService.publicErrorMessage(error) };
+    return { status: "error", failure: IdentityAccessAdminFailurePresentation.fromMutation(error) };
+  }
+}
+
+async function executeManagedPolicy(
+  defaultSuccessMessage: string,
+  operation: (service: IdentityAccessAdminManagedPolicyMutationService) => Promise<void | string>,
+): Promise<AdminActionState> {
+  try {
+    const request = await IdentityAccessAdminRequest.fromCurrentRequest();
+    const service = new IdentityAccessAdminManagedPolicyMutationService(request);
+    const result = await operation(service);
+    revalidatePath("/identity/policies");
+    revalidatePath("/identity/groups");
+    return { status: "success", message: typeof result === "string" ? result : defaultSuccessMessage };
+  } catch (error) {
+    return { status: "error", failure: IdentityAccessAdminFailurePresentation.fromMutation(error) };
   }
 }

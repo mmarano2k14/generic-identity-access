@@ -29,7 +29,7 @@ namespace IdentityAccess.Tests.Authorization
                     tenant,
                     application,
                     new GroupReference(tenant, application, Guid.NewGuid()),
-                    new PermissionPolicyReference(tenant, application, Guid.NewGuid()),
+                    new ManagedPolicyVersionReference(new ManagedPolicyReference(tenant.IdentityScopeId, application, Guid.NewGuid()), 1),
                     Guid.NewGuid(),
                     new ApplicationSecurityModelReference(tenant.IdentityScopeId, application, 1),
                     new CapabilityKey("billing", "invoice", "read"))

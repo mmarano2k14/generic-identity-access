@@ -13,7 +13,8 @@ namespace IdentityAccess.Application.Storage
 
         /// <summary>Lists resource scope records for the supplied scope.</summary>
         Task<IReadOnlyList<VersionedRecord<ResourceScope>>> ListAsync(ResolvedDatabaseRoute route,
-            TenantReference tenant, ApplicationKey application, CancellationToken cancellationToken);
+            TenantReference tenant, ApplicationKey application, string? search, int offset, int limit,
+            CancellationToken cancellationToken);
 
         /// <summary>Creates a resource scope record in the resolved database route.</summary>
         Task<VersionedRecord<ResourceScope>> CreateAsync(ResolvedDatabaseRoute route, ResourceScope scope,

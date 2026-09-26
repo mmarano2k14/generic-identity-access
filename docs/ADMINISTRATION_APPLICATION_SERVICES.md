@@ -1,80 +1,58 @@
 # Administration Application Services
 
-**Source version: 0.13.0. Date: September 21, 2026.**
+**Source version: 0.62.6. Date: September 27, 2026.**
 
-Version 0.13.0 moves administration orchestration out of ASP.NET Core controllers and into
-application-layer services.
+Administration orchestration remains in application-layer services rather than ASP.NET Core controllers. Repository version `0.62.6` closes the tenant-owned permission-policy compatibility surface from active composition.
 
-## Services
+## Active policy administration services
 
-Two application contracts are introduced:
+The active policy-related administration contracts are:
 
-- `IDirectoryAdministrationService`
-- `IPolicyAdministrationService`
+- `IManagedPolicyAdministrationService` for the shared identity-scope/application managed-policy catalog;
+- `IManagedPolicyBindingAdministrationService` for tenant-scoped group bindings to concrete managed-policy versions;
+- `IIdentityScopeAuthorityAdministrationService` for the separate identity-scope administration authority model.
 
-Their implementations own routing plus persistence orchestration for the existing
-administration use cases.
+`IPolicyAdministrationService` and its tenant-owned permission-policy persistence types remain as historical source/schema compatibility artifacts but are no longer registered into the running API.
 
-Controllers remain responsible for HTTP concerns only:
+## Managed policy administration
 
-- route/body binding;
-- Swagger/OpenAPI metadata;
-- HTTP status mapping;
-- fail-closed handling when administration services are unavailable.
+`ManagedPolicyAdministrationService` owns shared catalog operations:
+
+- bounded managed-policy discovery;
+- policy metadata create/update;
+- draft version creation pinned to a registered security-model version;
+- draft statement add/remove;
+- publication and published-default selection.
+
+Managed policy definitions contain no tenant ownership.
+
+## Tenant binding administration
+
+`ManagedPolicyBindingAdministrationService` owns tenant-scoped attachment and removal of managed-policy versions. Binding creation resolves an explicit version or the published default and persists a concrete `ManagedPolicyVersionReference` together with the tenant group and optional tenant resource scope.
+
+## Legacy compatibility closure
+
+The active host no longer:
+
+- registers `IPermissionPolicyStore`, `IPolicyStatementStore`, `IGroupPolicyBindingStore`, or `IGroupPolicyBindingMutationStore`;
+- registers `IPolicyAdministrationService`;
+- registers an optional API feature for that service;
+- discovers `PoliciesController` or `PolicyBindingsController` as MVC controllers.
+
+The two historical controller classes are retained as `[NonController]` source tombstones so source-overlay delivery does not require deleting files. Historical PostgreSQL migrations/tables are also preserved. Neither source retention nor table retention makes legacy rows an authorization source.
 
 ## Directory administration
 
-`DirectoryAdministrationService` centralizes:
-
-- user read/create/update;
-- tenant read/create/update;
-- tenant membership read/find/create/update;
-- group read/create/update;
-- group-member list/add/remove.
-
-Every operation resolves exactly one database route and reuses that immutable route for
-all persistence calls in that operation.
-
-Group membership creation performs the current structural checks in one place: the group
-and tenant membership are loaded through the same route, tenant boundaries are checked,
-and the domain factory enforces active-state requirements.
-
-## Policy administration
-
-`PolicyAdministrationService` centralizes:
-
-- policy read/create/update;
-- statement list/add/remove;
-- group-policy binding list/add/remove.
-
-Policy bindings load both the group and policy through the same operation route before the
-domain binding is created. Wildcard evaluation is not performed by this service.
+`DirectoryAdministrationService` continues to centralize user, tenant, membership, group and group-member operations. Each operation resolves exactly one database route and reuses that immutable route for all persistence calls in that operation.
 
 ## Concurrency and cancellation
 
-Optimistic concurrency remains implemented by the persistence layer and exposed to the
-HTTP layer as `409 Conflict` for stale mutable records.
-
-All methods introduced by these application contracts require an explicit
-`CancellationToken`. No optional cancellation-token parameter is introduced by this version.
-
-The services hold no per-request mutable state. They depend only on stateless routing and
-store contracts, preserving concurrent operation independence.
-
-## Registration
-
-The API registers the administration services only when both routing and the required
-persistence contracts are registered. An unconfigured host still starts for diagnostics,
-but administration endpoints remain unavailable/fail-closed.
+Optimistic concurrency remains implemented by the persistence layer and exposed to the HTTP layer as `409 Conflict` for stale mutable records. Active administration contracts require explicit `CancellationToken` parameters and hold no per-request mutable state.
 
 ## Security boundary
 
-This version does not authenticate callers and does not weaken
-`RequireAdministrationCapability`.
-
-Authentication, login forms, OIDC, redirect URI validation, sessions, MFA, and account
-recovery remain separate work.
+Controllers remain responsible for route/body binding, OpenAPI metadata, HTTP status mapping and fail-closed handling. Authorization remains server-side. The separate `scopeAuthority` model is unaffected by tenant permission-policy retirement.
 
 ## Database
 
-No PostgreSQL migration is introduced in version 0.13.0.
+No PostgreSQL migration is introduced in `0.62.6`. The latest migration remains `0025_managed_policy_publication.sql`.

@@ -1,6 +1,7 @@
 import { AdminCheckboxField, AdminField, AdminSelectField } from "../../../components/AdminField";
 import { AdminDetailCard } from "../../../components/AdminDetailCard";
 import { AdminEmptyState } from "../../../components/AdminEmptyState";
+import { AdminEntityAutocomplete } from "../../../components/AdminEntityAutocomplete";
 import { AdminEntityTable } from "../../../components/AdminEntityTable";
 import { AdminMutationDialog } from "../../../components/AdminMutationDialog";
 import { AdminPageHeader } from "../../../components/AdminPageHeader";
@@ -119,7 +120,7 @@ export default async function MfaPage({ searchParams }: { readonly searchParams:
       <section className="ia-card ia-lookup-card">
         <div className="ia-card-heading"><div><p className="ia-card-kicker">User security</p><h2>Inspect effective MFA state</h2><p>Resolve active generic authenticator metadata against the current application policy and installed provider capabilities.</p></div></div>
         <form className="ia-inline-form" method="get">
-          <AdminField label="User ID" name="userId" defaultValue={userId ?? ""} required autoComplete="off" />
+          <AdminEntityAutocomplete label="User" name="userId" kind="user" defaultValue={userId ?? ""} required hint="Type at least 3 characters of the user display name, or enter the full ID." />
           <button className="ia-button ia-button-secondary" type="submit">Inspect MFA state</button>
         </form>
       </section>

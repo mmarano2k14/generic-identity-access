@@ -2,6 +2,7 @@ using IdentityAccess.Application.Administration;
 using IdentityAccess.Application.Routing;
 using IdentityAccess.Application.Storage;
 using IdentityAccess.Application.Security;
+using IdentityAccess.Application.Authorization;
 
 namespace IdentityAccess.Api
 {
@@ -23,17 +24,50 @@ namespace IdentityAccess.Api
                 services.AddSingleton<IDirectoryAdministrationService, DirectoryAdministrationService>();
             }
 
-            if (Has<IPermissionPolicyStore>(services) &&
-                Has<IPolicyStatementStore>(services) &&
-                Has<IGroupPolicyBindingStore>(services) &&
-                Has<IGroupPolicyBindingMutationStore>(services))
+            if (Has<IIdentityScopeAssignedCapabilityReader>(services) &&
+                Has<ITenantMembershipStore>(services))
             {
-                services.AddSingleton<IPolicyAdministrationService, PolicyAdministrationService>();
+                services.AddSingleton<IEffectiveAdministrationContextService, EffectiveAdministrationContextService>();
+            }
+
+            if (Has<ITenantMembershipStore>(services))
+            {
+                services.AddSingleton<IAdministrationTenantVisibilityService, AdministrationTenantVisibilityService>();
+            }
+
+            if (Has<ITenantUserReadStore>(services))
+            {
+                services.AddSingleton<ITenantUserAdministrationService, TenantUserAdministrationService>();
+            }
+
+            if (Has<IApplicationSecurityCatalogStore>(services))
+            {
+                services.AddSingleton<ApplicationSecurityManifestFingerprint>();
+                services.AddSingleton<IApplicationSecurityCatalogAdministrationService, ApplicationSecurityCatalogAdministrationService>();
+            }
+
+            if (Has<IManagedPolicyStore>(services) &&
+                Has<IManagedPolicyVersionStore>(services) &&
+                Has<IManagedPolicyStatementStore>(services))
+            {
+                services.AddSingleton<IManagedPolicyAdministrationService, ManagedPolicyAdministrationService>();
+            }
+
+            if (Has<IManagedPolicyStore>(services) &&
+                Has<IManagedGroupPolicyBindingStore>(services) &&
+                Has<IManagedGroupPolicyBindingMutationStore>(services))
+            {
+                services.AddSingleton<IManagedPolicyBindingAdministrationService, ManagedPolicyBindingAdministrationService>();
             }
 
             if (Has<IApplicationScopeTypeStore>(services) && Has<IResourceScopeStore>(services))
             {
                 services.AddSingleton<IResourceScopeAdministrationService, ResourceScopeAdministrationService>();
+            }
+
+            if (Has<ISecurityAuditReader>(services))
+            {
+                services.AddSingleton<ISecurityAuditAdministrationService, SecurityAuditAdministrationService>();
             }
 
             if (Has<IIdentityScopeAdministrationGroupStore>(services) &&

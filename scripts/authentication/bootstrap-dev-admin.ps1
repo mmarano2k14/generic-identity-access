@@ -6,6 +6,9 @@ param(
     [Guid]$MembershipId = [Guid]'00000000-0000-0000-0000-000000000004',
     [string]$ApplicationKey = 'admin-web',
     [int]$ModelVersion = 1,
+    [string]$SecurityManifestPath,
+    [string]$RbacProject = 'identity-access',
+    [string]$RbacNamespace = 'administration',
     [string]$LoginIdentifier = 'admin',
     [string]$DisplayName = 'Local Administrator',
     [SecureString]$Password,
@@ -21,11 +24,50 @@ if (-not (Get-Command psql -ErrorAction SilentlyContinue)) {
 if (-not (Get-Command dotnet -ErrorAction SilentlyContinue)) {
     throw 'dotnet was not found on PATH.'
 }
+$root = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
+if ([string]::IsNullOrWhiteSpace($SecurityManifestPath)) {
+    $SecurityManifestPath = Join-Path $root 'config\identity-access-admin-security-manifest.json'
+}
+$SecurityManifestPath = [IO.Path]::GetFullPath($SecurityManifestPath)
+if (-not (Test-Path $SecurityManifestPath -PathType Leaf)) {
+    throw "Application security manifest was not found: $SecurityManifestPath"
+}
+
+$manifest = Get-Content $SecurityManifestPath -Raw | ConvertFrom-Json -Depth 32
+if ($manifest.schemaVersion -ne 1) {
+    throw 'The development bootstrap requires application security manifest schemaVersion 1.'
+}
+if ($manifest.applicationKey -ne $ApplicationKey) {
+    throw "ApplicationKey must match the application security manifest: $($manifest.applicationKey)"
+}
+if ([int]$manifest.modelVersion -ne $ModelVersion) {
+    throw "ModelVersion must match the application security manifest: $($manifest.modelVersion)"
+}
 if ($ApplicationKey -notmatch '^[a-z][a-z0-9-]{0,63}$') {
     throw 'ApplicationKey is invalid.'
 }
 if ($ModelVersion -lt 1) {
     throw 'ModelVersion must be positive.'
+}
+
+$manifestProject = ([string]$manifest.rbac.project).Trim().ToLowerInvariant()
+$manifestNamespaces = @($manifest.rbac.namespaces | ForEach-Object { ([string]$_).Trim().ToLowerInvariant() } | Sort-Object -Unique)
+if ($manifestNamespaces.Count -eq 0) {
+    throw 'The application security manifest must declare at least one RBAC namespace.'
+}
+foreach ($contextValue in @($manifestProject) + $manifestNamespaces) {
+    if ([string]::IsNullOrWhiteSpace($contextValue) -or $contextValue.Length -gt 128 -or $contextValue.Contains(':') -or $contextValue.Contains('*')) {
+        throw 'RBAC project and namespace must be concrete context segments of at most 128 characters.'
+    }
+}
+
+$RbacProject = $RbacProject.Trim().ToLowerInvariant()
+$RbacNamespace = $RbacNamespace.Trim().ToLowerInvariant()
+if ($manifestProject -ne $RbacProject) {
+    throw "RbacProject must match the application security manifest: $manifestProject"
+}
+if ($RbacNamespace -notin $manifestNamespaces) {
+    throw "RbacNamespace must be one of the namespaces declared by the application security manifest."
 }
 if ([string]::IsNullOrWhiteSpace($LoginIdentifier)) {
     throw 'LoginIdentifier is required.'
@@ -38,7 +80,6 @@ if ($null -eq $Password) {
     $Password = Read-Host 'Password for local admin (12-256 characters)' -AsSecureString
 }
 
-$root = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
 $hasherProject = Join-Path $root 'tools\IdentityAccess.DevPasswordHasher\IdentityAccess.DevPasswordHasher.csproj'
 $hasherDll = Join-Path $root 'tools\IdentityAccess.DevPasswordHasher\bin\Release\net10.0\IdentityAccess.DevPasswordHasher.dll'
 
@@ -83,23 +124,82 @@ try {
     $scopeAdminStatementId = [Guid]'00000000-0000-0000-0000-000000000012'
     $tenantAdminGroupId = [Guid]'00000000-0000-0000-0000-000000000020'
     $tenantAdminPolicyId = [Guid]'00000000-0000-0000-0000-000000000021'
-    $tenantAdminStatementId = [Guid]'00000000-0000-0000-0000-000000000022'
 
-    $features = @(
-        'user', 'tenant', 'tenant-membership', 'group', 'group-membership', 'credential',
-        'policy', 'policy-statement', 'policy-binding', 'scope-type', 'resource-scope', 'session', 'mfa-policy', 'mfa-authenticator',
-        'scope-authority-group', 'scope-authority-membership', 'scope-authority-policy',
-        'scope-authority-statement', 'scope-authority-binding'
-    )
-
-    $capabilityValues = foreach ($feature in $features) {
-        $escapedFeature = Escape-SqlLiteral $feature
-        foreach ($action in @('read', 'write')) {
-            "('$IdentityScopeId', '$app', $ModelVersion, 'identity-access', '$escapedFeature', '$action', 'Identity Access $escapedFeature $action')"
+    $manifestCapabilities = @()
+    foreach ($resource in @($manifest.resources)) {
+        $resourceName = ([string]$resource.name).Trim().ToLowerInvariant()
+        if ($resourceName -notmatch '^[a-z][a-z0-9-]{0,63}$') {
+            throw "Invalid manifest resource: $resourceName"
+        }
+        foreach ($feature in @($resource.features)) {
+            $featureName = ([string]$feature.name).Trim().ToLowerInvariant()
+            if ($featureName -notmatch '^[a-z][a-z0-9-]{0,63}$') {
+                throw "Invalid manifest feature: $featureName"
+            }
+            foreach ($action in @($feature.actions)) {
+                $actionName = ([string]$action.name).Trim().ToLowerInvariant()
+                $actionDisplayName = ([string]$action.displayName).Trim()
+                if ($actionName -notmatch '^[a-z][a-z0-9-]{0,63}$') {
+                    throw "Invalid manifest action: $actionName"
+                }
+                if ([string]::IsNullOrWhiteSpace($actionDisplayName) -or $actionDisplayName.Length -gt 256) {
+                    throw "Manifest action displayName must contain between 1 and 256 characters."
+                }
+                $manifestCapabilities += [pscustomobject]@{
+                    Resource = $resourceName
+                    Feature = $featureName
+                    Action = $actionName
+                    DisplayName = $actionDisplayName
+                }
+            }
         }
     }
 
+    $manifestCapabilities = @($manifestCapabilities | Sort-Object Resource, Feature, Action)
+    if ($manifestCapabilities.Count -eq 0) {
+        throw 'The application security manifest must declare at least one capability.'
+    }
+    $duplicateCapabilities = $manifestCapabilities |
+        Group-Object { "$($_.Resource)|$($_.Feature)|$($_.Action)" } |
+        Where-Object Count -gt 1
+    if ($duplicateCapabilities) {
+        throw 'The application security manifest contains duplicate concrete capabilities.'
+    }
+
+    $capabilityValues = foreach ($capability in $manifestCapabilities) {
+        $resourceSql = Escape-SqlLiteral $capability.Resource
+        $featureSql = Escape-SqlLiteral $capability.Feature
+        $actionSql = Escape-SqlLiteral $capability.Action
+        $displayNameSql = Escape-SqlLiteral $capability.DisplayName
+        "('$IdentityScopeId', '$app', $ModelVersion, '$resourceSql', '$featureSql', '$actionSql', '$displayNameSql')"
+    }
     $capabilitySql = $capabilityValues -join ",`n"
+
+    $fingerprintBuilder = [Text.StringBuilder]::new()
+    function Add-FingerprintPart([Text.StringBuilder]$Builder, [string]$Name, [string]$Value) {
+        [void]$Builder.Append($Name.Length).Append(':').Append($Name).Append('=').Append($Value.Length).Append(':').Append($Value).Append("`n")
+    }
+    Add-FingerprintPart $fingerprintBuilder 'schema' ([int]$manifest.schemaVersion).ToString([Globalization.CultureInfo]::InvariantCulture)
+    Add-FingerprintPart $fingerprintBuilder 'application' $ApplicationKey
+    Add-FingerprintPart $fingerprintBuilder 'model' $ModelVersion.ToString([Globalization.CultureInfo]::InvariantCulture)
+    Add-FingerprintPart $fingerprintBuilder 'project' $manifestProject
+    foreach ($namespaceValue in $manifestNamespaces) {
+        Add-FingerprintPart $fingerprintBuilder 'namespace' $namespaceValue
+    }
+    foreach ($capability in $manifestCapabilities) {
+        Add-FingerprintPart $fingerprintBuilder 'resource' $capability.Resource
+        Add-FingerprintPart $fingerprintBuilder 'feature' $capability.Feature
+        Add-FingerprintPart $fingerprintBuilder 'action' $capability.Action
+        Add-FingerprintPart $fingerprintBuilder 'display' $capability.DisplayName
+    }
+    $manifestHashBytes = [Security.Cryptography.SHA256]::HashData([Text.Encoding]::UTF8.GetBytes($fingerprintBuilder.ToString()))
+    $manifestSha256 = [Convert]::ToHexString($manifestHashBytes).ToLowerInvariant()
+    $rbacProjectSql = Escape-SqlLiteral $manifestProject
+    $namespaceValues = foreach ($namespaceValue in $manifestNamespaces) {
+        $namespaceSql = Escape-SqlLiteral $namespaceValue
+        "('$IdentityScopeId', '$app', $ModelVersion, '$namespaceSql')"
+    }
+    $namespaceSql = $namespaceValues -join ",`n"
 
     $sql = @"
 INSERT INTO identity_access.users
@@ -132,11 +232,29 @@ INSERT INTO identity_access.application_security_models
 VALUES ('$IdentityScopeId', '$app', $ModelVersion)
 ON CONFLICT DO NOTHING;
 
+INSERT INTO identity_access.application_security_model_registrations AS existing_registration
+(identity_scope_id, application_key, model_version, manifest_schema_version, rbac_project, manifest_sha256)
+VALUES ('$IdentityScopeId', '$app', $ModelVersion, 1, '$rbacProjectSql', '$manifestSha256')
+ON CONFLICT (identity_scope_id, application_key, model_version) DO UPDATE SET
+    manifest_sha256 = CASE
+        WHEN existing_registration.manifest_sha256 = EXCLUDED.manifest_sha256
+        THEN existing_registration.manifest_sha256
+        ELSE NULL
+    END;
+
+INSERT INTO identity_access.application_security_namespaces
+(identity_scope_id, application_key, model_version, rbac_namespace)
+VALUES
+$namespaceSql
+ON CONFLICT DO NOTHING;
+
 INSERT INTO identity_access.application_capabilities
 (identity_scope_id, application_key, model_version, capability_resource, capability_feature, capability_action, display_name)
 VALUES
 $capabilitySql
-ON CONFLICT DO NOTHING;
+ON CONFLICT (identity_scope_id, application_key, model_version,
+             capability_resource, capability_feature, capability_action) DO UPDATE SET
+    display_name = EXCLUDED.display_name;
 
 INSERT INTO identity_access.password_credentials
 (identity_scope_id, user_id, login_identifier, normalized_login_identifier, password_hash,
@@ -198,25 +316,70 @@ INSERT INTO identity_access.group_memberships
 VALUES ('$IdentityScopeId', '$TenantId', '$app', '$tenantAdminGroupId', '$MembershipId')
 ON CONFLICT DO NOTHING;
 
-INSERT INTO identity_access.permission_policies
-(identity_scope_id, tenant_id, application_key, policy_id, display_name, status)
-VALUES ('$IdentityScopeId', '$TenantId', '$app', '$tenantAdminPolicyId', 'Local Tenant Administration', 1)
-ON CONFLICT (identity_scope_id, tenant_id, application_key, policy_id) DO UPDATE SET
+INSERT INTO identity_access.managed_policies
+(identity_scope_id, application_key, policy_id, policy_key, display_name, status, default_version)
+VALUES ('$IdentityScopeId', '$app', '$tenantAdminPolicyId', 'local-tenant-administration', 'Local Tenant Administration', 1, NULL)
+ON CONFLICT (identity_scope_id, application_key, policy_id) DO UPDATE SET
+    display_name = EXCLUDED.display_name,
     status = 1,
-    row_version = identity_access.permission_policies.row_version + 1,
+    row_version = identity_access.managed_policies.row_version + 1,
     updated_at = transaction_timestamp();
 
-INSERT INTO identity_access.policy_statements
-(identity_scope_id, tenant_id, application_key, policy_id, statement_id, model_version,
- capability_resource, capability_feature, capability_action)
-VALUES ('$IdentityScopeId', '$TenantId', '$app', '$tenantAdminPolicyId', '$tenantAdminStatementId', $ModelVersion,
-        'identity-access', '*', '*')
+INSERT INTO identity_access.managed_policy_versions
+(identity_scope_id, application_key, policy_id, policy_version, model_version)
+VALUES ('$IdentityScopeId', '$app', '$tenantAdminPolicyId', $ModelVersion, $ModelVersion)
 ON CONFLICT DO NOTHING;
 
-INSERT INTO identity_access.group_policy_bindings
-(identity_scope_id, tenant_id, application_key, group_id, policy_id)
-VALUES ('$IdentityScopeId', '$TenantId', '$app', '$tenantAdminGroupId', '$tenantAdminPolicyId')
-ON CONFLICT DO NOTHING;
+INSERT INTO identity_access.managed_policy_statements
+(identity_scope_id, application_key, policy_id, policy_version, model_version, statement_id,
+ capability_resource, capability_feature, capability_action)
+SELECT '$IdentityScopeId', '$app', '$tenantAdminPolicyId', $ModelVersion, $ModelVersion, gen_random_uuid(),
+       c.capability_resource, c.capability_feature, c.capability_action
+FROM identity_access.application_capabilities AS c
+WHERE c.identity_scope_id = '$IdentityScopeId'
+  AND c.application_key = '$app'
+  AND c.model_version = $ModelVersion
+  AND NOT EXISTS
+  (
+      SELECT 1
+      FROM identity_access.managed_policy_statements AS existing
+      WHERE existing.identity_scope_id = '$IdentityScopeId'
+        AND existing.application_key = '$app'
+        AND existing.policy_id = '$tenantAdminPolicyId'
+        AND existing.policy_version = $ModelVersion
+        AND existing.capability_resource = c.capability_resource
+        AND existing.capability_feature = c.capability_feature
+        AND existing.capability_action = c.capability_action
+  );
+
+UPDATE identity_access.managed_policy_versions
+SET published_at = transaction_timestamp()
+WHERE identity_scope_id = '$IdentityScopeId'
+  AND application_key = '$app'
+  AND policy_id = '$tenantAdminPolicyId'
+  AND policy_version = $ModelVersion
+  AND published_at IS NULL;
+
+UPDATE identity_access.managed_policies
+SET default_version = $ModelVersion,
+    row_version = row_version + 1,
+    updated_at = transaction_timestamp()
+WHERE identity_scope_id = '$IdentityScopeId'
+  AND application_key = '$app'
+  AND policy_id = '$tenantAdminPolicyId';
+
+DELETE FROM identity_access.managed_group_policy_bindings
+WHERE identity_scope_id = '$IdentityScopeId'
+  AND tenant_id = '$TenantId'
+  AND application_key = '$app'
+  AND group_id = '$tenantAdminGroupId'
+  AND policy_id = '$tenantAdminPolicyId';
+
+INSERT INTO identity_access.managed_group_policy_bindings
+(identity_scope_id, tenant_id, application_key, group_id, policy_id, policy_version,
+ resource_scope_id, include_descendants)
+VALUES ('$IdentityScopeId', '$TenantId', '$app', '$tenantAdminGroupId', '$tenantAdminPolicyId', $ModelVersion,
+        NULL, FALSE);
 "@
 
     Write-Host 'Creating/updating local development administrator...'
@@ -231,7 +394,6 @@ ON CONFLICT DO NOTHING;
 IDENTITY_ACCESS_API_BASE_URL=http://127.0.0.1:5080
 IDENTITY_ACCESS_IDENTITY_SCOPE_ID=$IdentityScopeId
 IDENTITY_ACCESS_APPLICATION_KEY=$ApplicationKey
-IDENTITY_ACCESS_TENANT_ID=$TenantId
 IDENTITY_ACCESS_OIDC_CLIENT_ID=$ApplicationKey
 IDENTITY_ACCESS_OIDC_REDIRECT_URI=http://127.0.0.1:3000/auth/callback
 IDENTITY_ACCESS_BEARER_COOKIE_NAME=identity_access_bearer

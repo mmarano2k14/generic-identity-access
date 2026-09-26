@@ -95,10 +95,34 @@ export class IdentityAccessValueCodec {
     return normalized;
   }
 
+  public static managedPolicyKey(value: string): string {
+    const normalized = IdentityAccessValueCodec.nonEmpty(value).toLowerCase();
+    if (!/^[a-z][a-z0-9-]{0,127}$/u.test(normalized)) {
+      throw new IdentityAccessClientError("configuration");
+    }
+    return normalized;
+  }
+
   public static slug(value: string): string {
     const normalized = IdentityAccessValueCodec.nonEmpty(value).toLowerCase();
     if (!/^[a-z][a-z0-9-]{0,63}$/u.test(normalized)) {
       throw new IdentityAccessClientError("configuration");
+    }
+    return normalized;
+  }
+
+  public static rbacContextSegment(value: string): string {
+    const normalized = IdentityAccessValueCodec.nonEmpty(value.trim()).toLowerCase();
+    if (normalized.length > 128 || normalized.includes(":") || normalized.includes("*")) {
+      throw new IdentityAccessClientError("configuration");
+    }
+    return normalized;
+  }
+
+  public static sha256(value: unknown): string {
+    const normalized = IdentityAccessValueCodec.text(value);
+    if (!/^[0-9a-f]{64}$/u.test(normalized)) {
+      throw new IdentityAccessClientError("protocol");
     }
     return normalized;
   }

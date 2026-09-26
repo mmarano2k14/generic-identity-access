@@ -1,3 +1,4 @@
+using IdentityAccess.Application.Administration;
 using IdentityAccess.Application.Authentication;
 using IdentityAccess.Authorization;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -53,9 +54,16 @@ namespace IdentityAccess.Api.Security
                         descriptor.ServiceType ==
                         typeof(IIdentityScopeAuthorizationService));
 
+            var tenantVisibilityConfigured =
+                builder.Services.Any(
+                    descriptor =>
+                        descriptor.ServiceType ==
+                        typeof(IAdministrationTenantVisibilityService));
+
             var authorizationConfigured =
                 tenantAuthorizationConfigured &&
-                scopeAuthorizationConfigured;
+                scopeAuthorizationConfigured &&
+                tenantVisibilityConfigured;
 
             builder.Services.Replace(
                 authorizationConfigured

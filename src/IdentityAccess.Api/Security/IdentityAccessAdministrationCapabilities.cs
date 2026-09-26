@@ -33,6 +33,9 @@ namespace IdentityAccess.Api.Security
         /// <summary>Gets the policy administration feature.</summary>
         public const string Policies = "policy";
 
+        /// <summary>Gets the application security-model administration feature.</summary>
+        public const string SecurityModels = "security-model";
+
         /// <summary>Gets the policy-statement administration feature.</summary>
         public const string PolicyStatements = "policy-statement";
 
@@ -47,6 +50,9 @@ namespace IdentityAccess.Api.Security
 
         /// <summary>Gets the session administration feature.</summary>
         public const string Sessions = "session";
+
+        /// <summary>Gets the read-only security audit administration feature.</summary>
+        public const string SecurityAudit = "security-audit";
 
         /// <summary>Gets the generic MFA policy administration feature.</summary>
         public const string MfaPolicies = "mfa-policy";

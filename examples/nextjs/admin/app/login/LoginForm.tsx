@@ -11,7 +11,7 @@ export function LoginForm() {
   const [showPassword, setShowPassword] = useState(false);
 
   return (
-    <form action={action} className="ia-login-form">
+    <form action={action} className="ia-login-form" aria-busy={pending}>
       <label className="ia-field">
         <span className="ia-field-label">Login identifier</span>
         <input
@@ -45,6 +45,7 @@ export function LoginForm() {
             type="button"
             aria-label={showPassword ? "Hide password" : "Show password"}
             aria-pressed={showPassword}
+            disabled={pending}
             onClick={() => setShowPassword((value) => !value)}
           >
             <AdminIcon name={showPassword ? "eye-off" : "eye"} />

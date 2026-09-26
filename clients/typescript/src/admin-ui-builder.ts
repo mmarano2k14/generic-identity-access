@@ -16,7 +16,7 @@ export class IdentityAccessAdminUiBuilder {
   readonly #authorization: IdentityAuthorizationContext;
   readonly #basePath: string;
   readonly #entries = new Map<IdentityAccessAdminUiSection, IdentityAccessAdminUiEntry>();
-  #tenantAuthorization: IdentityAuthorizationContext | undefined;
+  #tenantAuthorizations: readonly IdentityAuthorizationContext[] = [];
 
   public constructor(
     authorization: IdentityAuthorizationContext,
@@ -31,15 +31,20 @@ export class IdentityAccessAdminUiBuilder {
 
   /** Supplies the tenant-scoped authorization context used for tenant-bound UI sections. */
   public withTenantAuthorization(authorization: IdentityAuthorizationContext): this {
-    if (!(authorization instanceof IdentityAuthorizationContext)) {
+    return this.withTenantAuthorizations([authorization]);
+  }
+
+  /** Supplies all trusted active tenant contexts used for tenant-aware presentation filtering. */
+  public withTenantAuthorizations(authorizations: readonly IdentityAuthorizationContext[]): this {
+    if (authorizations.some((authorization) => !(authorization instanceof IdentityAuthorizationContext))) {
       throw new IdentityAccessClientError("configuration");
     }
-    this.#tenantAuthorization = authorization;
+    this.#tenantAuthorizations = Object.freeze([...authorizations]);
     return this;
   }
 
   public withUsers(): this {
-    return this.#with("users", "user", "Users", "Manage identities and account lifecycle.", false);
+    return this.#with("users", "user", "Users", "Manage identities and account lifecycle.", true);
   }
 
   public withTenants(): this {
@@ -55,7 +60,11 @@ export class IdentityAccessAdminUiBuilder {
   }
 
   public withPolicies(): this {
-    return this.#with("policies", "policy", "Policies", "Manage permission policies and capability statements.", true);
+    return this.#with("policies", "policy", "Managed policies", "Manage shared versioned policy definitions and capability statements.", false);
+  }
+
+  public withSecurityModels(): this {
+    return this.#with("security-models", "security-model", "Security models", "Inspect registered application capabilities and RBAC context.", false);
   }
 
   public withResourceScopes(): this {
@@ -70,6 +79,10 @@ export class IdentityAccessAdminUiBuilder {
     return this.#with("sessions", "session", "Sessions", "Revoke active user or client sessions.", false);
   }
 
+  public withSecurityAudit(): this {
+    return this.#with("security-audit", "security-audit", "Security audit", "Inspect bounded secret-safe security events.", false);
+  }
+
   public withScopeAuthority(): this {
     return this.#with("scope-authority", "scope-authority-group", "Scope authority", "Manage identity-scope administration authority.", false);
   }
@@ -82,9 +95,11 @@ export class IdentityAccessAdminUiBuilder {
       .withMemberships()
       .withGroups()
       .withPolicies()
+      .withSecurityModels()
       .withResourceScopes()
       .withMfa()
       .withSessions()
+      .withSecurityAudit()
       .withScopeAuthority();
   }
 
@@ -102,9 +117,15 @@ export class IdentityAccessAdminUiBuilder {
   public async buildVisible(signal?: AbortSignal): Promise<IdentityAccessAdminUiDefinition> {
     const visible: IdentityAccessAdminUiEntry[] = [];
     for (const entry of this.#entries.values()) {
-      const authorization = entry.tenantScoped ? this.#tenantAuthorization : this.#authorization;
-      if (authorization !== undefined && await authorization.isAllowedRequirement(entry.requirement, signal)) {
-        visible.push(entry);
+      const authorizations = entry.tenantScoped && this.#tenantAuthorizations.length > 0
+        ? this.#tenantAuthorizations
+        : [this.#authorization];
+
+      for (const authorization of authorizations) {
+        if (await authorization.isAllowedRequirement(entry.requirement, signal)) {
+          visible.push(entry);
+          break;
+        }
       }
     }
 

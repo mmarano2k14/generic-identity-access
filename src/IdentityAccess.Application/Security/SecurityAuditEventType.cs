@@ -112,6 +112,24 @@ namespace IdentityAccess.Application.Security
         /// <summary>A recovery code was used to replace a password and revoke existing credentials.</summary>
         PasswordRecoverySucceeded = 54,
         /// <summary>A password-recovery attempt was rejected after directory resolution.</summary>
-        PasswordRecoveryFailed = 55
+        PasswordRecoveryFailed = 55,
+        /// <summary>An immutable application-owned security manifest was registered.</summary>
+        ApplicationSecurityModelRegistered = 56,
+        /// <summary>A reusable managed policy was created.</summary>
+        ManagedPolicyCreated = 57,
+        /// <summary>Reusable managed policy metadata was updated.</summary>
+        ManagedPolicyUpdated = 58,
+        /// <summary>A draft managed-policy version was created.</summary>
+        ManagedPolicyVersionCreated = 59,
+        /// <summary>A managed-policy version was published and frozen.</summary>
+        ManagedPolicyVersionPublished = 60,
+        /// <summary>A statement was added to a draft managed-policy version.</summary>
+        ManagedPolicyStatementAdded = 61,
+        /// <summary>A statement was removed from a draft managed-policy version.</summary>
+        ManagedPolicyStatementRemoved = 62,
+        /// <summary>A tenant-scoped group was bound to a shared managed-policy version.</summary>
+        ManagedPolicyBindingAdded = 63,
+        /// <summary>A tenant-scoped managed-policy binding was removed.</summary>
+        ManagedPolicyBindingRemoved = 64
     }
 }

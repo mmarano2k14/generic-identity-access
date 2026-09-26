@@ -1,4 +1,5 @@
 import type {
+  IdentityAdministrationListOptions,
   IdentityCreateTenantMembershipRequest,
   IdentityTenantAdministrationContext,
   IdentityTenantMembershipRecord,
@@ -14,6 +15,15 @@ export class IdentityAccessMembershipsClient {
 
   public constructor(admin: IdentityAccessAdministrationTransport) {
     this.#admin = admin;
+  }
+
+  public async list(
+    context: IdentityTenantAdministrationContext,
+    options?: IdentityAdministrationListOptions,
+    signal?: AbortSignal,
+  ): Promise<readonly IdentityTenantMembershipRecord[]> {
+    const path = `${IdentityAccessPathBuilder.tenantMembershipsPath(context)}${IdentityAccessPathBuilder.administrationListQuery(options)}`;
+    return this.#admin.get(path, context, (value) => IdentityAccessValueCodec.array(value, IdentityAccessAdministrationCodec.tenantMembershipRecord), signal);
   }
 
   public async get(

@@ -75,6 +75,7 @@ namespace IdentityAccess.Tests
             var contracts = new[]
             {
                 typeof(IdentityAccess.Application.Storage.IApplicationSecurityModelStore),
+                typeof(IdentityAccess.Application.Storage.IApplicationSecurityCatalogStore),
                 typeof(IdentityAccess.Application.Storage.IPermissionPolicyStore),
                 typeof(IdentityAccess.Application.Storage.IPolicyStatementStore),
                 typeof(IdentityAccess.Application.Storage.IGroupPolicyBindingStore)

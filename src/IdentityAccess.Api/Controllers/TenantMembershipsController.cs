@@ -14,6 +14,22 @@ namespace IdentityAccess.Api.Controllers
     [Produces("application/json")]
     public sealed class TenantMembershipsController(OptionalFeature<IDirectoryAdministrationService> feature) : ControllerBase
     {
+        /// <summary>Lists tenant memberships in a bounded deterministic window.</summary>
+        [HttpGet]
+        [RequireAdministrationCapability(IdentityAccessAdministrationCapabilities.Resource, IdentityAccessAdministrationCapabilities.TenantMemberships, IdentityAccessAdministrationCapabilities.Read)]
+        public async Task<ActionResult<IReadOnlyList<TenantMembershipRecordResponse>>> List(Guid identityScopeId,
+            string applicationKey, Guid tenantId, [FromQuery] string? search, [FromQuery] int? offset, [FromQuery] int? limit,
+            CancellationToken cancellationToken)
+        {
+            var resolvedOffset = offset ?? 0;
+            var resolvedLimit = limit ?? AdministrationPaging.DefaultLimit;
+            if (!AdministrationPaging.IsValid(resolvedOffset, resolvedLimit)) return BadRequest();
+            if (!feature.TryGet(out var service)) return ApiProblems.DirectoryAdministrationUnavailable();
+            var records = await service.ListTenantMembershipsAsync(identityScopeId, new ApplicationKey(applicationKey),
+                tenantId, search, resolvedOffset, resolvedLimit, cancellationToken);
+            return Ok(records.Select(TenantMembershipRecordResponse.From).ToArray());
+        }
+
         /// <summary>Gets the requested tenant memberships.</summary>
         [HttpGet("{membershipId:guid}")]
         [RequireAdministrationCapability(IdentityAccessAdministrationCapabilities.Resource, IdentityAccessAdministrationCapabilities.TenantMemberships, IdentityAccessAdministrationCapabilities.Read)]

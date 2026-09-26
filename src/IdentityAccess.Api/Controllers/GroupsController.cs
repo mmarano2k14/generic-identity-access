@@ -18,13 +18,13 @@ namespace IdentityAccess.Api.Controllers
         [HttpGet]
         [RequireAdministrationCapability(IdentityAccessAdministrationCapabilities.Resource, IdentityAccessAdministrationCapabilities.Groups, IdentityAccessAdministrationCapabilities.Read)]
         public async Task<ActionResult<IReadOnlyList<GroupRecordResponse>>> List(Guid identityScopeId, Guid tenantId,
-            string applicationKey, [FromQuery] int? offset, [FromQuery] int? limit, CancellationToken cancellationToken)
+            string applicationKey, [FromQuery] string? search, [FromQuery] int? offset, [FromQuery] int? limit, CancellationToken cancellationToken)
         {
             var resolvedOffset = offset ?? 0;
             var resolvedLimit = limit ?? AdministrationPaging.DefaultLimit;
             if (!AdministrationPaging.IsValid(resolvedOffset, resolvedLimit)) return BadRequest();
             if (!feature.TryGet(out var service)) return ApiProblems.DirectoryAdministrationUnavailable();
-            var records = await service.ListGroupsAsync(identityScopeId, tenantId, new ApplicationKey(applicationKey),
+            var records = await service.ListGroupsAsync(identityScopeId, tenantId, new ApplicationKey(applicationKey), search,
                 resolvedOffset, resolvedLimit, cancellationToken);
             return Ok(records.Select(GroupRecordResponse.From).ToArray());
         }

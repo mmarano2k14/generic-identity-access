@@ -43,6 +43,38 @@ namespace IdentityAccess.Tests.Authorization
         }
 
         [Fact]
+        public async Task Published_managed_policy_grant_uses_the_same_external_rbac_evaluator()
+        {
+            var request = Request();
+            var managedPolicy = new ManagedPolicyVersionReference(
+                new ManagedPolicyReference(request.Tenant.IdentityScopeId, request.Application, PolicyA),
+                3);
+            var grant = new AssignedCapabilityGrant(
+                request.Subject,
+                request.Tenant,
+                request.Application,
+                new GroupReference(request.Tenant, request.Application, GroupA),
+                managedPolicy,
+                StatementA,
+                new ApplicationSecurityModelReference(request.Tenant.IdentityScopeId, request.Application, 1),
+                new CapabilityKey("billing", "invoice", "read"));
+            var adapter = new AdapterFake(rbacRequest =>
+            {
+                Assert.Equal(["trn:project-a:namespace-a:billing:invoice:read"], rbacRequest.GrantedTrns);
+                return RbacAuthorizationResult.Allow();
+            });
+            var service = Service(
+                new RouteResolverFake(Route(request)),
+                new GrantReaderFake([grant]),
+                adapter);
+
+            var result = await service.AuthorizeAsync(request, TestContext.Current.CancellationToken);
+
+            Assert.Equal(IdentityAuthorizationDecision.Allowed, result.Decision);
+            Assert.Equal(1, adapter.CallCount);
+        }
+
+        [Fact]
         public async Task Denial_from_external_rbac_remains_a_business_denial()
         {
             var request = Request();
@@ -116,7 +148,7 @@ namespace IdentityAccess.Tests.Authorization
                 request.Tenant,
                 request.Application,
                 new GroupReference(request.Tenant, request.Application, GroupA),
-                new PermissionPolicyReference(request.Tenant, request.Application, PolicyA),
+                new ManagedPolicyVersionReference(new ManagedPolicyReference(request.Tenant.IdentityScopeId, request.Application, PolicyA), 1),
                 StatementA,
                 new ApplicationSecurityModelReference(ScopeA, request.Application, 1),
                 new CapabilityKey("billing", "invoice", "read"));
@@ -282,7 +314,7 @@ namespace IdentityAccess.Tests.Authorization
                 request.Tenant,
                 request.Application,
                 new GroupReference(request.Tenant, request.Application, GroupA),
-                new PermissionPolicyReference(request.Tenant, request.Application, PolicyA),
+                new ManagedPolicyVersionReference(new ManagedPolicyReference(request.Tenant.IdentityScopeId, request.Application, PolicyA), 1),
                 statementId ?? StatementA,
                 new ApplicationSecurityModelReference(request.Tenant.IdentityScopeId, request.Application, 1),
                 capability);
@@ -296,7 +328,7 @@ namespace IdentityAccess.Tests.Authorization
                 request.Tenant,
                 request.Application,
                 new GroupReference(request.Tenant, request.Application, GroupA),
-                new PermissionPolicyReference(request.Tenant, request.Application, PolicyA),
+                new ManagedPolicyVersionReference(new ManagedPolicyReference(request.Tenant.IdentityScopeId, request.Application, PolicyA), 1),
                 statementId ?? StatementA,
                 new ApplicationSecurityModelReference(request.Tenant.IdentityScopeId, request.Application, 1),
                 pattern);

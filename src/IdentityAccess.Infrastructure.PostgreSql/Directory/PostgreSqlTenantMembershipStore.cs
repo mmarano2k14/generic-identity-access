@@ -38,6 +38,88 @@ namespace IdentityAccess.Infrastructure.PostgreSql.Directory
             }, tenant.IdentityScopeId, cancellationToken).ConfigureAwait(false);
         }
 
+        /// <summary>Lists tenant membership records for the requested tenant in a bounded deterministic window.</summary>
+        public async Task<IReadOnlyList<VersionedRecord<TenantMembership>>> ListAsync(ResolvedDatabaseRoute route,
+            TenantReference tenant, string? search, int offset, int limit, CancellationToken cancellationToken)
+        {
+            ArgumentNullException.ThrowIfNull(tenant);
+            PostgreSqlDirectoryGuard.EnsureScope(route, tenant.IdentityScopeId);
+
+            await using var connection = (NpgsqlConnection)await connectionFactory.OpenAsync(route, cancellationToken)
+                .ConfigureAwait(false);
+            await using var command = new NpgsqlCommand("""
+                SELECT memberships.membership_id, memberships.user_id, memberships.status, memberships.row_version
+                FROM identity_access.tenant_memberships AS memberships
+                JOIN identity_access.users AS users
+                  ON users.identity_scope_id = memberships.identity_scope_id
+                 AND users.user_id = memberships.user_id
+                WHERE memberships.identity_scope_id = @scope
+                  AND memberships.tenant_id = @tenant_id
+                  AND (@search_pattern IS NULL
+                       OR lower(users.display_name) LIKE @search_pattern
+                       OR memberships.membership_id = @search_id
+                       OR memberships.user_id = @search_id)
+                ORDER BY memberships.membership_id
+                OFFSET @offset
+                LIMIT @limit;
+                """, connection);
+            command.Parameters.AddWithValue("scope", tenant.IdentityScopeId);
+            command.Parameters.AddWithValue("tenant_id", tenant.TenantId);
+            PostgreSqlAdministrationSearch.AddParameters(command, search);
+            command.Parameters.AddWithValue("offset", offset);
+            command.Parameters.AddWithValue("limit", limit);
+
+            await using var reader = await command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
+            var records = new List<VersionedRecord<TenantMembership>>();
+            while (await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
+            {
+                records.Add(new VersionedRecord<TenantMembership>(
+                    new TenantMembership(
+                        reader.GetGuid(0),
+                        tenant,
+                        new SubjectReference(tenant.IdentityScopeId, reader.GetGuid(1)),
+                        (MembershipStatus)reader.GetInt16(2)),
+                    reader.GetInt64(3)));
+            }
+
+            return records;
+        }
+
+        /// <summary>Lists tenant membership records for one subject across the resolved identity scope.</summary>
+        public async Task<IReadOnlyList<VersionedRecord<TenantMembership>>> ListForSubjectAsync(
+            ResolvedDatabaseRoute route, SubjectReference subject, CancellationToken cancellationToken)
+        {
+            ArgumentNullException.ThrowIfNull(subject);
+            PostgreSqlDirectoryGuard.EnsureScope(route, subject.IdentityScopeId);
+
+            await using var connection = (NpgsqlConnection)await connectionFactory.OpenAsync(route, cancellationToken)
+                .ConfigureAwait(false);
+            await using var command = new NpgsqlCommand("""
+                SELECT membership_id, tenant_id, status, row_version
+                FROM identity_access.tenant_memberships
+                WHERE identity_scope_id = @scope
+                  AND user_id = @user_id
+                ORDER BY tenant_id, membership_id;
+                """, connection);
+            command.Parameters.AddWithValue("scope", subject.IdentityScopeId);
+            command.Parameters.AddWithValue("user_id", subject.UserId);
+
+            await using var reader = await command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
+            var records = new List<VersionedRecord<TenantMembership>>();
+            while (await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
+            {
+                records.Add(new VersionedRecord<TenantMembership>(
+                    new TenantMembership(
+                        reader.GetGuid(0),
+                        new TenantReference(subject.IdentityScopeId, reader.GetGuid(1)),
+                        subject,
+                        (MembershipStatus)reader.GetInt16(2)),
+                    reader.GetInt64(3)));
+            }
+
+            return records;
+        }
+
         /// <summary>Creates a tenant membership record in the resolved database route.</summary>
         public async Task<VersionedRecord<TenantMembership>> CreateAsync(ResolvedDatabaseRoute route,
             TenantMembership membership, CancellationToken cancellationToken)

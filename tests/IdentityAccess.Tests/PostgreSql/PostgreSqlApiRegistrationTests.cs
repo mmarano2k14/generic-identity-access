@@ -1,4 +1,5 @@
 using IdentityAccess.Application.Storage;
+using IdentityAccess.Application.Security;
 using IdentityAccess.Application.Authorization;
 using IdentityAccess.Infrastructure.PostgreSql;
 using Microsoft.AspNetCore.Hosting;
@@ -37,12 +38,20 @@ namespace IdentityAccess.Tests.PostgreSql
             Assert.NotNull(scope.ServiceProvider.GetService<IUserGroupStore>());
             Assert.NotNull(scope.ServiceProvider.GetService<IGroupMembershipStore>());
             Assert.NotNull(scope.ServiceProvider.GetService<IApplicationSecurityModelStore>());
-            Assert.NotNull(scope.ServiceProvider.GetService<IPermissionPolicyStore>());
-            Assert.NotNull(scope.ServiceProvider.GetService<IPolicyStatementStore>());
-            Assert.NotNull(scope.ServiceProvider.GetService<IGroupPolicyBindingStore>());
+            Assert.NotNull(scope.ServiceProvider.GetService<IApplicationSecurityCatalogStore>());
+            Assert.Null(scope.ServiceProvider.GetService<IPermissionPolicyStore>());
+            Assert.Null(scope.ServiceProvider.GetService<IPolicyStatementStore>());
+            Assert.Null(scope.ServiceProvider.GetService<IGroupPolicyBindingStore>());
+            Assert.Null(scope.ServiceProvider.GetService<IGroupPolicyBindingMutationStore>());
+            Assert.NotNull(scope.ServiceProvider.GetService<IManagedPolicyStore>());
+            Assert.NotNull(scope.ServiceProvider.GetService<IManagedPolicyVersionStore>());
+            Assert.NotNull(scope.ServiceProvider.GetService<IManagedPolicyStatementStore>());
+            Assert.NotNull(scope.ServiceProvider.GetService<IManagedGroupPolicyBindingStore>());
+            Assert.NotNull(scope.ServiceProvider.GetService<IManagedGroupPolicyBindingMutationStore>());
             Assert.NotNull(scope.ServiceProvider.GetService<IApplicationScopeTypeStore>());
             Assert.NotNull(scope.ServiceProvider.GetService<IResourceScopeStore>());
             Assert.NotNull(scope.ServiceProvider.GetService<IAssignedCapabilityReader>());
+            Assert.NotNull(scope.ServiceProvider.GetService<ISecurityAuditReader>());
             var options = scope.ServiceProvider.GetRequiredService<PostgreSqlStorageOptions>();
             Assert.Equal(7, options.MaximumPoolSize);
         }

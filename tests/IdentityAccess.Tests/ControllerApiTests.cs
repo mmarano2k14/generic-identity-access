@@ -24,10 +24,10 @@ namespace IdentityAccess.Tests
         }
 
         [Fact]
-        public async Task Administrative_controller_exists_but_fails_closed_without_trusted_authorizer()
+        public async Task Managed_policy_administrative_controller_exists_but_fails_closed_without_trusted_authorizer()
         {
             using var client = factory.CreateClient();
-            var path = $"/api/v1/identity-scopes/{Guid.NewGuid():D}/tenants/{Guid.NewGuid():D}/applications/app-a/policies/{Guid.NewGuid():D}";
+            var path = $"/api/v1/identity-scopes/{Guid.NewGuid():D}/applications/app-a/managed-policies/{Guid.NewGuid():D}";
             using var response = await client.GetAsync(path, TestContext.Current.CancellationToken);
             Assert.Equal(HttpStatusCode.ServiceUnavailable, response.StatusCode);
         }
@@ -39,8 +39,12 @@ namespace IdentityAccess.Tests
                 typeof(Microsoft.AspNetCore.Mvc.ApiControllerAttribute), inherit: true).SingleOrDefault());
             Assert.NotNull(typeof(IdentityAccess.Api.Controllers.SystemController).GetCustomAttributes(
                 typeof(Microsoft.AspNetCore.Mvc.ApiControllerAttribute), inherit: true).SingleOrDefault());
-            Assert.NotNull(typeof(IdentityAccess.Api.Controllers.PoliciesController).GetCustomAttributes(
+            Assert.NotNull(typeof(IdentityAccess.Api.Controllers.ManagedPoliciesController).GetCustomAttributes(
                 typeof(Microsoft.AspNetCore.Mvc.ApiControllerAttribute), inherit: true).SingleOrDefault());
+            Assert.NotNull(typeof(IdentityAccess.Api.Controllers.PoliciesController).GetCustomAttributes(
+                typeof(Microsoft.AspNetCore.Mvc.NonControllerAttribute), inherit: true).SingleOrDefault());
+            Assert.NotNull(typeof(IdentityAccess.Api.Controllers.PolicyBindingsController).GetCustomAttributes(
+                typeof(Microsoft.AspNetCore.Mvc.NonControllerAttribute), inherit: true).SingleOrDefault());
             Assert.NotNull(typeof(IdentityAccess.Api.Controllers.UsersController).GetCustomAttributes(
                 typeof(Microsoft.AspNetCore.Mvc.ApiControllerAttribute), inherit: true).SingleOrDefault());
             Assert.NotNull(typeof(IdentityAccess.Api.Controllers.GroupsController).GetCustomAttributes(

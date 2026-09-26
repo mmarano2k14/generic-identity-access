@@ -12,6 +12,11 @@ namespace IdentityAccess.Application.Storage
             IdentityScopeAdministrationPolicyReference policy,
             CancellationToken cancellationToken);
 
+        /// <summary>Lists policies for the identity scope and application in a bounded deterministic window.</summary>
+        Task<IReadOnlyList<VersionedRecord<IdentityScopeAdministrationPolicy>>> ListAsync(
+            ResolvedDatabaseRoute route, Guid identityScopeId, ApplicationKey application, string? search, int offset, int limit,
+            CancellationToken cancellationToken);
+
         /// <summary>Creates a policy.</summary>
         Task<VersionedRecord<IdentityScopeAdministrationPolicy>> CreateAsync(
             ResolvedDatabaseRoute route,

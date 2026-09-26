@@ -197,3 +197,14 @@ following remain deployment-specific evidence:
 - penetration testing or independent security review.
 
 Those results should be recorded with the exact environment, version, configuration, and date.
+
+## Administration-host failure semantics
+
+Version `0.58.0` hardens the runnable Next.js administration host without changing the backend security protocols. Protected mutation failures are projected into secret-safe categories before reaching Client Components. In particular, optimistic-concurrency `409`, authentication `401`, authorization `403`, dependency `503`, timeout, transport, protocol, cancellation, and configuration failures remain distinguishable in the host UX.
+
+For mutations, lack of a usable response is not interpreted as a confirmed failure or success. Timeout, transport, cancellation, and invalid-protocol cases require reloading current server state before deciding whether to retry. This avoids blindly replaying a mutation whose server-side outcome is unknown to the browser.
+
+A protected administration context that becomes unauthenticated during server-side navigation authorization is returned to sign-in. Authorization refusal remains separate, and technical dependency failures are not converted into RBAC denial. Session-security audit evidence may degrade independently from separately authorized containment controls; missing evidence never becomes inferred session state.
+
+
+Version `0.59.0` closes the administration presentation-consistency pass without changing backend qualification semantics. The reusable host must preserve a focusable skip target, route-aware mobile disclosure behavior, dialog focus restoration, explicit field descriptions, pending-state semantics, forced-colors support, increased-contrast support, reduced motion, automatic dark mode, and dynamic viewport-height behavior. These checks are presentation gates only; they do not substitute for the repository security, PostgreSQL, restore, concurrency, or failure qualification described here.

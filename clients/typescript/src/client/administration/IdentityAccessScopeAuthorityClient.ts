@@ -1,6 +1,7 @@
 import type {
   IdentityAddPolicyStatementRequest,
   IdentityAdministrationContext,
+  IdentityAdministrationListOptions,
   IdentityCreateGroupRequest,
   IdentityCreatePolicyRequest,
   IdentityScopeAuthorityGroupRecord,
@@ -21,6 +22,15 @@ export class IdentityAccessScopeAuthorityClient {
 
   public constructor(admin: IdentityAccessAdministrationTransport) {
     this.#admin = admin;
+  }
+
+  public async listGroups(
+    context: IdentityAdministrationContext,
+    options?: IdentityAdministrationListOptions,
+    signal?: AbortSignal,
+  ): Promise<readonly IdentityScopeAuthorityGroupRecord[]> {
+    const path = `${IdentityAccessPathBuilder.scopeAuthorityPath(context)}/groups${IdentityAccessPathBuilder.administrationListQuery(options)}`;
+    return this.#admin.get(path, context, (value) => IdentityAccessValueCodec.array(value, IdentityAccessAdministrationCodec.groupRecord), signal);
   }
 
   public async getGroup(
@@ -86,6 +96,15 @@ export class IdentityAccessScopeAuthorityClient {
   ): Promise<boolean> {
     const path = `${IdentityAccessPathBuilder.scopeAuthorityPath(context)}/groups/${IdentityAccessValueCodec.uuid(groupIdValue)}/members/${IdentityAccessValueCodec.uuid(userIdValue)}`;
     return this.#admin.delete(path, context, signal);
+  }
+
+  public async listPolicies(
+    context: IdentityAdministrationContext,
+    options?: IdentityAdministrationListOptions,
+    signal?: AbortSignal,
+  ): Promise<readonly IdentityScopeAuthorityPolicyRecord[]> {
+    const path = `${IdentityAccessPathBuilder.scopeAuthorityPath(context)}/policies${IdentityAccessPathBuilder.administrationListQuery(options)}`;
+    return this.#admin.get(path, context, (value) => IdentityAccessValueCodec.array(value, IdentityAccessAdministrationCodec.policyRecord), signal);
   }
 
   public async getPolicy(

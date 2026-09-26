@@ -60,6 +60,24 @@ session-revocation success/failure after directory resolution.
 Requests rejected before a routed identity directory exists are not persisted into a
 tenant-routed audit store.
 
+## Administration Read Path
+
+Version `0.56.0` adds a bounded, read-only administration surface over the existing `identity_access.security_events` table. The path does not change event production or persistence semantics.
+
+The read pipeline is intentionally separated by responsibility:
+
+```text
+PostgreSQL reader
+    -> application administration service
+    -> authorized MVC controller
+    -> focused TypeScript administration client
+    -> server-only Next.js query/load/presentation classes
+```
+
+The database reader always scopes records by `identity_scope_id` and `application_key`, orders by newest event first, and applies a bounded offset/limit. Optional exact filters cover tenant, user, event type, outcome, and correlation identifier. The public response contains only the existing categorical and identifier metadata; there is no raw event payload or secret field.
+
+The controller requires the dedicated `identity-access / security-audit / read` administration capability. Query filtering is not authorization, and the audit UI never evaluates or reimplements RBAC.
+
 ## Failure Semantics
 
 Audit persistence is non-authoritative for a completed primary operation.
@@ -76,7 +94,7 @@ with every existing application mutation.
 After applying migrations:
 
 ```powershell
-.\scripts\postgresqlerify-security-audit.ps1
+.\scripts\postgresql\verify-security-audit.ps1
 ```
 
 

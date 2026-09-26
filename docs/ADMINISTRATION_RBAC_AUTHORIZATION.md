@@ -104,7 +104,21 @@ resourceScopeId
 produces a `ResourceScopeReference`, allowing existing exact-scope and descendant binding
 rules to participate in grant projection.
 
-Routes without `resourceScopeId` are evaluated at tenant level.
+Routes without `resourceScopeId` are evaluated at tenant level after the broader identity-scope
+administration authority has had the opportunity to authorize the same requested capability.
+
+For tenant/resource routes, the trusted hierarchy is:
+
+```text
+identity-scope administration authority
+    -> Allow: request allowed
+    -> otherwise: evaluate tenant/resource authority
+```
+
+A tenant grant never creates identity-scope authority. Identity-scope-only routes never consult
+tenant grants. If one authority source fails technically but the other independently allows the
+request, the valid Allow is sufficient. If neither source allows and either evaluation failed
+technically, the request remains technically unavailable rather than becoming a false denial.
 
 ## Identity-Scope Operations
 

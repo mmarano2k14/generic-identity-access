@@ -61,6 +61,7 @@ namespace IdentityAccess.Infrastructure.PostgreSql.Directory
         public async Task<IReadOnlyList<VersionedRecord<User>>> ListAsync(
             ResolvedDatabaseRoute route,
             Guid identityScopeId,
+            string? search,
             int offset,
             int limit,
             CancellationToken cancellationToken)
@@ -75,10 +76,14 @@ namespace IdentityAccess.Infrastructure.PostgreSql.Directory
                 SELECT user_id, display_name, status, row_version
                 FROM identity_access.users
                 WHERE identity_scope_id = @scope
+                  AND (@search_pattern IS NULL
+                       OR lower(display_name) LIKE @search_pattern
+                       OR user_id = @search_id)
                 ORDER BY user_id
                 LIMIT @limit OFFSET @offset;
                 """, connection);
             command.Parameters.AddWithValue("scope", identityScopeId);
+            PostgreSqlAdministrationSearch.AddParameters(command, search);
             command.Parameters.AddWithValue("limit", limit);
             command.Parameters.AddWithValue("offset", offset);
 

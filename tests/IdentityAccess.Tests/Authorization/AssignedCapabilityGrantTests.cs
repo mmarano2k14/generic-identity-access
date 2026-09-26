@@ -14,7 +14,7 @@ namespace IdentityAccess.Tests.Authorization
             var app = new ApplicationKey("app-a");
             var subject = new SubjectReference(scope, Guid.NewGuid());
             var group = new GroupReference(tenant, app, Guid.NewGuid());
-            var policy = new PermissionPolicyReference(tenant, app, Guid.NewGuid());
+            var policy = new ManagedPolicyVersionReference(new ManagedPolicyReference(scope, app, Guid.NewGuid()), 1);
             var statementId = Guid.NewGuid();
             var model = new ApplicationSecurityModelReference(scope, app, 3);
             var capability = new CapabilityKey("billing", "invoice", "read");
@@ -23,7 +23,7 @@ namespace IdentityAccess.Tests.Authorization
 
             Assert.Equal(subject, grant.Subject);
             Assert.Equal(group, grant.Group);
-            Assert.Equal(policy, grant.Policy);
+            Assert.Equal(policy, grant.ManagedPolicyVersion);
             Assert.Equal(statementId, grant.StatementId);
             Assert.Equal(model, grant.Model);
             Assert.Equal(new CapabilityPattern(capability), grant.Pattern);
@@ -41,7 +41,7 @@ namespace IdentityAccess.Tests.Authorization
                 tenant,
                 app,
                 new GroupReference(tenant, app, Guid.NewGuid()),
-                new PermissionPolicyReference(tenant, app, Guid.NewGuid()),
+                new ManagedPolicyVersionReference(new ManagedPolicyReference(scope, app, Guid.NewGuid()), 1),
                 Guid.NewGuid(),
                 new ApplicationSecurityModelReference(scope, app, 1),
                 new CapabilityKey("billing", "invoice", "read")));
@@ -60,7 +60,7 @@ namespace IdentityAccess.Tests.Authorization
                 tenant,
                 appA,
                 new GroupReference(tenant, appB, Guid.NewGuid()),
-                new PermissionPolicyReference(tenant, appA, Guid.NewGuid()),
+                new ManagedPolicyVersionReference(new ManagedPolicyReference(scope, appA, Guid.NewGuid()), 1),
                 Guid.NewGuid(),
                 new ApplicationSecurityModelReference(scope, appA, 1),
                 new CapabilityKey("billing", "invoice", "read")));
@@ -76,12 +76,36 @@ namespace IdentityAccess.Tests.Authorization
             var target = new ResourceScopeReference(tenant, app, Guid.NewGuid());
             var grant = new AssignedCapabilityGrant(subject, tenant, app,
                 new GroupReference(tenant, app, Guid.NewGuid()),
-                new PermissionPolicyReference(tenant, app, Guid.NewGuid()),
+                new ManagedPolicyVersionReference(new ManagedPolicyReference(scope, app, Guid.NewGuid()), 1),
                 Guid.NewGuid(), new ApplicationSecurityModelReference(scope, app, 1),
                 new CapabilityPattern("billing", "invoice", "read"), target, true);
 
             Assert.Equal(target, grant.TargetScope);
             Assert.True(grant.IncludeDescendants);
+        }
+
+
+        [Fact]
+        public void Grant_preserves_shared_managed_policy_version_without_tenantizing_the_policy_definition()
+        {
+            var scope = Guid.NewGuid();
+            var tenant = new TenantReference(scope, Guid.NewGuid());
+            var app = new ApplicationKey("app-a");
+            var subject = new SubjectReference(scope, Guid.NewGuid());
+            var group = new GroupReference(tenant, app, Guid.NewGuid());
+            var managedPolicy = new ManagedPolicyVersionReference(
+                new ManagedPolicyReference(scope, app, Guid.NewGuid()),
+                4);
+            var statementId = Guid.NewGuid();
+            var model = new ApplicationSecurityModelReference(scope, app, 3);
+
+            var grant = new AssignedCapabilityGrant(
+                subject, tenant, app, group, managedPolicy, statementId, model,
+                new CapabilityPattern("storage", "object", "read"));
+
+            Assert.Equal(managedPolicy, grant.ManagedPolicyVersion);
+            Assert.Equal(tenant, grant.Tenant);
+            Assert.Equal(group, grant.Group);
         }
 
         [Fact]

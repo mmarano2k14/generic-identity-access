@@ -36,7 +36,7 @@ namespace IdentityAccess.Infrastructure.PostgreSql.Directory
 
         /// <summary>Lists resource scope records for the supplied scope.</summary>
         public async Task<IReadOnlyList<VersionedRecord<ResourceScope>>> ListAsync(ResolvedDatabaseRoute route,
-            TenantReference tenant, ApplicationKey application, CancellationToken cancellationToken)
+            TenantReference tenant, ApplicationKey application, string? search, int offset, int limit, CancellationToken cancellationToken)
         {
             ArgumentNullException.ThrowIfNull(tenant);
             ArgumentNullException.ThrowIfNull(application);
@@ -50,11 +50,20 @@ namespace IdentityAccess.Infrastructure.PostgreSql.Directory
                 WHERE identity_scope_id = @scope
                   AND tenant_id = @tenant_id
                   AND application_key = @application_key
-                ORDER BY scope_type_key, external_resource_id, resource_scope_id;
+                  AND (@search_pattern IS NULL
+                       OR lower(display_name) LIKE @search_pattern
+                       OR lower(external_resource_id) LIKE @search_pattern
+                       OR resource_scope_id = @search_id)
+                ORDER BY scope_type_key, external_resource_id, resource_scope_id
+                OFFSET @offset
+                LIMIT @limit;
                 """, connection);
             command.Parameters.AddWithValue("scope", tenant.IdentityScopeId);
             command.Parameters.AddWithValue("tenant_id", tenant.TenantId);
             command.Parameters.AddWithValue("application_key", application.Value);
+            PostgreSqlAdministrationSearch.AddParameters(command, search);
+            command.Parameters.AddWithValue("offset", offset);
+            command.Parameters.AddWithValue("limit", limit);
             var result = new List<VersionedRecord<ResourceScope>>();
             await using var reader = await command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
             while (await reader.ReadAsync(cancellationToken).ConfigureAwait(false))

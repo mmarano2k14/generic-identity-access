@@ -1,0 +1,283 @@
+{
+  "schemaVersion": 1,
+  "applicationKey": "admin-web",
+  "modelVersion": 2,
+  "rbac": {
+    "project": "identity-access",
+    "namespaces": [
+      "administration"
+    ]
+  },
+  "resources": [
+    {
+      "name": "identity-access",
+      "features": [
+        {
+          "name": "credential",
+          "actions": [
+            {
+              "name": "read",
+              "displayName": "Identity Access credential read"
+            },
+            {
+              "name": "write",
+              "displayName": "Identity Access credential write"
+            }
+          ]
+        },
+        {
+          "name": "group",
+          "actions": [
+            {
+              "name": "read",
+              "displayName": "Identity Access group read"
+            },
+            {
+              "name": "write",
+              "displayName": "Identity Access group write"
+            }
+          ]
+        },
+        {
+          "name": "group-membership",
+          "actions": [
+            {
+              "name": "read",
+              "displayName": "Identity Access group-membership read"
+            },
+            {
+              "name": "write",
+              "displayName": "Identity Access group-membership write"
+            }
+          ]
+        },
+        {
+          "name": "mfa-authenticator",
+          "actions": [
+            {
+              "name": "read",
+              "displayName": "Identity Access mfa-authenticator read"
+            },
+            {
+              "name": "write",
+              "displayName": "Identity Access mfa-authenticator write"
+            }
+          ]
+        },
+        {
+          "name": "mfa-policy",
+          "actions": [
+            {
+              "name": "read",
+              "displayName": "Identity Access mfa-policy read"
+            },
+            {
+              "name": "write",
+              "displayName": "Identity Access mfa-policy write"
+            }
+          ]
+        },
+        {
+          "name": "policy",
+          "actions": [
+            {
+              "name": "read",
+              "displayName": "Identity Access policy read"
+            },
+            {
+              "name": "write",
+              "displayName": "Identity Access policy write"
+            }
+          ]
+        },
+        {
+          "name": "policy-binding",
+          "actions": [
+            {
+              "name": "read",
+              "displayName": "Identity Access policy-binding read"
+            },
+            {
+              "name": "write",
+              "displayName": "Identity Access policy-binding write"
+            }
+          ]
+        },
+        {
+          "name": "policy-statement",
+          "actions": [
+            {
+              "name": "read",
+              "displayName": "Identity Access policy-statement read"
+            },
+            {
+              "name": "write",
+              "displayName": "Identity Access policy-statement write"
+            }
+          ]
+        },
+        {
+          "name": "resource-scope",
+          "actions": [
+            {
+              "name": "read",
+              "displayName": "Identity Access resource-scope read"
+            },
+            {
+              "name": "write",
+              "displayName": "Identity Access resource-scope write"
+            }
+          ]
+        },
+        {
+          "name": "scope-authority-binding",
+          "actions": [
+            {
+              "name": "read",
+              "displayName": "Identity Access scope-authority-binding read"
+            },
+            {
+              "name": "write",
+              "displayName": "Identity Access scope-authority-binding write"
+            }
+          ]
+        },
+        {
+          "name": "scope-authority-group",
+          "actions": [
+            {
+              "name": "read",
+              "displayName": "Identity Access scope-authority-group read"
+            },
+            {
+              "name": "write",
+              "displayName": "Identity Access scope-authority-group write"
+            }
+          ]
+        },
+        {
+          "name": "scope-authority-membership",
+          "actions": [
+            {
+              "name": "read",
+              "displayName": "Identity Access scope-authority-membership read"
+            },
+            {
+              "name": "write",
+              "displayName": "Identity Access scope-authority-membership write"
+            }
+          ]
+        },
+        {
+          "name": "scope-authority-policy",
+          "actions": [
+            {
+              "name": "read",
+              "displayName": "Identity Access scope-authority-policy read"
+            },
+            {
+              "name": "write",
+              "displayName": "Identity Access scope-authority-policy write"
+            }
+          ]
+        },
+        {
+          "name": "scope-authority-statement",
+          "actions": [
+            {
+              "name": "read",
+              "displayName": "Identity Access scope-authority-statement read"
+            },
+            {
+              "name": "write",
+              "displayName": "Identity Access scope-authority-statement write"
+            }
+          ]
+        },
+        {
+          "name": "scope-type",
+          "actions": [
+            {
+              "name": "read",
+              "displayName": "Identity Access scope-type read"
+            },
+            {
+              "name": "write",
+              "displayName": "Identity Access scope-type write"
+            }
+          ]
+        },
+        {
+          "name": "security-audit",
+          "actions": [
+            {
+              "name": "read",
+              "displayName": "Identity Access security-audit read"
+            }
+          ]
+        },
+        {
+          "name": "security-model",
+          "actions": [
+            {
+              "name": "read",
+              "displayName": "Identity Access security-model read"
+            },
+            {
+              "name": "write",
+              "displayName": "Identity Access security-model write"
+            }
+          ]
+        },
+        {
+          "name": "session",
+          "actions": [
+            {
+              "name": "write",
+              "displayName": "Identity Access session write"
+            }
+          ]
+        },
+        {
+          "name": "tenant",
+          "actions": [
+            {
+              "name": "read",
+              "displayName": "Identity Access tenant read"
+            },
+            {
+              "name": "write",
+              "displayName": "Identity Access tenant write"
+            }
+          ]
+        },
+        {
+          "name": "tenant-membership",
+          "actions": [
+            {
+              "name": "read",
+              "displayName": "Identity Access tenant-membership read"
+            },
+            {
+              "name": "write",
+              "displayName": "Identity Access tenant-membership write"
+            }
+          ]
+        },
+        {
+          "name": "user",
+          "actions": [
+            {
+              "name": "read",
+              "displayName": "Identity Access user read"
+            },
+            {
+              "name": "write",
+              "displayName": "Identity Access user write"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

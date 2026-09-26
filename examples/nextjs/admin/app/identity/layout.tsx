@@ -1,7 +1,9 @@
 import type { ReactNode } from "react";
+import { IdentityAccessClientError, type IdentityAccessAdminUiDefinition } from "@identity-access/client";
 import { redirect } from "next/navigation";
 import { AdminCurrentSection } from "../../components/AdminCurrentSection";
 import { AdminIcon } from "../../components/AdminIcon";
+import { AdminMobileNavigation } from "../../components/AdminMobileNavigation";
 import { AdminNavigation } from "../../components/AdminNavigation";
 import { IdentityAccessAdminRequest } from "../../server/IdentityAccessAdminRequest";
 import { IdentityAccessHostSessionService } from "../../server/IdentityAccessHostSessionService";
@@ -12,7 +14,15 @@ export default async function IdentityLayout({ children }: { readonly children: 
   if (!hostSession.hasBearerCredential()) redirect("/login");
 
   const request = await IdentityAccessAdminRequest.fromCurrentRequest();
-  const navigation = await request.adminUiBuilder().buildVisible();
+  let navigation: IdentityAccessAdminUiDefinition;
+  try {
+    navigation = await request.adminUiBuilder().buildVisible();
+  } catch (error) {
+    if (error instanceof IdentityAccessClientError && error.code === "unauthenticated") {
+      redirect("/login?session=expired");
+    }
+    throw error;
+  }
 
   return (
     <div className="ia-shell">
@@ -21,14 +31,9 @@ export default async function IdentityLayout({ children }: { readonly children: 
       <div className="ia-workspace">
         <header className="ia-topbar">
           <div className="ia-topbar-leading">
-            <details className="ia-mobile-navigation">
-              <summary className="ia-icon-button ia-mobile-navigation-trigger" aria-label="Open administration navigation">
-                <AdminIcon name="menu" />
-              </summary>
-              <div className="ia-mobile-navigation-popover">
-                <AdminNavigation entries={navigation.entries} mobile />
-              </div>
-            </details>
+            <AdminMobileNavigation>
+              <AdminNavigation entries={navigation.entries} mobile />
+            </AdminMobileNavigation>
             <div className="ia-topbar-context">
               <span className="ia-topbar-icon"><AdminIcon name="shield" /></span>
               <AdminCurrentSection entries={navigation.entries} />
@@ -41,7 +46,7 @@ export default async function IdentityLayout({ children }: { readonly children: 
             </form>
           </div>
         </header>
-        <main className="ia-main" id="identity-main">{children}</main>
+        <main className="ia-main" id="identity-main" tabIndex={-1}>{children}</main>
       </div>
     </div>
   );

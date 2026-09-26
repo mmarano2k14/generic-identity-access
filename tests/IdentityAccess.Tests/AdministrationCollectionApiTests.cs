@@ -12,7 +12,7 @@ namespace IdentityAccess.Tests
             AssertListAction<UsersController>();
             AssertListAction<TenantsController>();
             AssertListAction<GroupsController>();
-            AssertListAction<PoliciesController>();
+            AssertListAction<ManagedPoliciesController>();
             Assert.Equal(50, AdministrationPaging.DefaultLimit);
             Assert.Equal(200, AdministrationPaging.MaximumLimit);
         }

@@ -1,6 +1,6 @@
 # Local Development Administrator Bootstrap
 
-**Source version: 0.42.14. Date: September 23, 2026.**
+**Source version: 0.62.6. Date: September 27, 2026.**
 
 This workflow exists only to establish the first local development administrator so the runnable Next.js administration host can be exercised against the real authentication, OIDC, Bearer, and RBAC paths.
 
@@ -47,11 +47,18 @@ The script creates or repairs:
 
 - the active user;
 - the local administration tenant and membership;
-- the `admin-web` security model and concrete Identity Access capabilities;
+- the `admin-web` manifest-backed security model, RBAC development context, and concrete Identity Access capabilities loaded from `config/identity-access-admin-security-manifest.json`;
 - the password credential using the same ASP.NET Core Identity hash format as the runtime;
 - identity-scope administration authority;
-- tenant administration group/policy/binding;
+- tenant administration group plus a published managed policy version and managed binding;
 - `examples/nextjs/admin/.env.local` containing only non-secret runtime identifiers.
+
+
+The tenant administrator grant is materialized exclusively through the managed-policy path: the current manifest model version becomes a managed policy version, every concrete catalog capability is added as a statement, that version is published and selected as the default, and the tenant administration group is rebound to that exact published version. The historical tenant-policy tables are not used by this bootstrap.
+
+The bootstrap is idempotent for an already registered manifest/model pair. If the manifest fingerprint changes, reuse of that `ModelVersion` fails closed; increment the model version instead of mutating capabilities already pinned by a published managed-policy version.
+
+The development bootstrap reads the same JSON manifest shape used by application registration. It does not maintain a second hardcoded feature/action catalog. `-SecurityManifestPath` can select another development manifest, while `-ApplicationKey`, `-ModelVersion`, `-RbacProject`, and `-RbacNamespace` must match the selected manifest. The script projects every declared namespace and concrete capability into PostgreSQL so the Security Models workspace and catalog-backed Policy Builder are usable immediately. This is a development-only repair/bootstrap path and does not replace immutable public manifest registration for deployed applications.
 
 The resulting login identifier is:
 

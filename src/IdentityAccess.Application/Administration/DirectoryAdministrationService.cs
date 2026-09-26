@@ -27,11 +27,13 @@ namespace IdentityAccess.Application.Administration
 
         /// <summary>Lists users in a bounded deterministic window.</summary>
         public async Task<IReadOnlyList<VersionedRecord<User>>> ListUsersAsync(Guid identityScopeId,
-            ApplicationKey application, int offset, int limit, CancellationToken cancellationToken)
+            ApplicationKey application, string? search, int offset, int limit, CancellationToken cancellationToken)
         {
             AdministrationPaging.EnsureValid(offset, limit);
+            var normalizedSearch = AdministrationSearch.Normalize(search);
+            var boundedLimit = AdministrationSearch.Limit(normalizedSearch, limit);
             var route = await ResolveAsync(identityScopeId, application, cancellationToken);
-            return await users.ListAsync(route, identityScopeId, offset, limit, cancellationToken);
+            return await users.ListAsync(route, identityScopeId, normalizedSearch, offset, boundedLimit, cancellationToken);
         }
 
         /// <summary>Creates a user.</summary>
@@ -68,11 +70,13 @@ namespace IdentityAccess.Application.Administration
 
         /// <summary>Lists tenants in a bounded deterministic window.</summary>
         public async Task<IReadOnlyList<VersionedRecord<Tenant>>> ListTenantsAsync(Guid identityScopeId,
-            ApplicationKey application, int offset, int limit, CancellationToken cancellationToken)
+            ApplicationKey application, string? search, int offset, int limit, CancellationToken cancellationToken)
         {
             AdministrationPaging.EnsureValid(offset, limit);
+            var normalizedSearch = AdministrationSearch.Normalize(search);
+            var boundedLimit = AdministrationSearch.Limit(normalizedSearch, limit);
             var route = await ResolveAsync(identityScopeId, application, cancellationToken);
-            return await tenants.ListAsync(route, identityScopeId, offset, limit, cancellationToken);
+            return await tenants.ListAsync(route, identityScopeId, normalizedSearch, offset, boundedLimit, cancellationToken);
         }
 
         /// <summary>Creates a tenant.</summary>
@@ -119,6 +123,19 @@ namespace IdentityAccess.Application.Administration
                 new SubjectReference(identityScopeId, userId), cancellationToken);
         }
 
+        /// <summary>Lists tenant memberships in a bounded deterministic window.</summary>
+        public async Task<IReadOnlyList<VersionedRecord<TenantMembership>>> ListTenantMembershipsAsync(
+            Guid identityScopeId, ApplicationKey application, Guid tenantId, string? search, int offset, int limit,
+            CancellationToken cancellationToken)
+        {
+            AdministrationPaging.EnsureValid(offset, limit);
+            var normalizedSearch = AdministrationSearch.Normalize(search);
+            var boundedLimit = AdministrationSearch.Limit(normalizedSearch, limit);
+            var route = await ResolveAsync(identityScopeId, application, cancellationToken);
+            return await tenantMemberships.ListAsync(route, new TenantReference(identityScopeId, tenantId),
+                normalizedSearch, offset, boundedLimit, cancellationToken);
+        }
+
         /// <summary>Creates a tenant membership.</summary>
         public async Task<VersionedRecord<TenantMembership>> CreateTenantMembershipAsync(Guid identityScopeId,
             ApplicationKey application, Guid tenantId, Guid membershipId, Guid userId, MembershipStatus status,
@@ -159,12 +176,15 @@ namespace IdentityAccess.Application.Administration
 
         /// <summary>Lists user groups in a bounded deterministic window.</summary>
         public async Task<IReadOnlyList<VersionedRecord<UserGroup>>> ListGroupsAsync(Guid identityScopeId,
-            Guid tenantId, ApplicationKey application, int offset, int limit, CancellationToken cancellationToken)
+            Guid tenantId, ApplicationKey application, string? search, int offset, int limit,
+            CancellationToken cancellationToken)
         {
             AdministrationPaging.EnsureValid(offset, limit);
+            var normalizedSearch = AdministrationSearch.Normalize(search);
+            var boundedLimit = AdministrationSearch.Limit(normalizedSearch, limit);
             var route = await ResolveAsync(identityScopeId, application, cancellationToken);
-            return await groups.ListAsync(route, new TenantReference(identityScopeId, tenantId), application, offset,
-                limit, cancellationToken);
+            return await groups.ListAsync(route, new TenantReference(identityScopeId, tenantId), application,
+                normalizedSearch, offset, boundedLimit, cancellationToken);
         }
 
         /// <summary>Creates a user group.</summary>

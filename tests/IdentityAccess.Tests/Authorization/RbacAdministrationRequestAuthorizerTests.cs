@@ -72,6 +72,173 @@ namespace IdentityAccess.Tests.Authorization
         }
 
         /// <summary>
+        /// Verifies identity-scope authority may authorize a tenant route without requiring a
+        /// tenant-local administration membership.
+        /// </summary>
+        [Fact]
+        public async Task Tenant_route_scope_allow_bypasses_tenant_authority()
+        {
+            var tenantService =
+                new RbacAdministrationCapturingAuthorizationService(
+                    IdentityAuthorizationResult.Deny());
+
+            var scopeService =
+                new RbacAdministrationCapturingIdentityScopeAuthorizationService(
+                    IdentityAuthorizationResult.Allow());
+
+            var result = await Create(
+                tenantService,
+                scopeService).AuthorizeAsync(
+                    TenantRequest(includeResourceScope: false),
+                    "identity-access",
+                    "tenant-membership",
+                    "write",
+                    TestContext.Current.CancellationToken);
+
+            Assert.Equal(
+                AdministrationAccessDecision.Allowed,
+                result.Decision);
+
+            Assert.Null(tenantService.Request);
+
+            var request = Assert.IsType<IdentityScopeAuthorizationRequest>(
+                scopeService.Request);
+
+            Assert.Equal(ScopeId, request.IdentityScopeId);
+            Assert.Equal("identity-access", request.Capability.Resource);
+            Assert.Equal("tenant-membership", request.Capability.Feature);
+            Assert.Equal("write", request.Capability.Action);
+        }
+
+        /// <summary>
+        /// Verifies a scope-level denial falls back to tenant-local authority.
+        /// </summary>
+        [Fact]
+        public async Task Tenant_route_scope_deny_falls_back_to_tenant_allow()
+        {
+            var tenantService =
+                new RbacAdministrationCapturingAuthorizationService(
+                    IdentityAuthorizationResult.Allow());
+
+            var scopeService =
+                new RbacAdministrationCapturingIdentityScopeAuthorizationService(
+                    IdentityAuthorizationResult.Deny());
+
+            var result = await Create(
+                tenantService,
+                scopeService).AuthorizeAsync(
+                    TenantRequest(includeResourceScope: false),
+                    "identity-access",
+                    "group",
+                    "write",
+                    TestContext.Current.CancellationToken);
+
+            Assert.Equal(
+                AdministrationAccessDecision.Allowed,
+                result.Decision);
+
+            Assert.NotNull(scopeService.Request);
+            Assert.NotNull(tenantService.Request);
+        }
+
+        /// <summary>
+        /// Verifies independent tenant authority can still allow when scope authorization fails
+        /// technically.
+        /// </summary>
+        [Fact]
+        public async Task Tenant_route_scope_technical_failure_with_tenant_allow_allows()
+        {
+            var tenantService =
+                new RbacAdministrationCapturingAuthorizationService(
+                    IdentityAuthorizationResult.Allow());
+
+            var scopeService =
+                new RbacAdministrationCapturingIdentityScopeAuthorizationService(
+                    IdentityAuthorizationResult.Failure(
+                        IdentityAuthorizationFailureCode.RbacTechnicalFailure));
+
+            var result = await Create(
+                tenantService,
+                scopeService).AuthorizeAsync(
+                    TenantRequest(includeResourceScope: false),
+                    "identity-access",
+                    "policy",
+                    "read",
+                    TestContext.Current.CancellationToken);
+
+            Assert.Equal(
+                AdministrationAccessDecision.Allowed,
+                result.Decision);
+        }
+
+        /// <summary>
+        /// Verifies a scope technical failure cannot be converted to a denial when tenant
+        /// authority also denies.
+        /// </summary>
+        [Fact]
+        public async Task Tenant_route_scope_technical_failure_with_tenant_deny_is_unavailable()
+        {
+            var tenantService =
+                new RbacAdministrationCapturingAuthorizationService(
+                    IdentityAuthorizationResult.Deny());
+
+            var scopeService =
+                new RbacAdministrationCapturingIdentityScopeAuthorizationService(
+                    IdentityAuthorizationResult.Failure(
+                        IdentityAuthorizationFailureCode.RbacTechnicalFailure));
+
+            var result = await Create(
+                tenantService,
+                scopeService).AuthorizeAsync(
+                    TenantRequest(includeResourceScope: false),
+                    "identity-access",
+                    "policy",
+                    "read",
+                    TestContext.Current.CancellationToken);
+
+            Assert.Equal(
+                AdministrationAccessDecision.Unavailable,
+                result.Decision);
+
+            Assert.Equal(
+                AdministrationAccessFailureCode.AuthorizationTechnicalFailure,
+                result.FailureCode);
+        }
+
+        /// <summary>
+        /// Verifies tenant technical failure remains unavailable after a clean scope denial.
+        /// </summary>
+        [Fact]
+        public async Task Tenant_route_scope_deny_with_tenant_technical_failure_is_unavailable()
+        {
+            var tenantService =
+                new RbacAdministrationCapturingAuthorizationService(
+                    IdentityAuthorizationResult.Failure(
+                        IdentityAuthorizationFailureCode.RbacTechnicalFailure));
+
+            var scopeService =
+                new RbacAdministrationCapturingIdentityScopeAuthorizationService(
+                    IdentityAuthorizationResult.Deny());
+
+            var result = await Create(
+                tenantService,
+                scopeService).AuthorizeAsync(
+                    TenantRequest(includeResourceScope: false),
+                    "identity-access",
+                    "policy",
+                    "read",
+                    TestContext.Current.CancellationToken);
+
+            Assert.Equal(
+                AdministrationAccessDecision.Unavailable,
+                result.Decision);
+
+            Assert.Equal(
+                AdministrationAccessFailureCode.AuthorizationTechnicalFailure,
+                result.FailureCode);
+        }
+
+        /// <summary>
         /// Verifies an external/identity authorization denial remains an explicit HTTP-layer deny.
         /// </summary>
         [Fact]
@@ -163,6 +330,106 @@ namespace IdentityAccess.Tests.Authorization
         }
 
         /// <summary>
+        /// Verifies tenant-local RBAC cannot authorize a tenant outside the subject's active memberships
+        /// after a clean identity-scope denial.
+        /// </summary>
+        [Fact]
+        public async Task Tenant_route_without_active_membership_is_denied_before_tenant_rbac()
+        {
+            var tenantService =
+                new RbacAdministrationCapturingAuthorizationService(
+                    IdentityAuthorizationResult.Allow());
+
+            var scopeService =
+                new RbacAdministrationCapturingIdentityScopeAuthorizationService(
+                    IdentityAuthorizationResult.Deny());
+
+            var result = await Create(
+                tenantService,
+                scopeService,
+                hasActiveTenantMembership: false).AuthorizeAsync(
+                    TenantRequest(includeResourceScope: false),
+                    "identity-access",
+                    "group",
+                    "read",
+                    TestContext.Current.CancellationToken);
+
+            Assert.Equal(
+                AdministrationAccessDecision.Denied,
+                result.Decision);
+            Assert.Equal(
+                AdministrationAccessFailureCode.TenantContextOutsideVisibility,
+                result.FailureCode);
+            Assert.Null(tenantService.Request);
+        }
+
+        /// <summary>
+        /// Verifies an unresolved scope decision is not collapsed into a deny when no tenant membership
+        /// can provide an independent tenant-local authorization path.
+        /// </summary>
+        [Fact]
+        public async Task Tenant_route_without_active_membership_preserves_scope_technical_failure()
+        {
+            var tenantService =
+                new RbacAdministrationCapturingAuthorizationService(
+                    IdentityAuthorizationResult.Allow());
+
+            var scopeService =
+                new RbacAdministrationCapturingIdentityScopeAuthorizationService(
+                    IdentityAuthorizationResult.Failure(
+                        IdentityAuthorizationFailureCode.RbacTechnicalFailure));
+
+            var result = await Create(
+                tenantService,
+                scopeService,
+                hasActiveTenantMembership: false).AuthorizeAsync(
+                    TenantRequest(includeResourceScope: false),
+                    "identity-access",
+                    "policy",
+                    "read",
+                    TestContext.Current.CancellationToken);
+
+            Assert.Equal(
+                AdministrationAccessDecision.Unavailable,
+                result.Decision);
+            Assert.Equal(
+                AdministrationAccessFailureCode.AuthorizationTechnicalFailure,
+                result.FailureCode);
+            Assert.Null(tenantService.Request);
+        }
+
+        /// <summary>
+        /// Verifies an explicit identity-scope allow remains sufficient for cross-tenant administration
+        /// even when the subject has no tenant membership.
+        /// </summary>
+        [Fact]
+        public async Task Tenant_route_scope_allow_does_not_require_tenant_membership()
+        {
+            var tenantService =
+                new RbacAdministrationCapturingAuthorizationService(
+                    IdentityAuthorizationResult.Deny());
+
+            var scopeService =
+                new RbacAdministrationCapturingIdentityScopeAuthorizationService(
+                    IdentityAuthorizationResult.Allow());
+
+            var result = await Create(
+                tenantService,
+                scopeService,
+                hasActiveTenantMembership: false).AuthorizeAsync(
+                    TenantRequest(includeResourceScope: false),
+                    "identity-access",
+                    "tenant-membership",
+                    "read",
+                    TestContext.Current.CancellationToken);
+
+            Assert.Equal(
+                AdministrationAccessDecision.Allowed,
+                result.Decision);
+            Assert.Null(tenantService.Request);
+        }
+
+        /// <summary>
         /// Verifies route scope/application mismatch is denied before authorization orchestration.
         /// </summary>
         [Fact]
@@ -203,13 +470,15 @@ namespace IdentityAccess.Tests.Authorization
 
         private static RbacAdministrationRequestAuthorizer Create(
             RbacAdministrationCapturingAuthorizationService tenantService,
-            RbacAdministrationCapturingIdentityScopeAuthorizationService scopeService) =>
+            RbacAdministrationCapturingIdentityScopeAuthorizationService scopeService,
+            bool hasActiveTenantMembership = true) =>
             new(
                 new RbacAdministrationTestContextResolver(
                     AdministrationAuthenticationResult.Authenticated(
                         Context())),
                 tenantService,
                 scopeService,
+                new RbacAdministrationTenantVisibilityService(hasActiveTenantMembership),
                 new AdministrationAuthorizationOptions(
                     "admin-project",
                     "admin-namespace"),

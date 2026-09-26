@@ -4,6 +4,7 @@ import type { IdentityAccessCredential } from "./contracts.js";
 export interface IdentityAdministrationListOptions {
   readonly offset?: number;
   readonly limit?: number;
+  readonly search?: string;
 }
 
 /** Shared trusted administration boundary supplied explicitly per operation. */
@@ -16,6 +17,21 @@ export interface IdentityAdministrationContext {
 /** Tenant-scoped administration boundary supplied explicitly per operation. */
 export interface IdentityTenantAdministrationContext extends IdentityAdministrationContext {
   readonly tenantId: string;
+}
+
+export type IdentityAdministrationTenantVisibility = "membership-limited" | "scope-wide";
+
+export interface IdentityEffectiveAdministrationTenantMembership {
+  readonly membershipId: string;
+  readonly tenantId: string;
+}
+
+export interface IdentityEffectiveAdministrationContext {
+  readonly identityScopeId: string;
+  readonly userId: string;
+  readonly applicationKey: string;
+  readonly tenantVisibility: IdentityAdministrationTenantVisibility;
+  readonly activeTenantMemberships: readonly IdentityEffectiveAdministrationTenantMembership[];
 }
 
 export type IdentityUserStatus = 1 | 2;
@@ -69,6 +85,21 @@ export interface IdentityTenantMembershipRecord {
   readonly userId: string;
   readonly status: IdentityMembershipStatus;
   readonly version: number;
+}
+
+export interface IdentityTenantUserListOptions extends IdentityAdministrationListOptions {
+  readonly activeMembershipsOnly?: boolean;
+}
+
+export interface IdentityTenantUserRecord {
+  readonly membershipId: string;
+  readonly tenantId: string;
+  readonly userId: string;
+  readonly displayName: string;
+  readonly userStatus: IdentityUserStatus;
+  readonly membershipStatus: IdentityMembershipStatus;
+  readonly userVersion: number;
+  readonly membershipVersion: number;
 }
 
 export interface IdentityCreateTenantMembershipRequest {
@@ -141,6 +172,76 @@ export interface IdentityAddPolicyStatementRequest {
   readonly action: string;
 }
 
+export interface IdentityManagedPolicyRecord {
+  readonly policyId: string;
+  readonly policyKey: string;
+  readonly displayName: string;
+  readonly status: IdentityPolicyStatus;
+  readonly defaultVersion?: number;
+  readonly version: number;
+}
+
+export interface IdentityCreateManagedPolicyRequest {
+  readonly policyId?: string;
+  readonly policyKey: string;
+  readonly displayName: string;
+  readonly status?: IdentityPolicyStatus;
+}
+
+export interface IdentityUpdateManagedPolicyRequest {
+  readonly policyKey: string;
+  readonly displayName: string;
+  readonly status: IdentityPolicyStatus;
+  readonly expectedVersion: number;
+}
+
+export interface IdentityManagedPolicyVersionRecord {
+  readonly policyId: string;
+  readonly policyVersion: number;
+  readonly modelVersion: number;
+  readonly publishedAt?: string;
+}
+
+export interface IdentityCreateManagedPolicyVersionRequest {
+  readonly policyVersion: number;
+  readonly modelVersion: number;
+}
+
+export interface IdentityPublishManagedPolicyVersionRequest {
+  readonly makeDefault?: boolean;
+}
+
+export interface IdentityManagedPolicyStatementRecord {
+  readonly statementId: string;
+  readonly policyVersion: number;
+  readonly modelVersion: number;
+  readonly resource: string;
+  readonly feature: string;
+  readonly action: string;
+}
+
+export interface IdentityAddManagedPolicyStatementRequest {
+  readonly statementId?: string;
+  readonly resource: string;
+  readonly feature: string;
+  readonly action: string;
+}
+
+export interface IdentityManagedGroupPolicyBindingRecord {
+  readonly groupId: string;
+  readonly policyId: string;
+  readonly policyVersion: number;
+  readonly resourceScopeId?: string;
+  readonly includeDescendants: boolean;
+}
+
+export interface IdentityAddManagedGroupPolicyBindingRequest {
+  readonly policyId: string;
+  readonly policyVersion?: number;
+  readonly resourceScopeId?: string;
+  readonly includeDescendants?: boolean;
+}
+
 export interface IdentityGroupPolicyBindingRecord {
   readonly groupId: string;
   readonly policyId: string;
@@ -199,8 +300,82 @@ export interface IdentityAddScopeTypeRequest {
   readonly canAttachToTenant: boolean;
 }
 
+export interface IdentityApplicationSecurityCapabilityRecord {
+  readonly resource: string;
+  readonly feature: string;
+  readonly action: string;
+  readonly displayName: string;
+}
+
+export interface IdentityApplicationSecurityModelSummaryRecord {
+  readonly schemaVersion: number;
+  readonly applicationKey: string;
+  readonly modelVersion: number;
+  readonly rbacProject: string;
+  readonly rbacNamespaces: readonly string[];
+  readonly manifestSha256: string;
+  readonly capabilityCount: number;
+}
+
+export interface IdentityApplicationSecurityModelRecord extends IdentityApplicationSecurityModelSummaryRecord {
+  readonly capabilities: readonly IdentityApplicationSecurityCapabilityRecord[];
+}
+
+export interface IdentityApplicationSecurityManifestAction {
+  readonly name: string;
+  readonly displayName: string;
+}
+
+export interface IdentityApplicationSecurityManifestFeature {
+  readonly name: string;
+  readonly actions: readonly IdentityApplicationSecurityManifestAction[];
+}
+
+export interface IdentityApplicationSecurityManifestResource {
+  readonly name: string;
+  readonly features: readonly IdentityApplicationSecurityManifestFeature[];
+}
+
+export interface IdentityApplicationSecurityManifestRequest {
+  readonly schemaVersion: 1;
+  readonly applicationKey: string;
+  readonly modelVersion: number;
+  readonly rbac: {
+    readonly project: string;
+    readonly namespaces: readonly string[];
+  };
+  readonly resources: readonly IdentityApplicationSecurityManifestResource[];
+}
+
 export interface IdentitySessionRevocationResult {
   readonly revokedCount: number;
+}
+
+export type IdentitySecurityAuditOutcome = "Succeeded" | "Denied" | "Failed";
+
+export interface IdentitySecurityAuditQuery {
+  readonly tenantId?: string;
+  readonly userId?: string;
+  readonly eventType?: string;
+  readonly outcome?: IdentitySecurityAuditOutcome;
+  readonly correlationId?: string;
+  readonly offset?: number;
+  readonly limit?: number;
+}
+
+export interface IdentitySecurityAuditRecord {
+  readonly eventId: string;
+  readonly occurredAt: string;
+  readonly eventType: string;
+  readonly outcome: IdentitySecurityAuditOutcome;
+  readonly identityScopeId: string;
+  readonly tenantId?: string;
+  readonly userId?: string;
+  readonly applicationKey?: string;
+  readonly clientId?: string;
+  readonly targetId?: string;
+  readonly reasonCode?: string;
+  readonly correlationId?: string;
 }
 
 export interface IdentityScopeAuthorityGroupRecord extends IdentityGroupRecord {}

@@ -9,9 +9,11 @@ const ICONS: Readonly<Record<IdentityAccessAdminUiSection, AdminIconName>> = {
   memberships: "memberships",
   groups: "groups",
   policies: "policies",
+  "security-models": "policies",
   "resource-scopes": "resource-scopes",
   mfa: "mfa",
   sessions: "sessions",
+  "security-audit": "audit",
   "scope-authority": "scope-authority",
 };
 
@@ -40,9 +42,9 @@ function NavigationGroup({ label, entries }: { readonly label: string; readonly 
 
 /** Server-rendered permission-filtered navigation with client-only active-route decoration. */
 export function AdminNavigation({ entries, mobile = false }: { readonly entries: readonly IdentityAccessAdminUiEntry[]; readonly mobile?: boolean }) {
-  const scopeEntries = entries.filter((entry) => !entry.tenantScoped && entry.section !== "mfa" && entry.section !== "sessions" && entry.section !== "scope-authority");
+  const scopeEntries = entries.filter((entry) => !entry.tenantScoped && entry.section !== "mfa" && entry.section !== "sessions" && entry.section !== "security-audit" && entry.section !== "scope-authority");
   const tenantEntries = entries.filter((entry) => entry.tenantScoped);
-  const securityEntries = entries.filter((entry) => entry.section === "mfa" || entry.section === "sessions" || entry.section === "scope-authority");
+  const securityEntries = entries.filter((entry) => entry.section === "mfa" || entry.section === "sessions" || entry.section === "security-audit" || entry.section === "scope-authority");
 
   return (
     <nav className={`ia-navigation${mobile ? " ia-navigation-mobile-drawer" : ""}`} aria-label={mobile ? "Mobile identity administration" : "Identity administration"}>

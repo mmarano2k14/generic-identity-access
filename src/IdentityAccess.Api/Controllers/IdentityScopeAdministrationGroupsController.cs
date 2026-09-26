@@ -15,6 +15,27 @@ namespace IdentityAccess.Api.Controllers
         OptionalFeature<IIdentityScopeAuthorityAdministrationService> feature)
         : ControllerBase
     {
+        /// <summary>Lists scope-authority groups in a bounded deterministic window.</summary>
+        [HttpGet]
+        [RequireAdministrationCapability(
+            IdentityAccessAdministrationCapabilities.Resource,
+            IdentityAccessAdministrationCapabilities.IdentityScopeAuthorityGroups,
+            IdentityAccessAdministrationCapabilities.Read)]
+        public async Task<ActionResult<IReadOnlyList<IdentityScopeAdministrationGroupResponse>>> List(
+            Guid identityScopeId, string applicationKey, [FromQuery] string? search, [FromQuery] int? offset, [FromQuery] int? limit,
+            CancellationToken cancellationToken)
+        {
+            var resolvedOffset = offset ?? 0;
+            var resolvedLimit = limit ?? AdministrationPaging.DefaultLimit;
+            if (!AdministrationPaging.IsValid(resolvedOffset, resolvedLimit)) return BadRequest();
+            if (!feature.TryGet(out var service))
+                return ApiProblems.IdentityScopeAuthorityAdministrationUnavailable();
+
+            var records = await service.ListGroupsAsync(identityScopeId, new ApplicationKey(applicationKey), search,
+                resolvedOffset, resolvedLimit, cancellationToken);
+            return Ok(records.Select(IdentityScopeAdministrationGroupResponse.From).ToArray());
+        }
+
         /// <summary>Gets a scope-authority group.</summary>
         [HttpGet("{groupId:guid}")]
         [RequireAdministrationCapability(

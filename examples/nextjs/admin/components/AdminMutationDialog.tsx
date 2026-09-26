@@ -2,6 +2,7 @@
 
 import { useActionState, useEffect, useId, useRef, type ReactNode } from "react";
 import { INITIAL_ADMIN_ACTION_STATE, type AdminActionState } from "../contracts/AdminActionState";
+import { AdminFailureFeedback } from "./AdminFailureFeedback";
 import { AdminIcon, type AdminIconName } from "./AdminIcon";
 
 export type AdminServerAction = (state: AdminActionState, formData: FormData) => Promise<AdminActionState>;
@@ -33,19 +34,28 @@ export function AdminMutationDialog({
   compact = false,
 }: AdminMutationDialogProps) {
   const dialog = useRef<HTMLDialogElement>(null);
+  const trigger = useRef<HTMLButtonElement>(null);
   const titleId = useId();
   const descriptionId = useId();
   const [state, formAction, pending] = useActionState(action, INITIAL_ADMIN_ACTION_STATE);
   const variant = triggerVariant ?? (dangerous ? "danger" : "primary");
   const icon = triggerIcon ?? (dangerous ? "trash" : "plus");
 
+  const closeDialog = () => {
+    dialog.current?.close();
+    trigger.current?.focus();
+  };
+
   useEffect(() => {
-    if (state.status === "success") dialog.current?.close();
-  }, [state]);
+    if (state.status === "success") {
+      dialog.current?.close();
+      trigger.current?.focus();
+    }
+  }, [state.status]);
 
   return (
     <div className="ia-admin-action">
-      <button className={`ia-button ia-button-${variant}${compact ? " ia-button-compact" : ""}`} type="button" onClick={() => dialog.current?.showModal()}>
+      <button ref={trigger} className={`ia-button ia-button-${variant}${compact ? " ia-button-compact" : ""}`} type="button" onClick={() => dialog.current?.showModal()}>
         <AdminIcon name={icon} />
         {triggerLabel}
       </button>
@@ -55,7 +65,10 @@ export function AdminMutationDialog({
         ref={dialog}
         aria-labelledby={titleId}
         aria-describedby={descriptionId}
-        onCancel={() => dialog.current?.close()}
+        onCancel={(event) => {
+          event.preventDefault();
+          closeDialog();
+        }}
       >
         <form action={formAction} className="ia-form" aria-busy={pending}>
           <header className="ia-dialog-header">
@@ -65,7 +78,7 @@ export function AdminMutationDialog({
               <h2 id={titleId}>{title}</h2>
               <p id={descriptionId}>{description}</p>
             </div>
-            <button className="ia-icon-button" type="button" aria-label="Close dialog" onClick={() => dialog.current?.close()} disabled={pending}>×</button>
+            <button className="ia-icon-button" type="button" aria-label="Close dialog" onClick={closeDialog} disabled={pending}>×</button>
           </header>
           <div className="ia-form-body">
             {dangerous ? (
@@ -76,11 +89,12 @@ export function AdminMutationDialog({
             ) : null}
             {children}
           </div>
-          {state.status === "error" && state.message ? <p className="ia-feedback ia-feedback-error" role="alert">{state.message}</p> : null}
+          {state.status === "error" && state.failure ? <AdminFailureFeedback failure={state.failure} /> : null}
+          {state.status === "error" && !state.failure && state.message ? <p className="ia-feedback ia-feedback-error" role="alert">{state.message}</p> : null}
           <footer className="ia-dialog-footer">
             <span className="ia-dialog-security"><AdminIcon name="shield" />Server authorization is re-evaluated on submit.</span>
             <div className="ia-dialog-actions">
-              <button className="ia-button ia-button-secondary" type="button" onClick={() => dialog.current?.close()} disabled={pending}>Cancel</button>
+              <button className="ia-button ia-button-secondary" type="button" onClick={closeDialog} disabled={pending}>Cancel</button>
               <button className={dangerous ? "ia-button ia-button-danger" : "ia-button ia-button-primary"} type="submit" disabled={pending}>
                 <AdminIcon name={dangerous ? "trash" : "check"} />
                 {pending ? "Working…" : submitLabel}

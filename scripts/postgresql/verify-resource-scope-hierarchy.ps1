@@ -47,20 +47,31 @@ BEGIN
     INSERT INTO identity_access.user_groups(identity_scope_id, tenant_id, application_key, group_id, display_name, status)
     VALUES (s, t, 'app-scope-test', g, 'Scoped managers', 1);
 
-    INSERT INTO identity_access.permission_policies(identity_scope_id, tenant_id, application_key, policy_id, display_name, status)
-    VALUES (s, t, 'app-scope-test', p, 'Scoped policy', 1);
+    INSERT INTO identity_access.managed_policies
+        (identity_scope_id, application_key, policy_id, policy_key, display_name, status)
+    VALUES (s, 'app-scope-test', p, 'scoped-policy', 'Scoped policy', 1);
 
-    INSERT INTO identity_access.group_policy_bindings
-        (identity_scope_id, tenant_id, application_key, group_id, policy_id, resource_scope_id, include_descendants)
+    INSERT INTO identity_access.managed_policy_versions
+        (identity_scope_id, application_key, policy_id, policy_version, model_version)
+    VALUES (s, 'app-scope-test', p, 1, 1);
+
+    UPDATE identity_access.managed_policy_versions
+    SET published_at = transaction_timestamp()
+    WHERE identity_scope_id = s AND application_key = 'app-scope-test'
+      AND policy_id = p AND policy_version = 1;
+
+    INSERT INTO identity_access.managed_group_policy_bindings
+        (identity_scope_id, tenant_id, application_key, group_id, policy_id, policy_version,
+         resource_scope_id, include_descendants)
     VALUES
-        (s, t, 'app-scope-test', g, p, unit_a, FALSE),
-        (s, t, 'app-scope-test', g, p, org, TRUE),
-        (s, t, 'app-scope-test', g, p, NULL, FALSE);
+        (s, t, 'app-scope-test', g, p, 1, unit_a, FALSE),
+        (s, t, 'app-scope-test', g, p, 1, org, TRUE),
+        (s, t, 'app-scope-test', g, p, 1, NULL, FALSE);
 
-    IF (SELECT count(*) FROM identity_access.group_policy_bindings
+    IF (SELECT count(*) FROM identity_access.managed_group_policy_bindings
         WHERE identity_scope_id = s AND tenant_id = t AND application_key = 'app-scope-test'
-          AND group_id = g AND policy_id = p) <> 3 THEN
-        RAISE EXCEPTION 'same group and policy were not persisted independently across binding targets';
+          AND group_id = g AND policy_id = p AND policy_version = 1) <> 3 THEN
+        RAISE EXCEPTION 'same group and managed policy version were not persisted independently across binding targets';
     END IF;
 
     BEGIN

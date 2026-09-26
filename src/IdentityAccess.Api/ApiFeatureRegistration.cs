@@ -26,8 +26,13 @@ namespace IdentityAccess.Api
             Register<IDatabaseRouteResolver>(builder.Services);
             Register<IIdentityDatabaseConnectionFactory>(builder.Services);
             Register<IDirectoryAdministrationService>(builder.Services);
-            Register<IPolicyAdministrationService>(builder.Services);
+            Register<ITenantUserAdministrationService>(builder.Services);
+            Register<IEffectiveAdministrationContextService>(builder.Services);
+            Register<IApplicationSecurityCatalogAdministrationService>(builder.Services);
+            Register<IManagedPolicyAdministrationService>(builder.Services);
+            Register<IManagedPolicyBindingAdministrationService>(builder.Services);
             Register<IResourceScopeAdministrationService>(builder.Services);
+            Register<ISecurityAuditAdministrationService>(builder.Services);
             Register<IIdentityScopeAuthorityAdministrationService>(builder.Services);
             Register<ILocalAuthenticationService>(builder.Services);
             Register<ICredentialAdministrationService>(builder.Services);

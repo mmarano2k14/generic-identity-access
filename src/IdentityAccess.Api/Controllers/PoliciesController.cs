@@ -9,7 +9,7 @@ namespace IdentityAccess.Api.Controllers
 {
 
     /// <summary>Exposes HTTP endpoints for policies.</summary>
-    [ApiController]
+    [NonController]
     [Route("api/v1/identity-scopes/{identityScopeId:guid}/tenants/{tenantId:guid}/applications/{applicationKey}/policies")]
     [Produces("application/json")]
     public sealed class PoliciesController(OptionalFeature<IPolicyAdministrationService> feature) : ControllerBase
@@ -18,13 +18,13 @@ namespace IdentityAccess.Api.Controllers
         [HttpGet]
         [RequireAdministrationCapability(IdentityAccessAdministrationCapabilities.Resource, IdentityAccessAdministrationCapabilities.Policies, IdentityAccessAdministrationCapabilities.Read)]
         public async Task<ActionResult<IReadOnlyList<PolicyResponse>>> List(Guid identityScopeId, Guid tenantId,
-            string applicationKey, [FromQuery] int? offset, [FromQuery] int? limit, CancellationToken cancellationToken)
+            string applicationKey, [FromQuery] string? search, [FromQuery] int? offset, [FromQuery] int? limit, CancellationToken cancellationToken)
         {
             var resolvedOffset = offset ?? 0;
             var resolvedLimit = limit ?? AdministrationPaging.DefaultLimit;
             if (!AdministrationPaging.IsValid(resolvedOffset, resolvedLimit)) return BadRequest();
             if (!feature.TryGet(out var service)) return ApiProblems.PolicyAdministrationUnavailable();
-            var records = await service.ListPoliciesAsync(identityScopeId, tenantId, new ApplicationKey(applicationKey),
+            var records = await service.ListPoliciesAsync(identityScopeId, tenantId, new ApplicationKey(applicationKey), search,
                 resolvedOffset, resolvedLimit, cancellationToken);
             return Ok(records.Select(PolicyResponse.From).ToArray());
         }

@@ -4,11 +4,18 @@ import { useId, useMemo, useState, type ReactNode } from "react";
 import { AdminEmptyState } from "./AdminEmptyState";
 import { AdminIcon } from "./AdminIcon";
 
+export interface AdminEntityTableTenant {
+  readonly tenantId: string;
+  readonly displayName?: string;
+}
+
 export interface AdminEntityTableRow {
+  readonly key?: string;
   readonly id: string;
   readonly name: string;
   readonly status: string;
   readonly version?: number;
+  readonly tenant?: AdminEntityTableTenant;
   readonly actions?: ReactNode;
 }
 
@@ -17,22 +24,24 @@ export interface AdminEntityTableProps {
   readonly title?: string;
   readonly description?: string;
   readonly entityLabel?: string;
+  readonly selectedId?: string;
 }
 
 type AdminEntityTableSort = "default" | "name" | "status" | "version";
 
 /** Client Component limited to presentation filtering/sorting; authorization and data loading stay server-side. */
-export function AdminEntityTable({ rows, title = "Records", description = "Browse the current administration view.", entityLabel = "records" }: AdminEntityTableProps) {
+export function AdminEntityTable({ rows, title = "Records", description = "Browse the current administration view.", entityLabel = "records", selectedId }: AdminEntityTableProps) {
   const tableId = useId();
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState("all");
   const [sort, setSort] = useState<AdminEntityTableSort>("default");
   const hasActions = rows.some((row) => row.actions !== undefined);
+  const hasTenantContext = rows.some((row) => row.tenant !== undefined);
   const statuses = useMemo(() => [...new Set(rows.map((row) => row.status))].sort((left, right) => left.localeCompare(right)), [rows]);
   const filtered = useMemo(() => {
     const normalized = query.trim().toLowerCase();
     const matches = rows.filter((row) => {
-      const matchesQuery = !normalized || `${row.id} ${row.name} ${row.status}`.toLowerCase().includes(normalized);
+      const matchesQuery = !normalized || `${row.id} ${row.name} ${row.status} ${row.tenant?.tenantId ?? ""} ${row.tenant?.displayName ?? ""}`.toLowerCase().includes(normalized);
       const matchesStatus = status === "all" || row.status === status;
       return matchesQuery && matchesStatus;
     });
@@ -106,22 +115,36 @@ export function AdminEntityTable({ rows, title = "Records", description = "Brows
         <div className="ia-table-scroll">
           <table className="ia-table" id={tableId}>
             <caption className="ia-sr-only">{title}. {filtered.length} visible {entityLabel}.</caption>
-            <thead><tr><th scope="col">Name</th><th scope="col">Identifier</th><th scope="col">Status</th><th scope="col">Version</th>{hasActions ? <th scope="col" className="ia-actions-heading">Actions</th> : null}</tr></thead>
+            <thead><tr><th scope="col">Name</th><th scope="col">Identifier</th>{hasTenantContext ? <th scope="col">Tenant</th> : null}<th scope="col">Status</th><th scope="col">Version</th>{hasActions ? <th scope="col" className="ia-actions-heading">Actions</th> : null}</tr></thead>
             <tbody>
-              {filtered.map((row) => (
-                <tr key={row.id}>
+              {filtered.map((row) => {
+                const selected = selectedId === row.id;
+                return (
+                <tr key={row.key ?? row.id} className={selected ? "ia-table-row-selected" : undefined}>
                   <td data-label="Name" className="ia-table-cell-name">
                     <div className="ia-entity-name">
                       <span className="ia-entity-avatar" aria-hidden="true">{row.name.trim().slice(0, 1).toUpperCase() || "•"}</span>
                       <strong>{row.name}</strong>
+                      {selected ? <span className="ia-selected-badge">Selected</span> : null}
                     </div>
                   </td>
                   <td data-label="Identifier"><code className="ia-id-chip" title={row.id}>{row.id}</code></td>
+                  {hasTenantContext ? (
+                    <td data-label="Tenant">
+                      {row.tenant ? (
+                        <div className="ia-table-tenant-context">
+                          <strong>{row.tenant.displayName ?? "Authorized tenant"}</strong>
+                          <code title={row.tenant.tenantId}>{row.tenant.tenantId}</code>
+                        </div>
+                      ) : <span className="ia-muted">—</span>}
+                    </td>
+                  ) : null}
                   <td data-label="Status"><span className={`ia-status ${row.status === "Active" ? "ia-status-active" : row.status === "Inactive" || row.status === "Revoked" ? "ia-status-inactive" : "ia-status-neutral"}`}><span className="ia-status-dot" aria-hidden="true" />{row.status}</span></td>
                   <td data-label="Version"><span className="ia-version-chip">v{row.version ?? "—"}</span></td>
                   {hasActions ? <td data-label="Actions" className="ia-table-cell-actions"><div className="ia-row-actions">{row.actions}</div></td> : null}
                 </tr>
-              ))}
+                );
+              })}
             </tbody>
           </table>
         </div>

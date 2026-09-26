@@ -12,6 +12,11 @@ namespace IdentityAccess.Application.Storage
             IdentityScopeAdministrationGroupReference group,
             CancellationToken cancellationToken);
 
+        /// <summary>Lists groups for the identity scope and application in a bounded deterministic window.</summary>
+        Task<IReadOnlyList<VersionedRecord<IdentityScopeAdministrationGroup>>> ListAsync(
+            ResolvedDatabaseRoute route, Guid identityScopeId, ApplicationKey application, string? search, int offset, int limit,
+            CancellationToken cancellationToken);
+
         /// <summary>Creates a group.</summary>
         Task<VersionedRecord<IdentityScopeAdministrationGroup>> CreateAsync(
             ResolvedDatabaseRoute route,

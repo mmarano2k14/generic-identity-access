@@ -1,5 +1,4 @@
 import "server-only";
-import { IdentityAccessClientError } from "@identity-access/client";
 import { IdentityAccessAdminRequest } from "./IdentityAccessAdminRequest";
 
 /**
@@ -28,21 +27,15 @@ export class IdentityAccessAdminMutationService {
   }
 
   public async createTenantMembership(formData: FormData): Promise<void> {
-    await this.#request.client.administration.memberships.create(this.#request.tenantContext(), {
+    const tenantId = IdentityAccessAdminMutationService.requiredText(formData, "tenantId", 64);
+    await this.#request.client.administration.memberships.create(this.#request.tenantContextFor(tenantId), {
       userId: IdentityAccessAdminMutationService.requiredText(formData, "userId", 64),
       status: IdentityAccessAdminMutationService.lifecycleStatus(formData, "status"),
     });
   }
 
   public async createGroup(formData: FormData): Promise<void> {
-    await this.#request.client.administration.groups.create(this.#request.tenantContext(), {
-      displayName: IdentityAccessAdminMutationService.requiredText(formData, "displayName", 200),
-      status: IdentityAccessAdminMutationService.lifecycleStatus(formData, "status"),
-    });
-  }
-
-  public async createPolicy(formData: FormData): Promise<void> {
-    await this.#request.client.administration.policies.create(this.#request.tenantContext(), {
+    await this.#request.client.administration.groups.create(this.#tenantContext(formData), {
       displayName: IdentityAccessAdminMutationService.requiredText(formData, "displayName", 200),
       status: IdentityAccessAdminMutationService.lifecycleStatus(formData, "status"),
     });
@@ -50,7 +43,7 @@ export class IdentityAccessAdminMutationService {
 
   public async createResourceScope(formData: FormData): Promise<void> {
     const parentResourceScopeId = IdentityAccessAdminMutationService.optionalText(formData, "parentResourceScopeId", 64);
-    await this.#request.client.administration.resourceScopes.create(this.#request.tenantContext(), {
+    await this.#request.client.administration.resourceScopes.create(this.#tenantContext(formData), {
       modelVersion: IdentityAccessAdminMutationService.positiveInteger(formData, "modelVersion"),
       scopeType: IdentityAccessAdminMutationService.requiredText(formData, "scopeType", 128),
       externalResourceId: IdentityAccessAdminMutationService.requiredText(formData, "externalResourceId", 256),
@@ -99,8 +92,9 @@ export class IdentityAccessAdminMutationService {
   }
 
   public async updateTenantMembership(formData: FormData): Promise<void> {
+    const tenantId = IdentityAccessAdminMutationService.requiredText(formData, "tenantId", 64);
     await this.#request.client.administration.memberships.update(
-      this.#request.tenantContext(),
+      this.#request.tenantContextFor(tenantId),
       IdentityAccessAdminMutationService.requiredText(formData, "membershipId", 64),
       {
         status: IdentityAccessAdminMutationService.lifecycleStatus(formData, "status"),
@@ -111,7 +105,7 @@ export class IdentityAccessAdminMutationService {
 
   public async updateGroup(formData: FormData): Promise<void> {
     await this.#request.client.administration.groups.update(
-      this.#request.tenantContext(),
+      this.#tenantContext(formData),
       IdentityAccessAdminMutationService.requiredText(formData, "groupId", 64),
       {
         displayName: IdentityAccessAdminMutationService.requiredText(formData, "displayName", 200),
@@ -123,7 +117,7 @@ export class IdentityAccessAdminMutationService {
 
   public async addGroupMember(formData: FormData): Promise<void> {
     await this.#request.client.administration.groups.addMember(
-      this.#request.tenantContext(),
+      this.#tenantContext(formData),
       IdentityAccessAdminMutationService.requiredText(formData, "groupId", 64),
       IdentityAccessAdminMutationService.requiredText(formData, "tenantMembershipId", 64),
     );
@@ -132,66 +126,33 @@ export class IdentityAccessAdminMutationService {
   public async removeGroupMember(formData: FormData): Promise<void> {
     IdentityAccessAdminMutationService.requireLiteralConfirmation(formData, "REMOVE");
     await this.#request.client.administration.groups.removeMember(
-      this.#request.tenantContext(),
+      this.#tenantContext(formData),
       IdentityAccessAdminMutationService.requiredText(formData, "groupId", 64),
       IdentityAccessAdminMutationService.requiredText(formData, "tenantMembershipId", 64),
     );
   }
 
-  public async updatePolicy(formData: FormData): Promise<void> {
-    await this.#request.client.administration.policies.update(
-      this.#request.tenantContext(),
-      IdentityAccessAdminMutationService.requiredText(formData, "policyId", 64),
-      {
-        displayName: IdentityAccessAdminMutationService.requiredText(formData, "displayName", 200),
-        status: IdentityAccessAdminMutationService.lifecycleStatus(formData, "status"),
-        expectedVersion: IdentityAccessAdminMutationService.positiveInteger(formData, "expectedVersion"),
-      },
-    );
-  }
-
-  public async addPolicyStatement(formData: FormData): Promise<void> {
-    await this.#request.client.administration.policies.addStatement(
-      this.#request.tenantContext(),
-      IdentityAccessAdminMutationService.requiredText(formData, "policyId", 64),
-      {
-        modelVersion: IdentityAccessAdminMutationService.positiveInteger(formData, "modelVersion"),
-        resource: IdentityAccessAdminMutationService.requiredText(formData, "resource", 128),
-        feature: IdentityAccessAdminMutationService.requiredText(formData, "feature", 128),
-        action: IdentityAccessAdminMutationService.requiredText(formData, "action", 128),
-      },
-    );
-  }
-
-  public async removePolicyStatement(formData: FormData): Promise<void> {
-    IdentityAccessAdminMutationService.requireLiteralConfirmation(formData, "REMOVE");
-    await this.#request.client.administration.policies.removeStatement(
-      this.#request.tenantContext(),
-      IdentityAccessAdminMutationService.requiredText(formData, "policyId", 64),
-      IdentityAccessAdminMutationService.requiredText(formData, "statementId", 64),
-    );
-  }
-
-  public async addGroupPolicyBinding(formData: FormData): Promise<void> {
+  public async addManagedGroupPolicyBinding(formData: FormData): Promise<void> {
     const resourceScopeId = IdentityAccessAdminMutationService.optionalText(formData, "resourceScopeId", 64);
-    await this.#request.client.administration.policies.addBinding(
-      this.#request.tenantContext(),
+    await this.#request.client.administration.managedPolicyBindings.add(
+      this.#tenantContext(formData),
       IdentityAccessAdminMutationService.requiredText(formData, "groupId", 64),
       {
-        policyId: IdentityAccessAdminMutationService.requiredText(formData, "policyId", 64),
+        policyId: IdentityAccessAdminMutationService.requiredText(formData, "managedPolicyId", 64),
         ...(resourceScopeId === undefined ? {} : { resourceScopeId }),
         includeDescendants: IdentityAccessAdminMutationService.checkbox(formData, "includeDescendants"),
       },
     );
   }
 
-  public async removeGroupPolicyBinding(formData: FormData): Promise<void> {
+  public async removeManagedGroupPolicyBinding(formData: FormData): Promise<void> {
     IdentityAccessAdminMutationService.requireLiteralConfirmation(formData, "REMOVE");
     const resourceScopeId = IdentityAccessAdminMutationService.optionalText(formData, "resourceScopeId", 64);
-    await this.#request.client.administration.policies.removeBinding(
-      this.#request.tenantContext(),
+    await this.#request.client.administration.managedPolicyBindings.remove(
+      this.#tenantContext(formData),
       IdentityAccessAdminMutationService.requiredText(formData, "groupId", 64),
-      IdentityAccessAdminMutationService.requiredText(formData, "policyId", 64),
+      IdentityAccessAdminMutationService.requiredText(formData, "managedPolicyId", 64),
+      IdentityAccessAdminMutationService.positiveInteger(formData, "policyVersion"),
       resourceScopeId,
     );
   }
@@ -199,7 +160,7 @@ export class IdentityAccessAdminMutationService {
   public async updateResourceScope(formData: FormData): Promise<void> {
     const parentResourceScopeId = IdentityAccessAdminMutationService.optionalText(formData, "parentResourceScopeId", 64);
     await this.#request.client.administration.resourceScopes.update(
-      this.#request.tenantContext(),
+      this.#tenantContext(formData),
       IdentityAccessAdminMutationService.requiredText(formData, "resourceScopeId", 64),
       {
         modelVersion: IdentityAccessAdminMutationService.positiveInteger(formData, "modelVersion"),
@@ -328,36 +289,9 @@ export class IdentityAccessAdminMutationService {
     );
   }
 
-  public async revokeUserSessions(formData: FormData): Promise<number> {
-    IdentityAccessAdminMutationService.requireConfirmation(formData);
-    const result = await this.#request.client.administration.sessions.revokeUser(
-      this.#request.administrationContext,
-      IdentityAccessAdminMutationService.requiredText(formData, "userId", 64),
-    );
-    return result.revokedCount;
-  }
-
-  public async revokeClientSessions(formData: FormData): Promise<number> {
-    IdentityAccessAdminMutationService.requireConfirmation(formData);
-    const result = await this.#request.client.administration.sessions.revokeClient(
-      this.#request.administrationContext,
-      IdentityAccessAdminMutationService.requiredText(formData, "clientId", 128),
-    );
-    return result.revokedCount;
-  }
-
-  public static publicErrorMessage(error: unknown): string {
-    if (error instanceof IdentityAccessClientError) {
-      switch (error.code) {
-        case "unauthenticated": return "Authentication is required. Sign in again and retry.";
-        case "forbidden": return "The current administrator is not allowed to perform this operation.";
-        case "unavailable": return "Identity Access is temporarily unavailable. No change was confirmed.";
-        case "protocol": return "The requested identity operation was rejected.";
-        default: return "The identity operation could not be completed.";
-      }
-    }
-    if (error instanceof Error && error.message.startsWith("Invalid administration input:")) return error.message;
-    return "The identity operation could not be completed.";
+  #tenantContext(formData: FormData) {
+    const tenantId = IdentityAccessAdminMutationService.requiredText(formData, "tenantId", 64);
+    return this.#request.tenantContextFor(tenantId);
   }
 
   private static requiredText(formData: FormData, field: string, maxLength: number): string {
@@ -422,7 +356,4 @@ export class IdentityAccessAdminMutationService {
     }
   }
 
-  private static requireConfirmation(formData: FormData): void {
-    IdentityAccessAdminMutationService.requireLiteralConfirmation(formData, "REVOKE");
-  }
 }

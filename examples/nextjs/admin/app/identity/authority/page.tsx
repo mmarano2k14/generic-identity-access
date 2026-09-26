@@ -1,4 +1,5 @@
 import { AdminDetailCard } from "../../../components/AdminDetailCard";
+import { AdminEntityAutocomplete } from "../../../components/AdminEntityAutocomplete";
 import { AdminField, AdminStatusField } from "../../../components/AdminField";
 import { AdminMutationDialog } from "../../../components/AdminMutationDialog";
 import { AdminPageHeader } from "../../../components/AdminPageHeader";
@@ -30,6 +31,12 @@ export default async function AuthorityPage({ searchParams }: { readonly searchP
     policy ? request.client.administration.scopeAuthority.listPolicyStatements(context, policy.policyId) : Promise.resolve([]),
     group ? request.client.administration.scopeAuthority.listPolicyBindings(context, group.groupId) : Promise.resolve([]),
   ]);
+  const [memberUsers, boundPolicies] = await Promise.all([
+    Promise.all(members.map((member) => request.client.administration.users.get(context, member.userId))),
+    Promise.all(bindings.map((binding) => request.client.administration.scopeAuthority.getPolicy(context, binding.policyId))),
+  ]);
+  const usersById = new Map(memberUsers.filter((user) => user !== null).map((user) => [user.userId, user]));
+  const policiesById = new Map(boundPolicies.filter((item) => item !== null).map((item) => [item.policyId, item]));
 
   const actions = (
     <div className="ia-action-row">
@@ -63,8 +70,8 @@ export default async function AuthorityPage({ searchParams }: { readonly searchP
       <section className="ia-card ia-lookup-card">
         <div className="ia-card-heading"><div><p className="ia-card-kicker">Authority lookup</p><h2>Inspect global administration objects</h2><p>Load a scope authority group, policy, or both by their stable identifiers.</p></div></div>
         <form className="ia-lookup-grid" method="get">
-          <AdminField label="Group ID" name="groupId" defaultValue={groupId ?? ""} />
-          <AdminField label="Policy ID" name="policyId" defaultValue={policyId ?? ""} />
+          <AdminEntityAutocomplete label="Authority group" name="groupId" kind="authority-group" defaultValue={groupId ?? ""} emptyLabel="No group selected" hint="Type at least 3 characters of the group display name, or enter the full ID." />
+          <AdminEntityAutocomplete label="Authority policy" name="policyId" kind="authority-policy" defaultValue={policyId ?? ""} emptyLabel="No policy selected" hint="Type at least 3 characters of the policy display name, or enter the full ID." />
           <button className="ia-button ia-button-secondary" type="submit">Lookup authority</button>
         </form>
       </section>
@@ -105,14 +112,14 @@ export default async function AuthorityPage({ searchParams }: { readonly searchP
                   <div><p className="ia-card-kicker">Members</p><h2>Authority group members</h2><p>Identity-scope users attached directly to this administration group.</p></div>
                   <AdminMutationDialog title="Add authority member" description="Attach an identity-scope user to this authority group." triggerLabel="Add member" submitLabel="Add member" action={addScopeAuthorityMemberAction} compact>
                     <input type="hidden" name="groupId" value={group.groupId} />
-                    <AdminField label="User ID" name="userId" required />
+                    <AdminEntityAutocomplete label="User" name="userId" kind="user" required hint="Type at least 3 characters of the user display name, or enter the full ID." />
                   </AdminMutationDialog>
                 </div>
                 {members.length === 0 ? <p className="ia-empty-inline">No authority members are assigned.</p> : (
                   <div className="ia-manage-list">
                     {members.map((member) => (
                       <div className="ia-manage-row" key={member.userId}>
-                        <div><strong>{member.userId}</strong><span>Identity-scope user</span></div>
+                        <div><strong>{usersById.get(member.userId)?.displayName ?? member.userId}</strong><span>{member.userId}</span></div>
                         <AdminMutationDialog title="Remove authority member" description="Remove this user from the authority group. Type REMOVE to confirm." triggerLabel="Remove" submitLabel="Remove member" action={removeScopeAuthorityMemberAction} dangerous compact>
                           <input type="hidden" name="groupId" value={group.groupId} />
                           <input type="hidden" name="userId" value={member.userId} />
@@ -160,14 +167,14 @@ export default async function AuthorityPage({ searchParams }: { readonly searchP
                   <div><p className="ia-card-kicker">Bindings</p><h2>Authority policy bindings</h2><p>Policies granted directly to the selected authority group.</p></div>
                   <AdminMutationDialog title="Add authority policy binding" description="Attach an existing identity-scope authority policy to this group." triggerLabel="Add binding" submitLabel="Add binding" action={addScopeAuthorityPolicyBindingAction} compact>
                     <input type="hidden" name="groupId" value={group.groupId} />
-                    <AdminField label="Policy ID" name="policyId" required defaultValue={policy?.policyId ?? ""} />
+                    <AdminEntityAutocomplete label="Authority policy" name="policyId" kind="authority-policy" defaultValue={policy?.policyId ?? ""} required hint="Type at least 3 characters of the policy display name, or enter the full ID." />
                   </AdminMutationDialog>
                 </div>
                 {bindings.length === 0 ? <p className="ia-empty-inline">No policies are bound to this authority group.</p> : (
                   <div className="ia-manage-list">
                     {bindings.map((binding) => (
                       <div className="ia-manage-row" key={binding.policyId}>
-                        <div><strong>{binding.policyId}</strong><span>Authority policy binding</span></div>
+                        <div><strong>{policiesById.get(binding.policyId)?.displayName ?? binding.policyId}</strong><span>{binding.policyId}</span></div>
                         <AdminMutationDialog title="Remove authority policy binding" description="Remove this policy grant from the authority group. Type REMOVE to confirm." triggerLabel="Remove" submitLabel="Remove binding" action={removeScopeAuthorityPolicyBindingAction} dangerous compact>
                           <input type="hidden" name="groupId" value={group.groupId} />
                           <input type="hidden" name="policyId" value={binding.policyId} />

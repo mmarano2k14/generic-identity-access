@@ -25,6 +25,19 @@ namespace IdentityAccess.Application.Administration
         }
 
         /// <inheritdoc />
+        public async Task<IReadOnlyList<VersionedRecord<IdentityScopeAdministrationGroup>>> ListGroupsAsync(
+            Guid identityScopeId, ApplicationKey application, string? search, int offset, int limit,
+            CancellationToken cancellationToken)
+        {
+            AdministrationPaging.EnsureValid(offset, limit);
+            var normalizedSearch = AdministrationSearch.Normalize(search);
+            var boundedLimit = AdministrationSearch.Limit(normalizedSearch, limit);
+            var route = await ResolveAsync(identityScopeId, application, cancellationToken);
+            return await groups.ListAsync(route, identityScopeId, application, normalizedSearch, offset,
+                boundedLimit, cancellationToken);
+        }
+
+        /// <inheritdoc />
         public async Task<VersionedRecord<IdentityScopeAdministrationGroup>> CreateGroupAsync(
             Guid identityScopeId, ApplicationKey application, Guid groupId, string displayName,
             GroupStatus status, CancellationToken cancellationToken)
@@ -107,6 +120,19 @@ namespace IdentityAccess.Application.Administration
         {
             var route = await ResolveAsync(identityScopeId, application, cancellationToken);
             return await policies.GetAsync(route, Policy(identityScopeId, application, policyId), cancellationToken);
+        }
+
+        /// <inheritdoc />
+        public async Task<IReadOnlyList<VersionedRecord<IdentityScopeAdministrationPolicy>>> ListPoliciesAsync(
+            Guid identityScopeId, ApplicationKey application, string? search, int offset, int limit,
+            CancellationToken cancellationToken)
+        {
+            AdministrationPaging.EnsureValid(offset, limit);
+            var normalizedSearch = AdministrationSearch.Normalize(search);
+            var boundedLimit = AdministrationSearch.Limit(normalizedSearch, limit);
+            var route = await ResolveAsync(identityScopeId, application, cancellationToken);
+            return await policies.ListAsync(route, identityScopeId, application, normalizedSearch, offset,
+                boundedLimit, cancellationToken);
         }
 
         /// <inheritdoc />

@@ -43,6 +43,48 @@ namespace IdentityAccess.Infrastructure.PostgreSql.Directory
         }
 
         /// <inheritdoc />
+        public async Task<IReadOnlyList<VersionedRecord<IdentityScopeAdministrationPolicy>>> ListAsync(
+            ResolvedDatabaseRoute route, Guid identityScopeId, ApplicationKey application, string? search, int offset, int limit,
+            CancellationToken cancellationToken)
+        {
+            PostgreSqlDirectoryGuard.EnsureScope(route, identityScopeId);
+            if (route.Request.Application != application)
+                throw new InvalidOperationException("Administration policy application does not match the route.");
+
+            await using var connection = (NpgsqlConnection)await connectionFactory
+                .OpenAsync(route, cancellationToken).ConfigureAwait(false);
+            await using var command = new NpgsqlCommand("""
+                SELECT policy_id, display_name, status, row_version
+                FROM identity_access.identity_scope_administration_policies
+                WHERE identity_scope_id = @scope
+                  AND application_key = @application_key
+                  AND (@search_pattern IS NULL
+                       OR lower(display_name) LIKE @search_pattern
+                       OR policy_id = @search_id)
+                ORDER BY policy_id
+                OFFSET @offset
+                LIMIT @limit;
+                """, connection);
+            command.Parameters.AddWithValue("scope", identityScopeId);
+            command.Parameters.AddWithValue("application_key", application.Value);
+            PostgreSqlAdministrationSearch.AddParameters(command, search);
+            command.Parameters.AddWithValue("offset", offset);
+            command.Parameters.AddWithValue("limit", limit);
+
+            await using var reader = await command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
+            var records = new List<VersionedRecord<IdentityScopeAdministrationPolicy>>();
+            while (await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
+            {
+                var reference = new IdentityScopeAdministrationPolicyReference(identityScopeId, application, reader.GetGuid(0));
+                records.Add(new VersionedRecord<IdentityScopeAdministrationPolicy>(
+                    new IdentityScopeAdministrationPolicy(reference, reader.GetString(1), (PolicyStatus)reader.GetInt16(2)),
+                    reader.GetInt64(3)));
+            }
+
+            return records;
+        }
+
+        /// <inheritdoc />
         public async Task<VersionedRecord<IdentityScopeAdministrationPolicy>> CreateAsync(
             ResolvedDatabaseRoute route,
             IdentityScopeAdministrationPolicy policy,

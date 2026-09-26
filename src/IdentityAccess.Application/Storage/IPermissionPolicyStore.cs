@@ -13,7 +13,7 @@ namespace IdentityAccess.Application.Storage
 
         /// <summary>Lists a bounded window of policies for one tenant and application.</summary>
         Task<IReadOnlyList<VersionedRecord<PermissionPolicy>>> ListAsync(ResolvedDatabaseRoute route,
-            TenantReference tenant, ApplicationKey application, int offset, int limit,
+            TenantReference tenant, ApplicationKey application, string? search, int offset, int limit,
             CancellationToken cancellationToken);
 
         /// <summary>Creates a permission policy record in the resolved database route.</summary>

@@ -18,10 +18,15 @@ namespace IdentityAccess.Api.Controllers
         [HttpGet]
         [RequireAdministrationCapability(IdentityAccessAdministrationCapabilities.Resource, IdentityAccessAdministrationCapabilities.ResourceScopes, IdentityAccessAdministrationCapabilities.Read)]
         public async Task<ActionResult<IReadOnlyList<ResourceScopeResponse>>> List(Guid identityScopeId, Guid tenantId,
-            string applicationKey, CancellationToken cancellationToken)
+            string applicationKey, [FromQuery] string? search, [FromQuery] int? offset, [FromQuery] int? limit,
+            CancellationToken cancellationToken)
         {
+            var resolvedOffset = offset ?? 0;
+            var resolvedLimit = limit ?? AdministrationPaging.DefaultLimit;
+            if (!AdministrationPaging.IsValid(resolvedOffset, resolvedLimit)) return BadRequest();
             if (!feature.TryGet(out var service)) return ApiProblems.ResourceScopeAdministrationUnavailable();
-            var rows = await service.ListAsync(identityScopeId, tenantId, new ApplicationKey(applicationKey), cancellationToken);
+            var rows = await service.ListAsync(identityScopeId, tenantId, new ApplicationKey(applicationKey),
+                search, resolvedOffset, resolvedLimit, cancellationToken);
             return Ok(rows.Select(ResourceScopeResponse.From).ToArray());
         }
 

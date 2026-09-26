@@ -28,6 +28,21 @@ namespace IdentityAccess.Tests.PostgreSql
         }
 
         [Fact]
+        public async Task Tenant_user_read_store_rejects_cross_scope_route_before_opening_connection()
+        {
+            var store = new PostgreSqlTenantUserReadStore(new MustNotOpenConnectionFactory());
+            await Assert.ThrowsAsync<InvalidOperationException>(() =>
+                store.ListAsync(
+                    Route(Guid.NewGuid()),
+                    new TenantReference(Guid.NewGuid(), Guid.NewGuid()),
+                    null,
+                    false,
+                    0,
+                    20,
+                    TestContext.Current.CancellationToken));
+        }
+
+        [Fact]
         public async Task Group_store_rejects_cross_scope_route_before_opening_connection()
         {
             var scope = Guid.NewGuid();

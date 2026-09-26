@@ -18,13 +18,13 @@ namespace IdentityAccess.Api.Controllers
         [HttpGet]
         [RequireAdministrationCapability(IdentityAccessAdministrationCapabilities.Resource, IdentityAccessAdministrationCapabilities.Users, IdentityAccessAdministrationCapabilities.Read)]
         public async Task<ActionResult<IReadOnlyList<UserRecordResponse>>> List(Guid identityScopeId,
-            string applicationKey, [FromQuery] int? offset, [FromQuery] int? limit, CancellationToken cancellationToken)
+            string applicationKey, [FromQuery] string? search, [FromQuery] int? offset, [FromQuery] int? limit, CancellationToken cancellationToken)
         {
             var resolvedOffset = offset ?? 0;
             var resolvedLimit = limit ?? AdministrationPaging.DefaultLimit;
             if (!AdministrationPaging.IsValid(resolvedOffset, resolvedLimit)) return BadRequest();
             if (!feature.TryGet(out var service)) return ApiProblems.DirectoryAdministrationUnavailable();
-            var records = await service.ListUsersAsync(identityScopeId, new ApplicationKey(applicationKey), resolvedOffset,
+            var records = await service.ListUsersAsync(identityScopeId, new ApplicationKey(applicationKey), search, resolvedOffset,
                 resolvedLimit, cancellationToken);
             return Ok(records.Select(UserRecordResponse.From).ToArray());
         }

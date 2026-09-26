@@ -22,6 +22,9 @@ namespace IdentityAccess.Api.Security
         AuthorizationTargetUnavailable = 5,
 
         /// <summary>The authorization orchestration or external RBAC boundary failed technically.</summary>
-        AuthorizationTechnicalFailure = 6
+        AuthorizationTechnicalFailure = 6,
+
+        /// <summary>The authenticated subject is not associated with the requested tenant boundary.</summary>
+        TenantContextOutsideVisibility = 7
     }
 }

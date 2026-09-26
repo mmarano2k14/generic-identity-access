@@ -33,7 +33,7 @@ namespace IdentityAccess.Infrastructure.PostgreSql.Directory
 
         /// <summary>Lists a bounded window of tenant records in the resolved database route.</summary>
         public async Task<IReadOnlyList<VersionedRecord<Tenant>>> ListAsync(ResolvedDatabaseRoute route,
-            Guid identityScopeId, int offset, int limit, CancellationToken cancellationToken)
+            Guid identityScopeId, string? search, int offset, int limit, CancellationToken cancellationToken)
         {
             PostgreSqlDirectoryGuard.EnsureScope(route, identityScopeId);
             await using var connection = (NpgsqlConnection)await connectionFactory.OpenAsync(route, cancellationToken)
@@ -42,10 +42,14 @@ namespace IdentityAccess.Infrastructure.PostgreSql.Directory
                 SELECT tenant_id, display_name, status, row_version
                 FROM identity_access.tenants
                 WHERE identity_scope_id = @scope
+                  AND (@search_pattern IS NULL
+                       OR lower(display_name) LIKE @search_pattern
+                       OR tenant_id = @search_id)
                 ORDER BY tenant_id
                 LIMIT @limit OFFSET @offset;
                 """, connection);
             command.Parameters.AddWithValue("scope", identityScopeId);
+            PostgreSqlAdministrationSearch.AddParameters(command, search);
             command.Parameters.AddWithValue("limit", limit);
             command.Parameters.AddWithValue("offset", offset);
             var records = new List<VersionedRecord<Tenant>>();

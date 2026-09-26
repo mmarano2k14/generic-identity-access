@@ -55,11 +55,14 @@ namespace IdentityAccess.Application.Administration
 
         /// <summary>Lists resource scopes for the requested tenant and application.</summary>
         public async Task<IReadOnlyList<VersionedRecord<ResourceScope>>> ListAsync(Guid identityScopeId, Guid tenantId,
-            ApplicationKey application, CancellationToken cancellationToken)
+            ApplicationKey application, string? search, int offset, int limit, CancellationToken cancellationToken)
         {
+            AdministrationPaging.EnsureValid(offset, limit);
+            var normalizedSearch = AdministrationSearch.Normalize(search);
+            var boundedLimit = AdministrationSearch.Limit(normalizedSearch, limit);
             var route = await ResolveAsync(identityScopeId, application, cancellationToken);
             return await resourceScopes.ListAsync(route, new TenantReference(identityScopeId, tenantId), application,
-                cancellationToken);
+                normalizedSearch, offset, boundedLimit, cancellationToken);
         }
 
         /// <summary>Creates a resource scope.</summary>
