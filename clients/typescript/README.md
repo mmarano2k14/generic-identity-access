@@ -1,3 +1,7 @@
+Version 0.24.0 unifies reusable group-template operations under `administration.groups`. `IdentityGroupRecord` now exposes `isTemplate`; `groups.listTemplates()` lists reusable real groups, `groups.createFromTemplate()` creates a normal target-tenant group from one reusable group, and `groups.updateReusable()` is the identity-scope mutation path. The separate `administration.groupTemplates` client and origin/template provenance contracts are retired.
+
+Version 0.23.0 added `administration.membershipCandidates` for exact-login tenant membership resolution and `administration.tenantGroupAssignments` for tenant-scoped aggregate group assignment reads. These focused clients support safe Add member and member-group administration without exposing a global user directory to tenant-scoped administrators.
+
 # Identity & Access TypeScript Client
 
 Version 0.21.0 closes the public legacy tenant-policy compatibility surface. `administration.managedPolicies` remains the identity-scope/application catalog administration surface, `administration.managedPolicyBindings` remains tenant-scoped for grants of published shared policy versions, and `administration.policies` is no longer composed by the public client. `scopeAuthority` remains a separate identity-scope administration model. The root client remains a lightweight facade; transport, system diagnostics, local authentication, OIDC/PKCE, authorization, and each administration domain live in focused classes under `src/client/`.
@@ -35,6 +39,9 @@ IdentityAccessClient
         │   └── IdentityAccessTenantUsersClient
         ├── groups
         │   └── IdentityAccessGroupsClient
+        │       ├── list / get / create / update
+        │       ├── listTemplates / createFromTemplate
+        │       └── updateReusable
         ├── managedPolicies
         │   └── IdentityAccessManagedPoliciesClient
         ├── managedPolicyBindings
@@ -314,7 +321,7 @@ CSS Modules, component-local style files, `<style>` blocks, and React inline sty
 ```sh
 npm test
 npm run typecheck
-npm pack
+npm run smoke
 ```
 
 The repository-level `scripts/verify.ps1` also verifies the class-composed source layout, the runnable Next.js host, the single-CSS invariant, and the .NET suite.

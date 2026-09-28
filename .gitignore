@@ -13,3 +13,6 @@ artifacts/
 *.suo
 *.tgz
 secrets/
+
+# Local PostgreSQL password files
+**/.pgpass.local

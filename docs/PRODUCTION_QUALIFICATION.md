@@ -14,6 +14,7 @@ The qualification surface covers:
 - migration checksum integrity;
 - backup and restore through a disposable PostgreSQL database;
 - restored-schema structural validation;
+- group-as-template migration/schema validation;
 - operational key/secret handling and restart boundaries.
 
 The generic MFA provider foundation, concrete TOTP/recovery/WebAuthn providers, 0.48 provider-policy/administration hardening, and 0.49 local-session assurance/OIDC integration are included in repository qualification gates. Provider-specific and session-assurance live PostgreSQL scripts remain separate dedicated gates and are not yet invoked by this consolidated production-qualification command. End-to-end browser interaction policy for arbitrary non-OIDC sensitive operations remains a consuming-application concern rather than a repository-wide declarative step-up feature.
@@ -53,7 +54,7 @@ external RBAC compatibility
 migration integrity
         |
         v
-PostgreSQL isolation / concurrency / persistence gates
+PostgreSQL isolation / concurrency / persistence / group-as-template gates
         |
         v
 authentication / session / audit / authority gates
@@ -98,6 +99,27 @@ A backup that has never been restored is not treated as proof of recoverability.
 The source database is read by `pg_dump`; the scratch database is disposable. Qualification
 should still be executed against a controlled non-production source so the test environment and
 backup contents are known and repeatable.
+
+## Complete administration qualification
+
+Production qualification does not by itself prove the browser administration workflows. For complete administration qualification, use:
+
+```powershell
+.\scripts\verify-administration-qualification.ps1 `
+  -RbacReferenceDirectory "<multiplexed-rbac-release-directory>" `
+  -Configuration Release
+```
+
+The wrapper runs production qualification first, then pauses before real-browser evidence. Keep these processes running in separate terminals before continuing:
+
+```text
+Identity & Access API   http://127.0.0.1:5080
+Next.js Admin           http://127.0.0.1:3000
+```
+
+Use `127.0.0.1` consistently with the registered OIDC callback. The browser gate validates OIDC login, tenant/member administration, one-table `Template Yes/No` groups, `Create from template`, managed-policy binding behavior, membership non-copying, tenant isolation, Sessions, MFA, and logout.
+
+A run with `-SkipBrowserQualification` is partial.
 
 ## Partial qualification
 

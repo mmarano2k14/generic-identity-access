@@ -28,9 +28,27 @@ export class IdentityAccessAdminMutationService {
 
   public async createTenantMembership(formData: FormData): Promise<void> {
     const tenantId = IdentityAccessAdminMutationService.requiredText(formData, "tenantId", 64);
-    await this.#request.client.administration.memberships.create(this.#request.tenantContextFor(tenantId), {
-      userId: IdentityAccessAdminMutationService.requiredText(formData, "userId", 64),
-      status: IdentityAccessAdminMutationService.lifecycleStatus(formData, "status"),
+    const context = this.#request.tenantContextFor(tenantId);
+    const userId = IdentityAccessAdminMutationService.requiredText(formData, "userId", 64);
+
+    const status = IdentityAccessAdminMutationService.lifecycleStatus(formData, "status");
+    if (this.#request.effectiveContext.tenantVisibility !== "scope-wide") {
+      const loginIdentifier = IdentityAccessAdminMutationService.requiredText(formData, "loginIdentifier", 320);
+      const candidate = await this.#request.client.administration.membershipCandidates.findByLogin(context, loginIdentifier);
+      if (candidate === null || candidate.userId !== userId || candidate.userStatus !== 1 || candidate.existingMembershipId !== undefined) {
+        throw new Error("The exact login is not eligible for a new membership in this tenant.");
+      }
+      await this.#request.client.administration.membershipCandidates.createMembershipByLogin(
+        context,
+        loginIdentifier,
+        status,
+      );
+      return;
+    }
+
+    await this.#request.client.administration.memberships.create(context, {
+      userId,
+      status,
     });
   }
 
@@ -39,6 +57,19 @@ export class IdentityAccessAdminMutationService {
       displayName: IdentityAccessAdminMutationService.requiredText(formData, "displayName", 200),
       status: IdentityAccessAdminMutationService.lifecycleStatus(formData, "status"),
     });
+  }
+
+  public async createGroupFromTemplate(formData: FormData): Promise<void> {
+    const source = IdentityAccessAdminMutationService.requiredText(formData, "sourceGroup", 160);
+    const separator = source.indexOf(":");
+    if (separator <= 0) throw new Error("Invalid reusable group selection.");
+    await this.#request.client.administration.groups.createFromTemplate(
+      this.#tenantContext(formData),
+      {
+        sourceTenantId: source.slice(0, separator),
+        sourceGroupId: source.slice(separator + 1),
+      },
+    );
   }
 
   public async createResourceScope(formData: FormData): Promise<void> {
@@ -115,6 +146,20 @@ export class IdentityAccessAdminMutationService {
     );
   }
 
+  public async updateReusableGroup(formData: FormData): Promise<void> {
+    await this.#request.client.administration.groups.updateReusable(
+      this.#request.administrationContext,
+      IdentityAccessAdminMutationService.requiredText(formData, "tenantId", 64),
+      IdentityAccessAdminMutationService.requiredText(formData, "groupId", 64),
+      {
+        displayName: IdentityAccessAdminMutationService.requiredText(formData, "displayName", 200),
+        status: IdentityAccessAdminMutationService.lifecycleStatus(formData, "status"),
+        isTemplate: IdentityAccessAdminMutationService.checkbox(formData, "isTemplate"),
+        expectedVersion: IdentityAccessAdminMutationService.positiveInteger(formData, "expectedVersion"),
+      },
+    );
+  }
+
   public async addGroupMember(formData: FormData): Promise<void> {
     await this.#request.client.administration.groups.addMember(
       this.#tenantContext(formData),
@@ -130,6 +175,38 @@ export class IdentityAccessAdminMutationService {
       IdentityAccessAdminMutationService.requiredText(formData, "groupId", 64),
       IdentityAccessAdminMutationService.requiredText(formData, "tenantMembershipId", 64),
     );
+  }
+
+  public async replaceTenantMemberGroups(formData: FormData): Promise<void> {
+    const context = this.#tenantContext(formData);
+    const tenantMembershipId = IdentityAccessAdminMutationService.requiredText(formData, "tenantMembershipId", 64);
+    const selections = IdentityAccessAdminMutationService.textList(formData, "groupSelection", 160);
+
+    const [groups, assignments] = await Promise.all([
+      this.#request.client.administration.groups.list(context, { limit: 100 }),
+      this.#request.client.administration.tenantGroupAssignments.list(context),
+    ]);
+
+    const groupsById = new Map(groups.map((group) => [group.groupId, group]));
+    const desiredGroupIds = new Set<string>();
+    for (const selection of selections) {
+      const separator = selection.indexOf(":");
+      if (separator <= 0 || selection.slice(0, separator) !== "group") throw new Error("Invalid group selection.");
+      const group = groupsById.get(selection.slice(separator + 1));
+      if (!group || group.status !== 1) throw new Error("Selected tenant group is unavailable.");
+      desiredGroupIds.add(group.groupId);
+    }
+
+    const currentGroupIds = new Set(assignments
+      .filter((assignment) => assignment.tenantMembershipId === tenantMembershipId)
+      .map((assignment) => assignment.groupId));
+
+    for (const groupId of currentGroupIds) {
+      if (!desiredGroupIds.has(groupId)) await this.#request.client.administration.groups.removeMember(context, groupId, tenantMembershipId);
+    }
+    for (const groupId of desiredGroupIds) {
+      if (!currentGroupIds.has(groupId)) await this.#request.client.administration.groups.addMember(context, groupId, tenantMembershipId);
+    }
   }
 
   public async addManagedGroupPolicyBinding(formData: FormData): Promise<void> {

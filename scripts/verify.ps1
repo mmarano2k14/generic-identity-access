@@ -38,6 +38,18 @@ try {
     & (Join-Path $root "scripts/verify-multitenant-administration-context-source-consistency.ps1")
     if (-not $?) { throw "Multi-tenant administration context source consistency validation failed." }
 
+    & (Join-Path $root "scripts/verify-tenant-membership-ui-source-consistency.ps1")
+    if (-not $?) { throw "Tenant-centric membership UI source consistency validation failed." }
+
+    & (Join-Path $root "scripts/verify-group-as-template-source-consistency.ps1")
+    if (-not $?) { throw "Group-as-template source consistency validation failed." }
+
+    & (Join-Path $root "scripts/verify-member-group-assignment-source-consistency.ps1")
+    if (-not $?) { throw "Member group assignment and safe Add member source consistency validation failed." }
+
+    & (Join-Path $root "scripts/verify-r4-final-source-consistency.ps1")
+    if (-not $?) { throw "R4 final administration source consistency validation failed." }
+
     & (Join-Path $root "scripts/verify-oidc-source-consistency.ps1")
     if (-not $?) { throw "OIDC source consistency validation failed." }
 

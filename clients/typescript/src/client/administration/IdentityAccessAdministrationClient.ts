@@ -2,6 +2,8 @@ import { IdentityAccessHttpTransport } from "../IdentityAccessHttpTransport.js";
 import { IdentityAccessAdministrationTransport } from "./IdentityAccessAdministrationTransport.js";
 import { IdentityAccessAdministrationContextClient } from "./IdentityAccessAdministrationContextClient.js";
 import { IdentityAccessGroupsClient } from "./IdentityAccessGroupsClient.js";
+import { IdentityAccessMembershipCandidatesClient } from "./IdentityAccessMembershipCandidatesClient.js";
+import { IdentityAccessTenantGroupAssignmentsClient } from "./IdentityAccessTenantGroupAssignmentsClient.js";
 import { IdentityAccessMembershipsClient } from "./IdentityAccessMembershipsClient.js";
 import { IdentityAccessManagedPoliciesClient } from "./IdentityAccessManagedPoliciesClient.js";
 import { IdentityAccessManagedPolicyBindingsClient } from "./IdentityAccessManagedPolicyBindingsClient.js";
@@ -21,6 +23,8 @@ export class IdentityAccessAdministrationClient {
   public readonly users: IdentityAccessUsersClient;
   public readonly tenants: IdentityAccessTenantsClient;
   public readonly memberships: IdentityAccessMembershipsClient;
+  public readonly membershipCandidates: IdentityAccessMembershipCandidatesClient;
+  public readonly tenantGroupAssignments: IdentityAccessTenantGroupAssignmentsClient;
   public readonly tenantUsers: IdentityAccessTenantUsersClient;
   public readonly mfa: IdentityAccessMfaClient;
   public readonly managedPolicies: IdentityAccessManagedPoliciesClient;
@@ -38,6 +42,8 @@ export class IdentityAccessAdministrationClient {
     this.users = new IdentityAccessUsersClient(admin);
     this.tenants = new IdentityAccessTenantsClient(admin);
     this.memberships = new IdentityAccessMembershipsClient(admin);
+    this.membershipCandidates = new IdentityAccessMembershipCandidatesClient(admin);
+    this.tenantGroupAssignments = new IdentityAccessTenantGroupAssignmentsClient(admin);
     this.tenantUsers = new IdentityAccessTenantUsersClient(admin);
     this.mfa = new IdentityAccessMfaClient(admin);
     this.managedPolicies = new IdentityAccessManagedPoliciesClient(admin);

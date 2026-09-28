@@ -16,10 +16,13 @@ import type {
   IdentityPolicyRecord,
   IdentityPolicyStatementRecord,
   IdentityResourceScopeRecord,
+  IdentityScopeAuthorityGroupRecord,
   IdentityScopeAuthorityMemberRecord,
   IdentityScopeAuthorityPolicyBindingRecord,
   IdentityScopeTypeRecord,
   IdentitySessionRevocationResult,
+  IdentityTenantMembershipCandidateRecord,
+  IdentityTenantGroupAssignmentRecord,
   IdentityTenantMembershipRecord,
   IdentityTenantRecord,
   IdentityTenantUserRecord,
@@ -101,6 +104,18 @@ export class IdentityAccessAdministrationCodec {
   public static groupRecord(value: unknown): IdentityGroupRecord {
     const data = IdentityAccessValueCodec.object(value);
     return {
+      tenantId: IdentityAccessValueCodec.uuid(IdentityAccessValueCodec.text(data.tenantId)),
+      groupId: IdentityAccessValueCodec.uuid(IdentityAccessValueCodec.text(data.groupId)),
+      displayName: IdentityAccessValueCodec.text(data.displayName),
+      status: IdentityAccessValueCodec.lifecycleStatus(data.status),
+      isTemplate: IdentityAccessValueCodec.flag(data.isTemplate),
+      version: IdentityAccessValueCodec.version(data.version),
+    };
+  }
+
+  public static scopeAuthorityGroupRecord(value: unknown): IdentityScopeAuthorityGroupRecord {
+    const data = IdentityAccessValueCodec.object(value);
+    return {
       groupId: IdentityAccessValueCodec.uuid(IdentityAccessValueCodec.text(data.groupId)),
       displayName: IdentityAccessValueCodec.text(data.displayName),
       status: IdentityAccessValueCodec.lifecycleStatus(data.status),
@@ -113,6 +128,32 @@ export class IdentityAccessAdministrationCodec {
     return {
       tenantMembershipId: IdentityAccessValueCodec.uuid(IdentityAccessValueCodec.text(data.tenantMembershipId)),
       userId: IdentityAccessValueCodec.uuid(IdentityAccessValueCodec.text(data.userId)),
+    };
+  }
+
+  public static tenantGroupAssignmentRecord(value: unknown): IdentityTenantGroupAssignmentRecord {
+    const data = IdentityAccessValueCodec.object(value);
+    return {
+      groupId: IdentityAccessValueCodec.uuid(IdentityAccessValueCodec.text(data.groupId)),
+      tenantMembershipId: IdentityAccessValueCodec.uuid(IdentityAccessValueCodec.text(data.tenantMembershipId)),
+      userId: IdentityAccessValueCodec.uuid(IdentityAccessValueCodec.text(data.userId)),
+    };
+  }
+
+  public static tenantMembershipCandidateRecord(value: unknown): IdentityTenantMembershipCandidateRecord {
+    const data = IdentityAccessValueCodec.object(value);
+    const existingMembershipId = data.existingMembershipId === null || data.existingMembershipId === undefined
+      ? undefined
+      : IdentityAccessValueCodec.uuid(IdentityAccessValueCodec.text(data.existingMembershipId));
+    const existingMembershipStatus = data.existingMembershipStatus === null || data.existingMembershipStatus === undefined
+      ? undefined
+      : IdentityAccessValueCodec.lifecycleStatus(data.existingMembershipStatus);
+    return {
+      userId: IdentityAccessValueCodec.uuid(IdentityAccessValueCodec.text(data.userId)),
+      displayName: IdentityAccessValueCodec.text(data.displayName),
+      userStatus: IdentityAccessValueCodec.lifecycleStatus(data.userStatus),
+      ...(existingMembershipId === undefined ? {} : { existingMembershipId }),
+      ...(existingMembershipStatus === undefined ? {} : { existingMembershipStatus }),
     };
   }
 

@@ -51,6 +51,7 @@ namespace IdentityAccess.Tests.PostgreSql
             Assert.NotNull(scope.ServiceProvider.GetService<IApplicationScopeTypeStore>());
             Assert.NotNull(scope.ServiceProvider.GetService<IResourceScopeStore>());
             Assert.NotNull(scope.ServiceProvider.GetService<IAssignedCapabilityReader>());
+            Assert.NotNull(scope.ServiceProvider.GetService<IGroupCapabilityGrantReader>());
             Assert.NotNull(scope.ServiceProvider.GetService<ISecurityAuditReader>());
             var options = scope.ServiceProvider.GetRequiredService<PostgreSqlStorageOptions>();
             Assert.Equal(7, options.MaximumPoolSize);

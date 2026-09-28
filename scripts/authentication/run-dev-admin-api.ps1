@@ -44,6 +44,7 @@ $values = [ordered]@{
     'IdentityAccess__Authentication__Oidc__Enabled' = 'true'
     'IdentityAccess__Authentication__Oidc__Issuer' = 'http://127.0.0.1:5080'
     'IdentityAccess__Authentication__Oidc__AccessTokenAudience' = 'identity-access-api'
+    'IdentityAccess__Authentication__Oidc__AccessTokenLifetimeMinutes' = '20'
     'IdentityAccess__Authentication__Oidc__ActiveSigningKeyId' = 'admin-local-key'
     'IdentityAccess__Authentication__Oidc__SigningKeys__0__KeyId' = 'admin-local-key'
     'IdentityAccess__Authentication__Oidc__SigningKeys__0__PemPath' = $SigningKeyPath

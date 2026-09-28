@@ -2,7 +2,7 @@
 
 ## Scope
 
-Version `0.50.0` closes the planned backend/security sequence before the administration UI refinement phase. It adds a controlled self-service password-change path and recovery-code-backed account recovery without introducing a second reset-token subsystem or an external delivery channel.
+Version `0.50.0` establishes the credential-security baseline for controlled self-service password change and recovery-code-backed account recovery without introducing a second reset-token subsystem or an external delivery channel.
 
 The increment uses the existing trusted boundaries:
 
@@ -160,9 +160,9 @@ The complete repository gate remains:
 .\scripts\verify.ps1
 ```
 
-## Explicit boundary after 0.50.0
+## Security boundary established in 0.50.0
 
-`0.50.0` is the final planned backend/security milestone in the current Identity Access foundation sequence. Once it is GREEN, the next planned work is the reusable administration/login/security UI and UX improvement phase. Any defect discovered by the repository gate remains a `0.50.x` corrective patch rather than a new architectural backend milestone.
+The `0.50.0` contract establishes the backend credential-security boundary consumed by the reusable administration and authentication surfaces. Repository verification remains authoritative for this contract; later UI changes must preserve the same password-change, recovery, session-invalidation, and failure-handling guarantees.
 
 ## Administration host recovery surface added in 0.51.0
 

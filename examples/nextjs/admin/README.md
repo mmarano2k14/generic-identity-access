@@ -13,11 +13,20 @@ The host preserves the repository security boundaries:
 - no Client Component receives passwords after form submission, access tokens, refresh tokens, local session tokens, database routes, connection information, RBAC internals, or secret references.
 - `/identity/security-models` registers complete project-owned JSON manifests and inspects their immutable registered projections; it does not expose free-text capability-coordinate authoring, and policy statement creation selects exact registered capabilities.
 - relationship selectors use a shared server-backed autocomplete: no collection is preloaded into the browser; searches start after three characters, are debounced/cancelled, and return at most 20 authorized records.
-- tenant-membership creation selects both the tenant and user explicitly instead of relying on an implicit configured tenant.
-- tenant-member lookup and display resolve through tenant-constrained server reads; the host does not merge tenant memberships with the identity-scope user directory.
+- `/identity/memberships` is tenant-centric: scope-wide administrators see tenant boundaries with membership counts and open one concrete tenant before reading its member directory; membership-limited subjects see only their own active membership contexts.
+- empty tenants may be created before any user is attached; tenant creation and tenant membership creation remain separate operations.
+- `/identity/groups` uses one real-group model: a group may be marked reusable with `is_template`; there is no separate template catalogue or template security entity.
+- the Groups table shows `Template: Yes/No`; identity-scope administration may mark/unmark and mutate reusable definitions, while authorized tenant contexts may explicitly `Create from template`. The clone receives managed-policy bindings but never source memberships.
+- tenant member lists resolve through tenant-constrained server reads; the host never merges tenant memberships with the identity-scope user directory.
 - tenant-scoped workspaces resolve their tenant from the trusted effective administration context; scope-wide operators may request a tenant through server-backed selection, single-membership subjects resolve automatically, and multi-membership subjects can choose only from their active membership set.
 - membership-limited `/identity/users` reads use the tenant-constrained user projection and never fall back to the identity-scope directory.
 - tenant IDs carried in query strings or hidden form fields are requested context only; every read and mutation reconstructs a trusted tenant context and is re-authorized by the API.
+
+## Reusable group templates
+
+Apply the current schema, including `0027_simplify_group_templates.sql`. The four artificial development templates from the retired `group_templates` catalogue are intentionally removed. A reusable definition is created from an existing real group by an identity-scope administrator using `Make available as template`; there is no separate seed catalogue.
+
+`Create from template` creates a new normal group in the selected tenant, copies compatible managed-policy bindings, and never copies memberships.
 
 ## Runtime versions
 

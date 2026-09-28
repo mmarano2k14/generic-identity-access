@@ -69,9 +69,14 @@ export class IdentityAccessHostSessionService {
     return this.bearerCredential() !== undefined;
   }
 
+  public hasRefreshCredential(): boolean {
+    const refreshToken = this.#cookieStore.get(this.#refreshCookieName)?.value;
+    return Boolean(refreshToken && this.#sessionCredential());
+  }
+
   public bearerCredential(): IdentityBearerCredential | undefined {
     const accessToken = this.#cookieStore.get(this.#bearerCookieName)?.value;
-    if (!accessToken) return undefined;
+    if (!accessToken || IdentityAccessHostSessionService.accessTokenNeedsRefresh(accessToken, 5)) return undefined;
     return { kind: "bearer", accessToken };
   }
 
@@ -101,6 +106,39 @@ export class IdentityAccessHostSessionService {
       this.#persist(session, tokens);
     } catch (error) {
       await this.#bestEffortRevoke(session);
+      throw error;
+    }
+  }
+
+
+  public async refreshIfNeeded(refreshWindowSeconds = 120): Promise<"active" | "refreshed" | "expired"> {
+    if (!Number.isSafeInteger(refreshWindowSeconds) || refreshWindowSeconds < 0 || refreshWindowSeconds > 300) {
+      throw new IdentityAccessClientError("configuration");
+    }
+
+    const accessToken = this.#cookieStore.get(this.#bearerCookieName)?.value;
+    if (accessToken && !IdentityAccessHostSessionService.accessTokenNeedsRefresh(accessToken, refreshWindowSeconds)) {
+      return "active";
+    }
+
+    const refreshToken = this.#cookieStore.get(this.#refreshCookieName)?.value;
+    const session = this.#sessionCredential();
+    if (!refreshToken || session === undefined) {
+      this.#clearCookies();
+      return "expired";
+    }
+
+    try {
+      const tokens = await this.#connector.client.oidc.refreshTokens(this.#clientId, refreshToken);
+      this.#persistTokens(tokens);
+      return "refreshed";
+    } catch (error) {
+      if (error instanceof IdentityAccessClientError &&
+          error.code === "oidc" &&
+          error.protocolCode === "invalid_grant") {
+        this.#clearCookies();
+        return "expired";
+      }
       throw error;
     }
   }
@@ -165,19 +203,9 @@ export class IdentityAccessHostSessionService {
   }
 
   #persist(session: IdentityLocalSession, tokens: IdentityOidcTokenSet): void {
-    const secure = process.env.NODE_ENV === "production";
-    const base = {
-      httpOnly: true,
-      sameSite: "lax" as const,
-      secure,
-      path: "/",
-    };
+    this.#persistTokens(tokens);
 
-    this.#cookieStore.set(this.#bearerCookieName, tokens.accessToken, {
-      ...base,
-      maxAge: tokens.expiresIn,
-    });
-    this.#cookieStore.set(this.#refreshCookieName, tokens.refreshToken, base);
+    const base = IdentityAccessHostSessionService.cookieOptions();
     this.#cookieStore.set(this.#sessionIdCookieName, session.sessionId, {
       ...base,
       expires: new Date(session.expiresAt),
@@ -186,6 +214,15 @@ export class IdentityAccessHostSessionService {
       ...base,
       expires: new Date(session.expiresAt),
     });
+  }
+
+  #persistTokens(tokens: IdentityOidcTokenSet): void {
+    const base = IdentityAccessHostSessionService.cookieOptions();
+    this.#cookieStore.set(this.#bearerCookieName, tokens.accessToken, {
+      ...base,
+      maxAge: tokens.expiresIn,
+    });
+    this.#cookieStore.set(this.#refreshCookieName, tokens.refreshToken, base);
   }
 
   #sessionCredential(): IdentitySessionCredential | undefined {
@@ -217,6 +254,31 @@ export class IdentityAccessHostSessionService {
     ]) {
       this.#cookieStore.delete(name);
     }
+  }
+
+  private static accessTokenNeedsRefresh(accessToken: string, refreshWindowSeconds: number): boolean {
+    try {
+      const parts = accessToken.split(".");
+      if (parts.length !== 3 || !parts[1]) return true;
+
+      const payload = JSON.parse(Buffer.from(parts[1], "base64url").toString("utf8")) as { readonly exp?: unknown };
+      if (typeof payload.exp !== "number" || !Number.isFinite(payload.exp)) return true;
+
+      return payload.exp * 1000 <= Date.now() + refreshWindowSeconds * 1000;
+    } catch {
+      // The unverified JWT payload is only a refresh-timing hint, never an authorization decision.
+      // A malformed access token is recovered through the server-validated refresh token instead.
+      return true;
+    }
+  }
+
+  private static cookieOptions() {
+    return {
+      httpOnly: true,
+      sameSite: "lax" as const,
+      secure: process.env.NODE_ENV === "production",
+      path: "/",
+    };
   }
 
   private static requiredEnvironment(name: string): string {

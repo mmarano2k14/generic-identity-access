@@ -19,15 +19,15 @@ The repository is application-agnostic. Consuming systems define their own resou
 - Neutral RBAC adapter boundary with external wildcard evaluation.
 - Local password credential management, lockout, opaque sessions, registered redirect URIs, sensitive self-service password change, and recovery-code-backed account recovery.
 - Provider-neutral MFA policy and authenticator lifecycle with pluggable TOTP, recovery-code, and WebAuthn providers, policy-enforced provider execution, effective user MFA state, and hardened lost-factor administration.
-- Class-composed TypeScript / Next.js connector with separated system, authentication, OIDC, authorization, and administration responsibility classes, including a tenant-independent managed-policy catalog client, bounded core collection reads, a read-only security-audit administration path, and a premium multi-page server-first administration control center.
+- Class-composed TypeScript / Next.js connector with separated system, authentication, OIDC, authorization, and administration responsibility classes, including a tenant-independent managed-policy catalog client, bounded core collection reads, a read-only security-audit administration path, and a multi-page server-first administration control center.
 
 ## Next.js Administration Module
 
 `examples/nextjs/admin` contains a copyable App Router administration structure with separate pages for users, tenants, memberships, groups, shared managed policies, resource scopes, MFA, sessions, security audit, and identity-scope authority. Protected data loading, bearer provenance, validation, and API mutations stay server-side. Client Components are limited to presentation interaction and framework UI state. `IdentityAccessAdminUiBuilder` supplies permission-filtered route metadata but never replaces server-side authorization.
 
-Functional administration includes server-confirmed create and edit flows, explicit add/remove management for relationship records supported by the backend, loading/error/empty states, dialogs, path revalidation after successful mutations, destructive confirmation, a real `/identity` overview, structured record details, automatic light/dark presentation, responsive workspace composition, selected-user assignment provenance, and bounded read-only security-audit inspection. Version `0.56.0` adds a dedicated audit read path over the existing security-event store while keeping persistence, route resolution, HTTP authorization, TypeScript transport, query normalization, presentation, and summary aggregation in separate classes. The audit workspace exposes secret-safe categorical metadata only and does not become a second RBAC engine. Active-route navigation, compact mobile navigation, the skip-to-content path, account recovery, authentication assurance cues, and the descriptive-only provenance boundary remain unchanged. Framework-required Server Action and React component functions remain thin framework/presentation adapters; durable runtime and host behavior stays class-based.
+Functional administration includes server-confirmed create/edit flows, explicit relationship mutation, loading/error/empty states, tenant-centric membership administration, safe exact-login member addition, managed-policy-only authorization, session/MFA administration, and browser qualification. Reusable group templates use the same `UserGroup` model as ordinary groups: `is_template = true` marks a real group as reusable. The Groups workspace therefore has one group table with `Template: Yes/No`; identity-scope administration may mark, unmark, and mutate reusable definitions, while authorized tenant administration may explicitly `Create from template`. Cloning copies compatible managed-policy bindings only, never memberships, and the server re-checks delegation against the target tenant.
 
-All custom administration CSS is owned by one file: `examples/nextjs/admin/styles/identity-access-admin.css`. Do not introduce `*.module.css`, component-local stylesheet files, or inline style objects. The premium design system, dark-mode tokens, responsive rules, authentication/recovery surfaces, and motion/accessibility treatment all remain centralized in this one stylesheet.
+All custom administration CSS is owned by one file: `examples/nextjs/admin/styles/identity-access-admin.css`. Do not introduce `*.module.css`, component-local stylesheet files, or inline style objects. The shared design system, dark-mode tokens, responsive rules, authentication/recovery surfaces, and motion/accessibility treatment all remain centralized in this one stylesheet.
 
 The administration example is also a runnable standalone Next.js host. It contains a real `/login` route, server-side password -> OIDC Authorization Code + PKCE exchange, HTTP-only cookie handling, explicit sign-out, and the protected `/identity` workspace. The host keeps the existing class-based connector and authorization boundaries; it does not move Identity Access tokens or authorization decisions into browser code.
 
@@ -58,6 +58,28 @@ $env:IDENTITY_ACCESS_RBAC_REFERENCE_DIRECTORY = "<path-to-external-rbac-release-
 ```
 
 See [`docs/DEVELOPMENT_ADMIN_BOOTSTRAP.md`](docs/DEVELOPMENT_ADMIN_BOOTSTRAP.md).
+
+
+### Groups, managed policies, and user assignment
+
+Permissions are defined in published managed policies and granted to groups through managed-policy bindings. Users receive those permissions by belonging to the corresponding group within the tenant.
+
+```text
+User
+  -> TenantMembership
+  -> GroupMembership
+  -> UserGroup
+  -> Managed Policy Binding
+  -> Published Managed Policy Version
+  -> Capability statements
+  -> RBAC decision
+```
+
+The optional `Resource scope` on a managed-policy binding only narrows where the selected policy applies. It is not a capability selector. Capabilities such as `user / read` or `group / write` belong to the managed policy itself.
+
+Reusable templates follow the same model. An identity-scope administrator can mark a real group as reusable. `Create from template` creates a new normal group in the target tenant, copies compatible managed-policy bindings, and never copies source memberships. Users are assigned to the resulting tenant group through normal group membership.
+
+See [`docs/ADMINISTRATION_TENANTS_MEMBERSHIPS_AND_GROUPS.md`](docs/ADMINISTRATION_TENANTS_MEMBERSHIPS_AND_GROUPS.md) and [`docs/MANAGED_POLICY_CATALOG.md`](docs/MANAGED_POLICY_CATALOG.md).
 
 ## Architecture
 
@@ -135,7 +157,7 @@ Current centrally managed .NET package versions are documented in [`docs/DEPENDE
 From the repository root:
 
 ```powershell
-.\scripts\verify.ps1
+.\scripts\verify.ps1 -Configuration Release
 ```
 
 The standard verification now also runs TypeScript source-consistency, build, tests, and strict type checking.
@@ -163,6 +185,8 @@ The owned schema is:
 ```text
 identity_access
 ```
+
+The complete migration-derived schema, relationship model, integrity rules, and concurrency contract are documented in [`docs/POSTGRESQL_SCHEMA_AND_CONCURRENCY.md`](docs/POSTGRESQL_SCHEMA_AND_CONCURRENCY.md).
 
 Create the database:
 
@@ -210,7 +234,27 @@ No route is currently mapped to `/`; a `404` at the root URL is expected.
 
 ## Authorization
 
-Authorization data is resolved from group membership, permission policies, policy statements, resource-scope bindings, and assigned capability grants.
+Active authorization is managed-policy only. The grant path is:
+
+```text
+User
+  -> TenantMembership
+  -> GroupMembership
+  -> UserGroup
+  -> Managed policy binding
+  -> Published managed-policy version
+  -> Capability statements
+  -> Optional resource scope
+  -> Assigned capability grants
+  -> TRN materialization
+  -> External RBAC engine
+```
+
+Capabilities such as `user / read`, `user / write`, or `group / read` are declared by the application's registered security model and selected into a managed-policy version. A group receives permissions by binding a **published managed policy** to that group.
+
+The `Resource scope` field on a managed-policy binding is **not** a permission selector. It optionally narrows an already selected managed policy to one concrete resource scope (and, when supported, its descendants). Leave it empty when the policy should not be narrowed to one resource-scope record.
+
+Users receive the group's grants through group membership. A reusable group template follows the same model: it is a real `UserGroup` with `is_template = true`; `Create from template` copies managed-policy bindings into a new normal tenant group and never copies memberships.
 
 TRN materialization is owned by `IdentityAccess.Rbac`. Wildcard authorization is not reimplemented by this repository; the external RBAC engine remains the decision authority for the supported wildcard forms.
 
@@ -255,9 +299,10 @@ See [`docs/LOCAL_AUTHENTICATION_FOUNDATION.md`](docs/LOCAL_AUTHENTICATION_FOUNDA
 
 - [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — current architecture and invariants.
 - [`docs/ROUTING_CONFIGURATION.md`](docs/ROUTING_CONFIGURATION.md) — routing configuration contract.
-- [`docs/POSTGRESQL_SCHEMA_AND_CONCURRENCY.md`](docs/POSTGRESQL_SCHEMA_AND_CONCURRENCY.md) — persistence and concurrency model.
+- [`docs/POSTGRESQL_SCHEMA_AND_CONCURRENCY.md`](docs/POSTGRESQL_SCHEMA_AND_CONCURRENCY.md) — migration-derived database schema, integrity, relationships, and concurrency model.
 - [`docs/PERMISSION_POLICY_FOUNDATION.md`](docs/PERMISSION_POLICY_FOUNDATION.md) — permission and policy model.
 - [`docs/MANAGED_POLICY_CATALOG.md`](docs/MANAGED_POLICY_CATALOG.md) — reusable application-managed policy definitions and versioning.
+- [`docs/ADMINISTRATION_TENANTS_MEMBERSHIPS_AND_GROUPS.md`](docs/ADMINISTRATION_TENANTS_MEMBERSHIPS_AND_GROUPS.md) — tenant, membership, group, reusable-template, policy-binding, and user-assignment model.
 - [`docs/RESOURCE_SCOPE_HIERARCHY.md`](docs/RESOURCE_SCOPE_HIERARCHY.md) — generic resource hierarchy and scoped bindings.
 - [`docs/RBAC_EXTERNAL_ADAPTER.md`](docs/RBAC_EXTERNAL_ADAPTER.md) — external RBAC boundary.
 - [`docs/LOCAL_AUTHENTICATION_FOUNDATION.md`](docs/LOCAL_AUTHENTICATION_FOUNDATION.md) — local authentication and sessions.
@@ -274,6 +319,8 @@ See [`docs/LOCAL_AUTHENTICATION_FOUNDATION.md`](docs/LOCAL_AUTHENTICATION_FOUNDA
 - [`docs/VALIDATION.md`](docs/VALIDATION.md) — validation procedures.
 - [`docs/DEPENDENCIES.md`](docs/DEPENDENCIES.md) — toolchain and package versions.
 - [`docs/PRODUCTION_QUALIFICATION.md`](docs/PRODUCTION_QUALIFICATION.md) — release-candidate gates, backup/restore validation, and operational hardening.
+- [`docs/ADMIN_UI_E2E_QUALIFICATION.md`](docs/ADMIN_UI_E2E_QUALIFICATION.md) — real-browser administration qualification and evidence collection.
+- [`docs/DEVELOPMENT_ADMIN_BOOTSTRAP.md`](docs/DEVELOPMENT_ADMIN_BOOTSTRAP.md) — local root administrator bootstrap and runnable admin-host setup.
 
 ## Status
 
@@ -395,14 +442,23 @@ See `docs/OIDC_AUTHORIZATION_CODE_PKCE.md`.
 
 ## Production Qualification
 
-Release-candidate qualification is consolidated in:
+Repository and live-database qualification is consolidated in:
 
 ```powershell
 .\scripts\verify-production-qualification.ps1 `
-  -RbacReferenceDirectory "<multiplexed-rbac-release-directory>"
+  -RbacReferenceDirectory "<multiplexed-rbac-release-directory>" `
+  -Configuration Release
 ```
 
-The full gate includes repository build/tests, external RBAC compatibility, PostgreSQL security and
-concurrency validation, OIDC live database fixtures, and a disposable backup/restore cycle. Run it
-against a dedicated qualification database. See `docs/PRODUCTION_QUALIFICATION.md`.
+The full production gate includes repository build/tests, external RBAC compatibility, PostgreSQL security and concurrency validation, OIDC live database fixtures, group-as-template validation, and a disposable backup/restore cycle. Run it against a dedicated qualification database.
+
+Complete administration qualification additionally requires real-browser evidence. Start the API on `http://127.0.0.1:5080` and the Next.js host on `http://127.0.0.1:3000`, then run:
+
+```powershell
+.\scripts\verify-administration-qualification.ps1 `
+  -RbacReferenceDirectory "<multiplexed-rbac-release-directory>" `
+  -Configuration Release
+```
+
+A run using `-SkipBackupRestore` or `-SkipBrowserQualification` is partial and must not be reported as fully GREEN. See `docs/PRODUCTION_QUALIFICATION.md` and `docs/ADMIN_UI_E2E_QUALIFICATION.md`.
 

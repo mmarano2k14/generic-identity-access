@@ -3,5 +3,6 @@ import { IdentityAccessHostSessionService } from "../server/IdentityAccessHostSe
 
 export default async function HomePage() {
   const session = await IdentityAccessHostSessionService.fromCurrentRequest();
-  redirect(session.hasBearerCredential() ? "/identity" : "/login");
+  if (session.hasBearerCredential()) redirect("/identity");
+  redirect(session.hasRefreshCredential() ? "/login?session=refresh" : "/login");
 }

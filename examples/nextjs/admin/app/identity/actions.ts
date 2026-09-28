@@ -18,27 +18,35 @@ export async function updateUserAction(_state: AdminActionState, formData: FormD
 }
 
 export async function createTenantAction(_state: AdminActionState, formData: FormData): Promise<AdminActionState> {
-  return execute("/identity/tenants", "Tenant created.", (service) => service.createTenant(formData));
+  return execute(["/identity/tenants", "/identity/memberships"], "Tenant created.", (service) => service.createTenant(formData));
 }
 
 export async function updateTenantAction(_state: AdminActionState, formData: FormData): Promise<AdminActionState> {
-  return execute("/identity/tenants", "Tenant updated.", (service) => service.updateTenant(formData));
+  return execute(["/identity/tenants", "/identity/memberships"], "Tenant updated.", (service) => service.updateTenant(formData));
 }
 
 export async function createTenantMembershipAction(_state: AdminActionState, formData: FormData): Promise<AdminActionState> {
-  return execute("/identity/memberships", "Tenant membership created.", (service) => service.createTenantMembership(formData));
+  return execute(["/identity/memberships", "/identity/tenants"], "Tenant membership created.", (service) => service.createTenantMembership(formData));
 }
 
 export async function updateTenantMembershipAction(_state: AdminActionState, formData: FormData): Promise<AdminActionState> {
-  return execute("/identity/memberships", "Tenant membership updated.", (service) => service.updateTenantMembership(formData));
+  return execute(["/identity/memberships", "/identity/tenants"], "Tenant membership updated.", (service) => service.updateTenantMembership(formData));
 }
 
 export async function createGroupAction(_state: AdminActionState, formData: FormData): Promise<AdminActionState> {
   return execute("/identity/groups", "Group created.", (service) => service.createGroup(formData));
 }
 
+export async function createGroupFromTemplateAction(_state: AdminActionState, formData: FormData): Promise<AdminActionState> {
+  return execute("/identity/groups", "Group created from template.", (service) => service.createGroupFromTemplate(formData));
+}
+
 export async function updateGroupAction(_state: AdminActionState, formData: FormData): Promise<AdminActionState> {
   return execute("/identity/groups", "Group updated.", (service) => service.updateGroup(formData));
+}
+
+export async function updateReusableGroupAction(_state: AdminActionState, formData: FormData): Promise<AdminActionState> {
+  return execute("/identity/groups", "Group updated.", (service) => service.updateReusableGroup(formData));
 }
 
 export async function addGroupMemberAction(_state: AdminActionState, formData: FormData): Promise<AdminActionState> {
@@ -47,6 +55,10 @@ export async function addGroupMemberAction(_state: AdminActionState, formData: F
 
 export async function removeGroupMemberAction(_state: AdminActionState, formData: FormData): Promise<AdminActionState> {
   return execute("/identity/groups", "Group member removed.", (service) => service.removeGroupMember(formData));
+}
+
+export async function replaceTenantMemberGroupsAction(_state: AdminActionState, formData: FormData): Promise<AdminActionState> {
+  return execute(["/identity/memberships", "/identity/groups"], "Group assignments updated.", (service) => service.replaceTenantMemberGroups(formData));
 }
 
 export async function createManagedPolicyAction(_state: AdminActionState, formData: FormData): Promise<AdminActionState> {
@@ -159,7 +171,7 @@ export async function recoveryRevokeMfaAuthenticatorAction(_state: AdminActionSt
 }
 
 async function execute(
-  revalidationPath: string,
+  revalidationPath: string | readonly string[],
   defaultSuccessMessage: string,
   operation: (service: IdentityAccessAdminMutationService) => Promise<void | string>,
 ): Promise<AdminActionState> {
@@ -167,7 +179,8 @@ async function execute(
     const request = await IdentityAccessAdminRequest.fromCurrentRequest();
     const service = new IdentityAccessAdminMutationService(request);
     const result = await operation(service);
-    revalidatePath(revalidationPath);
+    const paths = typeof revalidationPath === "string" ? [revalidationPath] : revalidationPath;
+    for (const path of paths) revalidatePath(path);
     return { status: "success", message: typeof result === "string" ? result : defaultSuccessMessage };
   } catch (error) {
     return { status: "error", failure: IdentityAccessAdminFailurePresentation.fromMutation(error) };

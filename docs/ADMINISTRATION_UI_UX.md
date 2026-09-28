@@ -1,6 +1,6 @@
 # Administration UI and authentication UX
 
-Version `0.51.0` starts the reusable UI/UX refinement phase after the backend/security sequence closed at `0.50.0`.
+Version `0.51.0` defines the reusable administration and authentication presentation contract on top of the established backend security boundaries.
 
 The administration host remains a Next.js App Router application consuming the class-based TypeScript client. UI refinement does not change the authorization boundary: protected reads and mutations continue to be enforced by the .NET API and external RBAC integration.
 
@@ -388,3 +388,7 @@ tenantId=<concrete tenant>
 The Policies workspace is identity-scope/application scoped. It does not participate in tenant selection because managed-policy definitions are reusable application security definitions rather than tenant-owned records.
 
 The workspace exposes policy metadata, draft version creation, capability selection from the registered application security model, explicit publication, and default-version selection. Published versions are rendered as immutable. Tenant-specific grant administration stays in Groups through managed policy bindings and optional tenant resource scopes.
+## Group-as-Template presentation
+
+The Groups workspace exposes one tenant-group model. A reusable template is a real `UserGroup` whose `is_template` marker is enabled by identity-scope administration; there is no second global template entity, origin enum, or template provenance ID. Tenant rows show `Template: Yes/No`. Authorized tenant contexts may use an active reusable group through the explicit `Create from template` workflow, which creates a new normal target-tenant group and copies compatible managed-policy bindings only. Source memberships are never copied. Tenant authority cannot mark/unmark a group as reusable or mutate the definition of a reusable group.
+

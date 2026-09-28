@@ -2,13 +2,13 @@
 
 DO $$
 DECLARE
-    table_name text;
+    required_table_name text;
 BEGIN
     IF to_regnamespace('identity_access') IS NULL THEN
         RAISE EXCEPTION 'identity_access schema is missing';
     END IF;
 
-    FOREACH table_name IN ARRAY ARRAY[
+    FOREACH required_table_name IN ARRAY ARRAY[
         'users',
         'tenants',
         'tenant_memberships',
@@ -42,10 +42,39 @@ BEGIN
         'schema_migrations'
     ]
     LOOP
-        IF to_regclass(format('identity_access.%I', table_name)) IS NULL THEN
-            RAISE EXCEPTION 'required restored table is missing: %', table_name;
+        IF to_regclass(format('identity_access.%I', required_table_name)) IS NULL THEN
+            RAISE EXCEPTION 'required restored table is missing: %', required_table_name;
         END IF;
     END LOOP;
+
+
+    IF to_regclass('identity_access.group_templates') IS NOT NULL THEN
+        RAISE EXCEPTION 'retired group_templates table exists in restored database';
+    END IF;
+
+    IF NOT EXISTS
+    (
+        SELECT 1
+        FROM information_schema.columns AS cols
+        WHERE cols.table_schema = 'identity_access'
+          AND cols.table_name = 'user_groups'
+          AND cols.column_name = 'is_template'
+          AND cols.data_type = 'boolean'
+          AND cols.is_nullable = 'NO'
+    ) THEN
+        RAISE EXCEPTION 'restored user_groups.is_template is missing or nullable';
+    END IF;
+
+    IF EXISTS
+    (
+        SELECT 1
+        FROM information_schema.columns AS cols
+        WHERE cols.table_schema = 'identity_access'
+          AND cols.table_name = 'user_groups'
+          AND cols.column_name IN ('origin', 'template_id')
+    ) THEN
+        RAISE EXCEPTION 'retired group-template provenance columns exist in restored database';
+    END IF;
 
     IF EXISTS
     (
@@ -83,9 +112,9 @@ BEGIN
     IF EXISTS
     (
         SELECT 1
-        FROM information_schema.columns
-        WHERE table_schema = 'identity_access'
-          AND column_name IN
+        FROM information_schema.columns AS cols
+        WHERE cols.table_schema = 'identity_access'
+          AND cols.column_name IN
               ('password', 'session_token', 'refresh_token', 'authorization_code', 'connection_string', 'totp_secret', 'provider_payload', 'private_key', 'recovery_code')
     ) THEN
         RAISE EXCEPTION 'restored identity_access schema contains a forbidden raw-secret column';

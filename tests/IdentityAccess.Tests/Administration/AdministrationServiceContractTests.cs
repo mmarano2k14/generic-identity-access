@@ -10,6 +10,7 @@ namespace IdentityAccess.Tests.Administration
         [InlineData(typeof(IDirectoryAdministrationService))]
         [InlineData(typeof(IManagedPolicyAdministrationService))]
         [InlineData(typeof(IResourceScopeAdministrationService))]
+        [InlineData(typeof(ITenantMembershipCandidateService))]
         public void Administration_contracts_require_explicit_cancellation_tokens(Type contract)
         {
             foreach (var method in contract.GetMethods())
@@ -28,12 +29,13 @@ namespace IdentityAccess.Tests.Administration
             Assert.Equal("IdentityAccess.Application", typeof(IDirectoryAdministrationService).Assembly.GetName().Name);
             Assert.Equal("IdentityAccess.Application", typeof(IManagedPolicyAdministrationService).Assembly.GetName().Name);
             Assert.Equal("IdentityAccess.Application", typeof(IResourceScopeAdministrationService).Assembly.GetName().Name);
+            Assert.Equal("IdentityAccess.Application", typeof(ITenantMembershipCandidateService).Assembly.GetName().Name);
         }
 
         [Fact]
         public void Administration_contracts_do_not_expose_http_types()
         {
-            foreach (var contract in new[] { typeof(IDirectoryAdministrationService), typeof(IManagedPolicyAdministrationService), typeof(IResourceScopeAdministrationService) })
+            foreach (var contract in new[] { typeof(IDirectoryAdministrationService), typeof(IManagedPolicyAdministrationService), typeof(IResourceScopeAdministrationService), typeof(ITenantMembershipCandidateService) })
             foreach (var method in contract.GetMethods())
             foreach (var type in method.GetParameters().Select(parameter => parameter.ParameterType).Append(method.ReturnType))
                 Assert.False((type.FullName ?? string.Empty).Contains("Microsoft.AspNetCore", StringComparison.Ordinal));

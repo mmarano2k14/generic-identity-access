@@ -187,7 +187,20 @@ namespace IdentityAccess.Application.Administration
                 normalizedSearch, offset, boundedLimit, cancellationToken);
         }
 
-        /// <summary>Creates a user group.</summary>
+        /// <summary>Lists real groups explicitly marked as reusable templates.</summary>
+        public async Task<IReadOnlyList<VersionedRecord<UserGroup>>> ListGroupTemplatesAsync(Guid identityScopeId,
+            ApplicationKey application, string? search, int offset, int limit, bool activeOnly,
+            CancellationToken cancellationToken)
+        {
+            AdministrationPaging.EnsureValid(offset, limit);
+            var normalizedSearch = AdministrationSearch.Normalize(search);
+            var boundedLimit = AdministrationSearch.Limit(normalizedSearch, limit);
+            var route = await ResolveAsync(identityScopeId, application, cancellationToken);
+            return await groups.ListTemplatesAsync(route, identityScopeId, application, normalizedSearch, offset,
+                boundedLimit, activeOnly, cancellationToken);
+        }
+
+        /// <summary>Creates a normal user group.</summary>
         public async Task<VersionedRecord<UserGroup>> CreateGroupAsync(Guid identityScopeId, Guid tenantId,
             ApplicationKey application, Guid groupId, string displayName, GroupStatus status,
             CancellationToken cancellationToken)
@@ -200,16 +213,50 @@ namespace IdentityAccess.Application.Administration
             return created;
         }
 
-        /// <summary>Updates a user group using optimistic concurrency.</summary>
+        /// <summary>Creates a normal group from a reusable source group and clones managed-policy bindings only.</summary>
+        public async Task<VersionedRecord<UserGroup>?> CreateGroupFromTemplateAsync(Guid identityScopeId, Guid tenantId,
+            ApplicationKey application, Guid sourceTenantId, Guid sourceGroupId, Guid groupId,
+            CancellationToken cancellationToken)
+        {
+            var route = await ResolveAsync(identityScopeId, application, cancellationToken);
+            var source = Group(identityScopeId, sourceTenantId, application, sourceGroupId);
+            var target = Group(identityScopeId, tenantId, application, groupId);
+            var created = await groups.CreateFromTemplateAsync(route, source, target, cancellationToken);
+            if (created is null) return null;
+            await AuditAsync(route, SecurityAuditEventType.GroupCreatedFromTemplate, identityScopeId, application,
+                tenantId, null, $"{sourceTenantId:D}:{sourceGroupId:D}:{groupId:D}", cancellationToken);
+            return created;
+        }
+
+        /// <summary>Updates a user group using optimistic concurrency while preserving reusable-template state.</summary>
         public async Task<VersionedRecord<UserGroup>> UpdateGroupAsync(Guid identityScopeId, Guid tenantId,
             ApplicationKey application, Guid groupId, string displayName, GroupStatus status, long expectedVersion,
             CancellationToken cancellationToken)
         {
             var route = await ResolveAsync(identityScopeId, application, cancellationToken);
-            var value = new UserGroup(Group(identityScopeId, tenantId, application, groupId), displayName, status);
+            var reference = Group(identityScopeId, tenantId, application, groupId);
+            var existing = await groups.GetAsync(route, reference, cancellationToken);
+            if (existing is null) throw new IdentityConcurrencyException();
+            var value = new UserGroup(reference, displayName, status, existing.Value.IsTemplate);
             var updated = await groups.UpdateAsync(route, value, expectedVersion, cancellationToken);
             await AuditAsync(route, SecurityAuditEventType.GroupUpdated, identityScopeId, application,
                 tenantId, null, groupId.ToString("D"), cancellationToken);
+            return updated;
+        }
+
+        /// <summary>Updates a group definition and reusable-template marker from identity-scope administration.</summary>
+        public async Task<VersionedRecord<UserGroup>> UpdateReusableGroupAsync(Guid identityScopeId, Guid tenantId,
+            ApplicationKey application, Guid groupId, string displayName, GroupStatus status, bool isTemplate,
+            long expectedVersion, CancellationToken cancellationToken)
+        {
+            var route = await ResolveAsync(identityScopeId, application, cancellationToken);
+            var reference = Group(identityScopeId, tenantId, application, groupId);
+            var existing = await groups.GetAsync(route, reference, cancellationToken);
+            if (existing is null) throw new IdentityConcurrencyException();
+            var value = new UserGroup(reference, displayName, status, isTemplate);
+            var updated = await groups.UpdateAsync(route, value, expectedVersion, cancellationToken);
+            await AuditAsync(route, SecurityAuditEventType.GroupReusableAvailabilityChanged, identityScopeId, application,
+                tenantId, null, $"{groupId:D}:{isTemplate}", cancellationToken);
             return updated;
         }
 
@@ -220,6 +267,15 @@ namespace IdentityAccess.Application.Administration
             var route = await ResolveAsync(identityScopeId, application, cancellationToken);
             return await groupMemberships.ListAsync(route, Group(identityScopeId, tenantId, application, groupId),
                 cancellationToken);
+        }
+
+        /// <summary>Lists all group-membership assignments inside one tenant/application boundary.</summary>
+        public async Task<IReadOnlyList<GroupMembership>> ListTenantGroupAssignmentsAsync(Guid identityScopeId,
+            Guid tenantId, ApplicationKey application, CancellationToken cancellationToken)
+        {
+            var route = await ResolveAsync(identityScopeId, application, cancellationToken);
+            return await groupMemberships.ListForTenantAsync(route,
+                new TenantReference(identityScopeId, tenantId), application, cancellationToken);
         }
 
         /// <summary>Adds a tenant member to the requested user group.</summary>

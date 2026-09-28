@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { AdminCurrentSection } from "../../components/AdminCurrentSection";
 import { AdminIcon } from "../../components/AdminIcon";
 import { AdminMobileNavigation } from "../../components/AdminMobileNavigation";
+import { AdminSessionRefresh } from "../../components/AdminSessionRefresh";
 import { AdminNavigation } from "../../components/AdminNavigation";
 import { IdentityAccessAdminRequest } from "../../server/IdentityAccessAdminRequest";
 import { IdentityAccessHostSessionService } from "../../server/IdentityAccessHostSessionService";
@@ -11,7 +12,9 @@ import { logoutAction } from "../login/actions";
 
 export default async function IdentityLayout({ children }: { readonly children: ReactNode }) {
   const hostSession = await IdentityAccessHostSessionService.fromCurrentRequest();
-  if (!hostSession.hasBearerCredential()) redirect("/login");
+  if (!hostSession.hasBearerCredential()) {
+    redirect(hostSession.hasRefreshCredential() ? "/login?session=refresh" : "/login");
+  }
 
   const request = await IdentityAccessAdminRequest.fromCurrentRequest();
   let navigation: IdentityAccessAdminUiDefinition;
@@ -26,6 +29,7 @@ export default async function IdentityLayout({ children }: { readonly children: 
 
   return (
     <div className="ia-shell">
+      <AdminSessionRefresh />
       <a className="ia-skip-link" href="#identity-main">Skip to administration content</a>
       <AdminNavigation entries={navigation.entries} />
       <div className="ia-workspace">

@@ -1,4 +1,5 @@
 using IdentityAccess.Api.Features;
+using IdentityAccess.Api.Security;
 using IdentityAccess.Application.Administration;
 using IdentityAccess.Application.Authentication;
 using IdentityAccess.Application.Authentication.Mfa;
@@ -27,6 +28,10 @@ namespace IdentityAccess.Api
             Register<IIdentityDatabaseConnectionFactory>(builder.Services);
             Register<IDirectoryAdministrationService>(builder.Services);
             Register<ITenantUserAdministrationService>(builder.Services);
+            Register<ITenantMembershipCandidateService>(builder.Services);
+            Register<ITenantGroupAssignmentDelegationGuard>(builder.Services);
+            Register<IGroupDefinitionMutationGuard>(builder.Services);
+            Register<ITenantMembershipCreationAuthorizationGuard>(builder.Services);
             Register<IEffectiveAdministrationContextService>(builder.Services);
             Register<IApplicationSecurityCatalogAdministrationService>(builder.Services);
             Register<IManagedPolicyAdministrationService>(builder.Services);

@@ -30,7 +30,7 @@ export class IdentityAccessScopeAuthorityClient {
     signal?: AbortSignal,
   ): Promise<readonly IdentityScopeAuthorityGroupRecord[]> {
     const path = `${IdentityAccessPathBuilder.scopeAuthorityPath(context)}/groups${IdentityAccessPathBuilder.administrationListQuery(options)}`;
-    return this.#admin.get(path, context, (value) => IdentityAccessValueCodec.array(value, IdentityAccessAdministrationCodec.groupRecord), signal);
+    return this.#admin.get(path, context, (value) => IdentityAccessValueCodec.array(value, IdentityAccessAdministrationCodec.scopeAuthorityGroupRecord), signal);
   }
 
   public async getGroup(
@@ -39,7 +39,7 @@ export class IdentityAccessScopeAuthorityClient {
     signal?: AbortSignal,
   ): Promise<IdentityScopeAuthorityGroupRecord | null> {
     const path = `${IdentityAccessPathBuilder.scopeAuthorityPath(context)}/groups/${IdentityAccessValueCodec.uuid(groupIdValue)}`;
-    return this.#admin.getNullable(path, context, (value) => IdentityAccessAdministrationCodec.groupRecord(value), signal);
+    return this.#admin.getNullable(path, context, (value) => IdentityAccessAdministrationCodec.scopeAuthorityGroupRecord(value), signal);
   }
 
   public async createGroup(
@@ -52,7 +52,7 @@ export class IdentityAccessScopeAuthorityClient {
       groupId: IdentityAccessValueCodec.optionalUuidOrEmpty(request.groupId),
       displayName: IdentityAccessValueCodec.nonEmpty(request.displayName),
       status: IdentityAccessValueCodec.lifecycleStatus(request.status ?? 1),
-    }, (value) => IdentityAccessAdministrationCodec.groupRecord(value), signal);
+    }, (value) => IdentityAccessAdministrationCodec.scopeAuthorityGroupRecord(value), signal);
   }
 
   public async updateGroup(
@@ -66,7 +66,7 @@ export class IdentityAccessScopeAuthorityClient {
       displayName: IdentityAccessValueCodec.nonEmpty(request.displayName),
       status: IdentityAccessValueCodec.lifecycleStatus(request.status),
       expectedVersion: IdentityAccessValueCodec.version(request.expectedVersion),
-    }, (value) => IdentityAccessAdministrationCodec.groupRecord(value), signal);
+    }, (value) => IdentityAccessAdministrationCodec.scopeAuthorityGroupRecord(value), signal);
   }
 
   public async listMembers(

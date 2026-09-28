@@ -3,6 +3,7 @@ using IdentityAccess.Application.Routing;
 using IdentityAccess.Application.Storage;
 using IdentityAccess.Application.Security;
 using IdentityAccess.Application.Authorization;
+using IdentityAccess.Application.Authentication;
 
 namespace IdentityAccess.Api
 {
@@ -40,11 +41,19 @@ namespace IdentityAccess.Api
                 services.AddSingleton<ITenantUserAdministrationService, TenantUserAdministrationService>();
             }
 
+            if (Has<IPasswordCredentialStore>(services) &&
+                Has<IUserDirectoryStore>(services) &&
+                Has<ITenantMembershipStore>(services))
+            {
+                services.AddSingleton<ITenantMembershipCandidateService, TenantMembershipCandidateService>();
+            }
+
             if (Has<IApplicationSecurityCatalogStore>(services))
             {
                 services.AddSingleton<ApplicationSecurityManifestFingerprint>();
                 services.AddSingleton<IApplicationSecurityCatalogAdministrationService, ApplicationSecurityCatalogAdministrationService>();
             }
+
 
             if (Has<IManagedPolicyStore>(services) &&
                 Has<IManagedPolicyVersionStore>(services) &&

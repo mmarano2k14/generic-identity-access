@@ -12,7 +12,9 @@ namespace IdentityAccess.Api.Controllers
     [ApiController]
     [Route("api/v1/identity-scopes/{identityScopeId:guid}/tenants/{tenantId:guid}/applications/{applicationKey}/groups/{groupId:guid}/members")]
     [Produces("application/json")]
-    public sealed class GroupMembersController(OptionalFeature<IDirectoryAdministrationService> feature) : ControllerBase
+    public sealed class GroupMembersController(
+        OptionalFeature<IDirectoryAdministrationService> feature,
+        OptionalFeature<ITenantGroupAssignmentDelegationGuard> delegationFeature) : ControllerBase
     {
         /// <summary>Lists group members.</summary>
         [HttpGet]
@@ -37,8 +39,22 @@ namespace IdentityAccess.Api.Controllers
             CancellationToken cancellationToken)
         {
             if (!feature.TryGet(out var service)) return ApiProblems.DirectoryAdministrationUnavailable();
+            if (!delegationFeature.TryGet(out var delegation)) return ApiProblems.AdministrationAuthorizationUnavailable();
+            var trustedContext = HttpContext.Features.Get<AdministrationRequestContextFeature>();
+            if (trustedContext is null) return ApiProblems.AdministrationAuthorizationUnavailable();
+
+            var application = new ApplicationKey(applicationKey);
+            var delegationResult = await delegation.AuthorizeAssignmentAsync(
+                trustedContext.Context, tenantId, application, groupId, cancellationToken);
+            if (delegationResult.Decision == AdministrationAccessDecision.Denied)
+                return ApiProblems.Forbidden(
+                    "Group assignment delegation denied",
+                    "The selected group would delegate authority outside the caller's permitted tenant scope.");
+            if (delegationResult.Decision != AdministrationAccessDecision.Allowed)
+                return ApiProblems.AdministrationAuthorizationUnavailable();
+
             var edge = await service.AddGroupMemberAsync(identityScopeId, tenantId,
-                new ApplicationKey(applicationKey), groupId, request.TenantMembershipId, cancellationToken);
+                application, groupId, request.TenantMembershipId, cancellationToken);
             return edge is null
                 ? ApiProblems.NotFound("Group or tenant membership not found")
                 : Created(Request.Path, GroupMemberResponse.From(edge));

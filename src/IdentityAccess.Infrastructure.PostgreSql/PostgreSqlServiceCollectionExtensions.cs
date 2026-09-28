@@ -113,6 +113,7 @@ namespace IdentityAccess.Infrastructure.PostgreSql
             services.AddSingleton<IApplicationScopeTypeStore, PostgreSqlApplicationScopeTypeStore>();
             services.AddSingleton<IResourceScopeStore, PostgreSqlResourceScopeStore>();
             services.AddSingleton<IAssignedCapabilityReader, PostgreSqlAssignedCapabilityReader>();
+            services.AddSingleton<IGroupCapabilityGrantReader, PostgreSqlGroupCapabilityGrantReader>();
             services.AddSingleton<IIdentityScopeAssignedCapabilityReader, PostgreSqlIdentityScopeAssignedCapabilityReader>();
             services.AddSingleton<IIdentityScopeAdministrationGroupStore, PostgreSqlIdentityScopeAdministrationGroupStore>();
             services.AddSingleton<IIdentityScopeAdministrationMembershipStore, PostgreSqlIdentityScopeAdministrationMembershipStore>();

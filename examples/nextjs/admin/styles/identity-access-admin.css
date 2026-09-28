@@ -1816,3 +1816,117 @@ summary:focus-visible {
   .ia-table-tenant-context { min-width: 0; }
   .ia-table-tenant-context code { max-width: 100%; white-space: normal; overflow-wrap: anywhere; }
 }
+
+/* Tenant-centric membership administration */
+.ia-membership-count {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 4px 9px;
+  border: 1px solid var(--ia-border);
+  border-radius: 999px;
+  background: var(--ia-surface-subtle);
+  color: var(--ia-text-strong);
+  font-size: 10.5px;
+  font-weight: 720;
+  white-space: nowrap;
+}
+
+/* R4-B: group origin provenance */
+.ia-origin-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .04em;
+  white-space: nowrap;
+}
+.ia-origin-template {
+  color: var(--ia-accent-strong);
+  background: var(--ia-accent-soft);
+}
+.ia-origin-tenant {
+  color: var(--ia-muted-strong);
+  background: var(--ia-surface-strong);
+  border: 1px solid var(--ia-border);
+}
+
+/* R4-C: member group assignment and exact-login membership addition */
+.ia-member-group-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-width: 180px;
+}
+.ia-member-group-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 7px 3px 3px;
+  border: 1px solid var(--ia-border);
+  border-radius: 999px;
+  background: var(--ia-surface-subtle);
+  color: var(--ia-text-strong);
+  font-size: 11px;
+  font-weight: 650;
+}
+.ia-inline-input-action {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+}
+.ia-exact-member-lookup {
+  display: grid;
+  gap: 8px;
+}
+.ia-candidate-card {
+  display: grid;
+  gap: 3px;
+  padding: 10px 12px;
+  border: 1px solid var(--ia-border);
+  border-radius: 12px;
+  background: var(--ia-surface-subtle);
+}
+.ia-candidate-card-ready {
+  border-color: var(--ia-accent);
+  background: var(--ia-accent-soft);
+}
+.ia-candidate-card span {
+  color: var(--ia-muted);
+  font-size: 12px;
+}
+.ia-candidate-card code {
+  overflow-wrap: anywhere;
+}
+.ia-group-assignment-list {
+  display: grid;
+  gap: 8px;
+}
+.ia-group-assignment-option {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 10px;
+  align-items: start;
+  padding: 10px 12px;
+  border: 1px solid var(--ia-border);
+  border-radius: 12px;
+  background: var(--ia-surface-subtle);
+}
+.ia-group-assignment-option > span {
+  display: grid;
+  gap: 5px;
+}
+.ia-group-assignment-option small {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  color: var(--ia-muted);
+}
+@media (max-width: 680px) {
+  .ia-inline-input-action { grid-template-columns: 1fr; }
+}

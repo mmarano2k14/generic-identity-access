@@ -130,6 +130,16 @@ namespace IdentityAccess.Application.Security
         /// <summary>A tenant-scoped group was bound to a shared managed-policy version.</summary>
         ManagedPolicyBindingAdded = 63,
         /// <summary>A tenant-scoped managed-policy binding was removed.</summary>
-        ManagedPolicyBindingRemoved = 64
+        ManagedPolicyBindingRemoved = 64,
+        /// <summary>Historical pre-0.64 event: a separate reusable template definition was created.</summary>
+        GroupTemplateCreated = 65,
+        /// <summary>Historical pre-0.64 event: a separate reusable template definition was updated.</summary>
+        GroupTemplateUpdated = 66,
+        /// <summary>A reusable group template was instantiated inside one tenant by the retired pre-0.64 model.</summary>
+        GroupTemplateInstantiated = 67,
+        /// <summary>A real group was marked or unmarked as reusable.</summary>
+        GroupReusableAvailabilityChanged = 68,
+        /// <summary>A normal tenant group was created from a reusable real group definition.</summary>
+        GroupCreatedFromTemplate = 69
     }
 }

@@ -81,6 +81,42 @@ namespace IdentityAccess.Infrastructure.PostgreSql.Directory
             return items.AsReadOnly();
         }
 
+        /// <summary>Lists all group-membership edges for one tenant/application boundary.</summary>
+        public async Task<IReadOnlyList<GroupMembership>> ListForTenantAsync(ResolvedDatabaseRoute route,
+            TenantReference tenant, ApplicationKey application, CancellationToken cancellationToken)
+        {
+            ArgumentNullException.ThrowIfNull(tenant);
+            ArgumentNullException.ThrowIfNull(application);
+            PostgreSqlDirectoryGuard.EnsureScope(route, tenant.IdentityScopeId);
+            await using var connection = (NpgsqlConnection)await connectionFactory.OpenAsync(route, cancellationToken)
+                .ConfigureAwait(false);
+            await using var command = new NpgsqlCommand("""
+                SELECT gm.group_id, gm.tenant_membership_id, tm.user_id
+                FROM identity_access.group_memberships AS gm
+                JOIN identity_access.tenant_memberships AS tm
+                  ON tm.identity_scope_id = gm.identity_scope_id
+                 AND tm.tenant_id = gm.tenant_id
+                 AND tm.membership_id = gm.tenant_membership_id
+                WHERE gm.identity_scope_id = @scope
+                  AND gm.tenant_id = @tenant_id
+                  AND gm.application_key = @application_key
+                ORDER BY gm.tenant_membership_id, gm.group_id;
+                """, connection);
+            command.Parameters.AddWithValue("scope", tenant.IdentityScopeId);
+            command.Parameters.AddWithValue("tenant_id", tenant.TenantId);
+            command.Parameters.AddWithValue("application_key", application.Value);
+
+            var items = new List<GroupMembership>();
+            await using var reader = await command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
+            while (await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
+            {
+                var group = new GroupReference(tenant, application, reader.GetGuid(0));
+                items.Add(GroupMembership.Restore(group, reader.GetGuid(1),
+                    new SubjectReference(tenant.IdentityScopeId, reader.GetGuid(2))));
+            }
+            return items.AsReadOnly();
+        }
+
         private static void AddIdentity(NpgsqlCommand command, GroupReference group, Guid? membershipId)
         {
             command.Parameters.AddWithValue("scope", group.Tenant.IdentityScopeId);

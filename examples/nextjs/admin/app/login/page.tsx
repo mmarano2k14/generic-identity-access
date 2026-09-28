@@ -1,8 +1,12 @@
 import { AdminIcon } from "../../components/AdminIcon";
+import { AdminSessionRecovery } from "../../components/AdminSessionRecovery";
+import { IdentityAccessHostSessionService } from "../../server/IdentityAccessHostSessionService";
 import { LoginForm } from "./LoginForm";
 
 export default async function LoginPage({ searchParams }: { readonly searchParams: Promise<{ readonly recovered?: string; readonly session?: string }> }) {
   const { recovered, session } = await searchParams;
+  const hostSession = await IdentityAccessHostSessionService.fromCurrentRequest();
+  const canRecoverSession = session === "refresh" && hostSession.hasRefreshCredential();
 
   return (
     <main className="ia-login-shell">
@@ -44,7 +48,7 @@ export default async function LoginPage({ searchParams }: { readonly searchParam
         {session === "expired" ? (
           <div className="ia-auth-notice" role="status"><AdminIcon name="shield" /><span>Your administrative session is no longer valid. Sign in again to continue with a fresh server-authorized context.</span></div>
         ) : null}
-        <LoginForm />
+        {canRecoverSession ? <AdminSessionRecovery /> : <LoginForm />}
         <p className="ia-login-footnote"><AdminIcon name="shield" /> Authentication remains server-only from password entry through OIDC token exchange.</p>
       </section>
     </main>

@@ -68,6 +68,7 @@ namespace IdentityAccess.Api.Security
 
             RequireService<IDatabaseRouteResolver>(builder.Services);
             RequireService<IAssignedCapabilityReader>(builder.Services);
+            RequireService<IGroupCapabilityGrantReader>(builder.Services);
             RequireService<IIdentityScopeAssignedCapabilityReader>(builder.Services);
 
             var provider = Require(
@@ -138,6 +139,15 @@ namespace IdentityAccess.Api.Security
             builder.Services.AddSingleton<
                 IIdentityScopeAuthorizationService,
                 IdentityScopeAuthorizationService>();
+            builder.Services.AddSingleton<
+                ITenantGroupAssignmentDelegationGuard,
+                TenantGroupAssignmentDelegationGuard>();
+            builder.Services.AddSingleton<
+                IGroupDefinitionMutationGuard,
+                GroupDefinitionMutationGuard>();
+            builder.Services.AddSingleton<
+                ITenantMembershipCreationAuthorizationGuard,
+                TenantMembershipCreationAuthorizationGuard>();
         }
 
         private static string Require(

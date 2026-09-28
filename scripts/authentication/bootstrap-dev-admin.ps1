@@ -303,6 +303,7 @@ INSERT INTO identity_access.identity_scope_administration_group_policy_bindings
 VALUES ('$IdentityScopeId', '$app', '$scopeAdminGroupId', '$scopeAdminPolicyId')
 ON CONFLICT DO NOTHING;
 
+
 INSERT INTO identity_access.user_groups
 (identity_scope_id, tenant_id, application_key, group_id, display_name, status)
 VALUES ('$IdentityScopeId', '$TenantId', '$app', '$tenantAdminGroupId', 'Local Tenant Administrators', 1)

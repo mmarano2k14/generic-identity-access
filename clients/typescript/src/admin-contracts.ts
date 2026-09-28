@@ -114,10 +114,25 @@ export interface IdentityUpdateTenantMembershipRequest {
 }
 
 export interface IdentityGroupRecord {
+  readonly tenantId: string;
   readonly groupId: string;
   readonly displayName: string;
   readonly status: IdentityGroupStatus;
+  readonly isTemplate: boolean;
   readonly version: number;
+}
+
+export interface IdentityCreateGroupFromTemplateRequest {
+  readonly sourceTenantId: string;
+  readonly sourceGroupId: string;
+  readonly groupId?: string;
+}
+
+export interface IdentityUpdateReusableGroupRequest {
+  readonly displayName: string;
+  readonly status: IdentityGroupStatus;
+  readonly isTemplate: boolean;
+  readonly expectedVersion: number;
 }
 
 export interface IdentityCreateGroupRequest {
@@ -135,6 +150,20 @@ export interface IdentityUpdateGroupRequest {
 export interface IdentityGroupMemberRecord {
   readonly tenantMembershipId: string;
   readonly userId: string;
+}
+
+export interface IdentityTenantGroupAssignmentRecord {
+  readonly groupId: string;
+  readonly tenantMembershipId: string;
+  readonly userId: string;
+}
+
+export interface IdentityTenantMembershipCandidateRecord {
+  readonly userId: string;
+  readonly displayName: string;
+  readonly userStatus: IdentityUserStatus;
+  readonly existingMembershipId?: string;
+  readonly existingMembershipStatus?: IdentityMembershipStatus;
 }
 
 export interface IdentityPolicyRecord {
@@ -378,7 +407,12 @@ export interface IdentitySecurityAuditRecord {
   readonly correlationId?: string;
 }
 
-export interface IdentityScopeAuthorityGroupRecord extends IdentityGroupRecord {}
+export interface IdentityScopeAuthorityGroupRecord {
+  readonly groupId: string;
+  readonly displayName: string;
+  readonly status: IdentityGroupStatus;
+  readonly version: number;
+}
 
 export interface IdentityScopeAuthorityMemberRecord {
   readonly groupId: string;

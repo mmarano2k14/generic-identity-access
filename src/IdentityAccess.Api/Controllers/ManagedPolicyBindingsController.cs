@@ -7,12 +7,17 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace IdentityAccess.Api.Controllers
 {
-    /// <summary>Administers tenant-scoped bindings to shared managed-policy versions.</summary>
+    /// <summary>
+    /// Administers tenant-scoped bindings to shared managed-policy versions.
+    /// </summary>
     [ApiController]
-    [Route("api/v1/identity-scopes/{identityScopeId:guid}/tenants/{tenantId:guid}/applications/{applicationKey}/managed-policy-bindings")]
+    [Route(
+        "api/v1/identity-scopes/{identityScopeId:guid}/tenants/{tenantId:guid}/applications/{applicationKey}/managed-policy-bindings")]
     [Produces("application/json")]
     public sealed class ManagedPolicyBindingsController(
-        OptionalFeature<IManagedPolicyBindingAdministrationService> feature) : ControllerBase
+        OptionalFeature<IManagedPolicyBindingAdministrationService> feature,
+        OptionalFeature<IGroupDefinitionMutationGuard> definitionGuard)
+        : ControllerBase
     {
         [HttpGet("available-policies")]
         [RequireAdministrationCapability(
@@ -30,8 +35,13 @@ namespace IdentityAccess.Api.Controllers
         {
             var resolvedOffset = offset ?? 0;
             var resolvedLimit = limit ?? AdministrationPaging.DefaultLimit;
-            if (!AdministrationPaging.IsValid(resolvedOffset, resolvedLimit)) return BadRequest();
-            if (!feature.TryGet(out var service)) return ApiProblems.ManagedPolicyBindingAdministrationUnavailable();
+
+            if (!AdministrationPaging.IsValid(resolvedOffset, resolvedLimit))
+                return BadRequest();
+
+            if (!feature.TryGet(out var service))
+                return ApiProblems.ManagedPolicyBindingAdministrationUnavailable();
+
             var policies = await service.ListAvailablePoliciesAsync(
                 identityScopeId,
                 tenantId,
@@ -40,7 +50,11 @@ namespace IdentityAccess.Api.Controllers
                 resolvedOffset,
                 resolvedLimit,
                 cancellationToken);
-            return Ok(policies.Select(ManagedPolicyResponse.From).ToArray());
+
+            return Ok(
+                policies
+                    .Select(ManagedPolicyResponse.From)
+                    .ToArray());
         }
 
         [HttpGet("groups/{groupId:guid}")]
@@ -55,14 +69,20 @@ namespace IdentityAccess.Api.Controllers
             Guid groupId,
             CancellationToken cancellationToken)
         {
-            if (!feature.TryGet(out var service)) return ApiProblems.ManagedPolicyBindingAdministrationUnavailable();
+            if (!feature.TryGet(out var service))
+                return ApiProblems.ManagedPolicyBindingAdministrationUnavailable();
+
             var bindings = await service.ListBindingsAsync(
                 identityScopeId,
                 tenantId,
                 new ApplicationKey(applicationKey),
                 groupId,
                 cancellationToken);
-            return Ok(bindings.Select(ManagedGroupPolicyBindingResponse.From).ToArray());
+
+            return Ok(
+                bindings
+                    .Select(ManagedGroupPolicyBindingResponse.From)
+                    .ToArray());
         }
 
         [HttpPost("groups/{groupId:guid}")]
@@ -70,7 +90,8 @@ namespace IdentityAccess.Api.Controllers
             IdentityAccessAdministrationCapabilities.Resource,
             IdentityAccessAdministrationCapabilities.PolicyBindings,
             IdentityAccessAdministrationCapabilities.Write)]
-        [ProducesResponseType<ManagedGroupPolicyBindingResponse>(StatusCodes.Status201Created)]
+        [ProducesResponseType<ManagedGroupPolicyBindingResponse>(
+            StatusCodes.Status201Created)]
         public async Task<ActionResult<ManagedGroupPolicyBindingResponse>> Add(
             Guid identityScopeId,
             Guid tenantId,
@@ -79,25 +100,48 @@ namespace IdentityAccess.Api.Controllers
             [FromBody] AddManagedGroupPolicyBindingRequest request,
             CancellationToken cancellationToken)
         {
-            if (request.PolicyVersion is <= 0) return BadRequest();
-            if (request.ResourceScopeId is null && request.IncludeDescendants) return BadRequest();
-            if (!feature.TryGet(out var service)) return ApiProblems.ManagedPolicyBindingAdministrationUnavailable();
+            if (request.PolicyVersion <= 0)
+                return BadRequest();
+
+            if (request.ResourceScopeId is null && request.IncludeDescendants)
+                return BadRequest();
+
+            var application = new ApplicationKey(applicationKey);
+
+            var guardResult = await AuthorizeDefinitionMutationAsync(
+                identityScopeId,
+                tenantId,
+                application,
+                groupId,
+                cancellationToken);
+
+            if (guardResult is not null)
+                return guardResult;
+
+            if (!feature.TryGet(out var service))
+                return ApiProblems.ManagedPolicyBindingAdministrationUnavailable();
+
             var binding = await service.AddBindingAsync(
                 identityScopeId,
                 tenantId,
-                new ApplicationKey(applicationKey),
+                application,
                 groupId,
                 request.PolicyId,
                 request.PolicyVersion,
                 request.ResourceScopeId,
                 request.IncludeDescendants,
                 cancellationToken);
-            return binding is null
-                ? NotFound()
-                : Created(Request.Path, ManagedGroupPolicyBindingResponse.From(binding));
+
+            if (binding is null)
+                return NotFound();
+
+            return Created(
+                Request.Path,
+                ManagedGroupPolicyBindingResponse.From(binding));
         }
 
-        [HttpDelete("groups/{groupId:guid}/{policyId:guid}/versions/{policyVersion:int}")]
+        [HttpDelete(
+            "groups/{groupId:guid}/{policyId:guid}/versions/{policyVersion:int}")]
         [RequireAdministrationCapability(
             IdentityAccessAdministrationCapabilities.Resource,
             IdentityAccessAdministrationCapabilities.PolicyBindings,
@@ -112,17 +156,70 @@ namespace IdentityAccess.Api.Controllers
             [FromQuery] Guid? resourceScopeId,
             CancellationToken cancellationToken)
         {
-            if (!feature.TryGet(out var service)) return ApiProblems.ManagedPolicyBindingAdministrationUnavailable();
+            var application = new ApplicationKey(applicationKey);
+
+            var guardResult = await AuthorizeDefinitionMutationAsync(
+                identityScopeId,
+                tenantId,
+                application,
+                groupId,
+                cancellationToken);
+
+            if (guardResult is not null)
+                return guardResult;
+
+            if (!feature.TryGet(out var service))
+                return ApiProblems.ManagedPolicyBindingAdministrationUnavailable();
+
             var removed = await service.RemoveBindingAsync(
                 identityScopeId,
                 tenantId,
-                new ApplicationKey(applicationKey),
+                application,
                 groupId,
                 policyId,
                 policyVersion,
                 resourceScopeId,
                 cancellationToken);
-            return removed ? NoContent() : NotFound();
+
+            return removed
+                ? NoContent()
+                : NotFound();
+        }
+
+        private async Task<ActionResult?> AuthorizeDefinitionMutationAsync(
+            Guid identityScopeId,
+            Guid tenantId,
+            ApplicationKey application,
+            Guid groupId,
+            CancellationToken cancellationToken)
+        {
+            if (!definitionGuard.TryGet(out var guard))
+                return ApiProblems.AdministrationAuthorizationUnavailable();
+
+            var access = await guard.AuthorizeAsync(
+                HttpContext,
+                identityScopeId,
+                tenantId,
+                application,
+                groupId,
+                IdentityAccessAdministrationCapabilities.PolicyBindings,
+                IdentityAccessAdministrationCapabilities.Write,
+                cancellationToken);
+
+            return access.Decision switch
+            {
+                AdministrationAccessDecision.Allowed =>
+                    null,
+
+                AdministrationAccessDecision.Unauthenticated =>
+                    Unauthorized(),
+
+                AdministrationAccessDecision.Denied =>
+                    Forbid(),
+
+                _ =>
+                    ApiProblems.AdministrationAuthorizationUnavailable()
+            };
         }
     }
 }

@@ -1,3 +1,68 @@
+# 0.64.0 - Unified group-as-template model
+
+- Replaced the separate `GroupTemplate` security subsystem with a single `UserGroup` model carrying `is_template`; a reusable template is now a real tenant group with its normal managed-policy bindings.
+- Preserved historical checksum-protected migrations `0026_group_templates.sql` and `0027_group_template_flag_foundation.sql`; added append-only migration `0028_simplify_group_templates.sql` for the final cleanup. Migration `0028` removes the four artificial development templates and their derived development instances through explicit relationship cleanup, removes `origin` / `template_id`, preserves `user_groups.is_template`, and retires `identity_access.group_templates` without `CASCADE`.
+- Made migration `0028` fail closed if non-development rows remain in the retired global template catalogue, preventing silent loss of custom legacy definitions that cannot be mapped automatically because the old table has no tenant identity.
+- Added unified group administration routes for listing reusable groups, `Create from template`, and identity-scope `Make available as template` mutation. Reusable group definition changes require identity-scope authority.
+- Hardened `Create from template`: the server re-evaluates every concrete managed grant against the target tenant, rejects wildcard/descendant delegation from tenant scope, verifies target resource-scope portability, copies managed-policy bindings only, and never copies memberships.
+- Removed the old GroupTemplate domain/service/store/controllers, separate TypeScript client, development seed script, and the `Available group templates` UI catalogue.
+- Updated the Groups workspace to expose one group list with `Template: Yes/No`; template creation is an explicit clone action and member `Manage groups` operates only on already-created real groups.
+- Added `verify-group-as-template-source-consistency.ps1`, PostgreSQL group-as-template validation, restore-schema assertions, browser qualification updates, and focused domain/delegation tests.
+- Final qualification fixes remove accidental MVC body binding from `ManagedPolicyBindingsController`, correct the group-as-template PostgreSQL UUID fixture, and disambiguate restore-schema metadata queries.
+- Final documentation now distinguishes managed-policy capability selection from optional resource-scope narrowing, documents the immutable `0027` foundation plus `0028` cleanup sequence, and records the complete API/UI browser qualification flow.
+- Rebuilt the PostgreSQL schema reference directly from the numbered migrations, including the active managed-policy model, retained historical policy tables, resource scopes, authentication/OIDC/MFA persistence, audit ledgers, migration checksum rules, delete behavior, and the final group-as-template schema.
+- Advanced the repository and administration host to `0.64.0` and the TypeScript client to `0.24.0`.
+
+# 0.63.3 - Administration UI end-to-end qualification
+
+- Added a final administration source-consistency gate that composes tenant-centric membership, reusable groups, safe member addition, managed-policy-only authorization, session, MFA, and OIDC host invariants into one validation boundary.
+- Added an interactive real-browser administration qualification helper that verifies local API/UI reachability, collects explicit evidence for tenant/member/group workflows, template immutability, tenant isolation, ALLOW/DENY behavior, Sessions, MFA, and logout, and writes a JSON evidence record under `artifacts/qualification`.
+- Added a consolidated administration qualification entry point: production qualification plus real-browser evidence are both required for a complete result; explicit skips are reported as partial qualification.
+- Added `ADMIN_UI_E2E_QUALIFICATION.md` with the exact browser workflow and the requirement to use `127.0.0.1` consistently with the registered OIDC callback.
+- Preserved the existing runtime, API, and UI contracts unchanged; no new product feature or PostgreSQL migration was introduced by the qualification-only release.
+- Advanced the repository and administration host version to `0.63.3`.
+
+# 0.63.2 - Member group assignment and safe tenant member addition
+
+- Repair R3: corrected split tenant-group delegation test doubles to import the public authorization contracts from `IdentityAccess.Authorization`; the split files had retained the obsolete `IdentityAccess.Application.Authorization` namespace and failed compilation.
+- Repair R2: corrected the TypeScript membership-candidate client test to return HTTP 201 Created for membership creation, matching the public administration POST transport contract instead of incorrectly mocking HTTP 200.
+- Repair R1: split tenant-group delegation test doubles into one declared type per source file so the repository source-layout invariant remains enforced.
+- Repair R1: removed the tenant-membership candidate composite-service assertion from the PostgreSQL-only registration test; candidate-service composition still requires a configured database route and is not a PostgreSQL storage registration contract.
+- Extended tenant Memberships with per-user group provenance and a capability-gated `Manage groups` workflow covering tenant-owned groups and reusable template-derived groups.
+- Added tenant-scoped aggregate group-assignment reads so the administration host can render member/group relationships without N+1 group-member requests.
+- Added on-demand template instantiation during group assignment while keeping global templates immutable from tenant context and preserving `TEMPLATE` versus `TENANT` provenance.
+- Added exact-login membership candidate resolution for tenant-scoped administrators; the workflow does not expose the global user autocomplete and the server revalidates the resolved user before membership creation.
+- Kept identity-scope administrators on the broader user lookup surface while preserving the separation between `membership.add` and global `user.create`.
+- Added a server-side group-assignment delegation guard: identity-scope administrators may delegate directly, while tenant-scoped administrators must already hold each concrete capability carried by the target group at the same tenant/resource target. Wildcard or descendant-expanding grants fail closed for tenant-scoped delegation.
+- Added a dedicated group-capability projection over published managed-policy bindings for delegation checks without changing the external RBAC evaluator or reintroducing legacy policy authorization.
+- Preserved cross-tenant isolation in PostgreSQL group-membership mutation and added focused source, client, application-contract, registration, and delegation tests.
+- No PostgreSQL migration is required; the latest migration remains `0026_group_templates.sql`.
+
+# 0.63.1 - Group templates and tenant groups
+
+- Repair: corrected the invalid negative-test UUID in `validate-group-templates.sql` so provenance validation reaches the intended database constraint instead of failing during UUID parsing.
+- Added reusable application-level group templates as a separate identity-scope administration model while keeping every effective group membership tenant-scoped.
+- Added PostgreSQL migration `0026_group_templates.sql` with durable template storage, immutable group-origin provenance, one template-derived instance per tenant/application, and security-mutation audit coverage.
+- Extended tenant groups with explicit `TEMPLATE` versus `TENANT` origin and optional template provenance; tenant mutation cannot convert origins or edit template-derived group definitions.
+- Added identity-scope group-template administration routes plus tenant-scoped read/use routes. Tenant-scoped callers can list active templates and instantiate tenant-local group instances but cannot mutate global template definitions.
+- Added the public TypeScript `administration.groupTemplates` client and advanced the TypeScript package to `0.22.0`; tenant group records now expose origin and template provenance without changing the separate scope-authority group contract.
+- Reworked the Next.js Groups workspace so identity-scope administrators can maintain global templates, while concrete tenant views show available `TEMPLATE` definitions alongside tenant-local group instances marked `TEMPLATE` or `TENANT`.
+- Preserved tenant isolation: custom groups are always tenant-owned, template use creates a tenant-local instance, and global template mutation remains identity-scope authorized.
+- Added local development default templates (`Tenant Administrator`, `User Manager`, `Security Auditor`, `Read Only`) through the development bootstrap plus a standalone idempotent seed script for existing local databases, without changing production application semantics.
+- Added focused PostgreSQL and source-consistency qualification for template persistence, provenance, tenant instantiation, duplicate-instance rejection, template immutability, and global-versus-tenant administration boundaries.
+
+# 0.63.0 - Tenant-centric membership administration
+
+- Repair R2: updated the shared TypeScript source-consistency gate to validate the tenant-centric Memberships workspace instead of requiring the retired tenant/user autocomplete pair, and removed the obsolete membership-user autocomplete requirement.
+- Repair: corrected the tenant-membership UI source-consistency gate so self-only membership presentation is validated across the page/component boundary instead of requiring a page-owned label inside the table component.
+- Replaced the technical tenant/user membership lookup as the primary administration workflow with a tenant-centric Memberships workspace.
+- Added scope-aware tenant presentation: identity-scope administrators see the authorized tenant collection with membership counts, while membership-limited subjects see only their trusted active tenant memberships.
+- Added empty-tenant creation directly from the Memberships workspace without coupling tenant creation to user creation.
+- Added tenant detail member lists backed by tenant-constrained user reads; membership-limited subjects receive only their own membership record and never enumerate the tenant directory.
+- Preserved membership lifecycle editing for scope-wide administration while keeping membership distinct from groups, managed policies, and RBAC permission.
+- Added dedicated tenant-membership overview presentation and a source-consistency gate preventing regression to free-form tenant/user lookup or cross-tenant directory exposure.
+- No PostgreSQL migration is required; this increment composes the existing trusted administration context, tenant directory, membership, and tenant-user read surfaces.
+
 # 0.62.6 - Managed policy compatibility closure
 
 - Repair: converted the retired `AdminCreatePolicyDialog.tsx` source into an inert overlay tombstone so cumulative ZIP overlays cannot leave a stale `createPolicyAction` import from an earlier working tree.

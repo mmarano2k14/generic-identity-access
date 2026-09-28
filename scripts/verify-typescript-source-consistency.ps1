@@ -31,6 +31,8 @@ $required = @(
     "client/administration/IdentityAccessTenantsClient.ts",
     "client/administration/IdentityAccessTenantUsersClient.ts",
     "client/administration/IdentityAccessMembershipsClient.ts",
+    "client/administration/IdentityAccessMembershipCandidatesClient.ts",
+    "client/administration/IdentityAccessTenantGroupAssignmentsClient.ts",
     "client/administration/IdentityAccessMfaClient.ts",
     "client/administration/IdentityAccessManagedPoliciesClient.ts",
     "client/administration/IdentityAccessManagedPolicyBindingsClient.ts",
@@ -59,6 +61,8 @@ $usersClient = Get-Content (Join-Path $src "client/administration/IdentityAccess
 $tenantsClient = Get-Content (Join-Path $src "client/administration/IdentityAccessTenantsClient.ts") -Raw
 $tenantUsersClient = Get-Content (Join-Path $src "client/administration/IdentityAccessTenantUsersClient.ts") -Raw
 $membershipsClient = Get-Content (Join-Path $src "client/administration/IdentityAccessMembershipsClient.ts") -Raw
+$membershipCandidatesClient = Get-Content (Join-Path $src "client/administration/IdentityAccessMembershipCandidatesClient.ts") -Raw
+$tenantGroupAssignmentsClient = Get-Content (Join-Path $src "client/administration/IdentityAccessTenantGroupAssignmentsClient.ts") -Raw
 $mfaClient = Get-Content (Join-Path $src "client/administration/IdentityAccessMfaClient.ts") -Raw
 $managedPoliciesClient = Get-Content (Join-Path $src "client/administration/IdentityAccessManagedPoliciesClient.ts") -Raw
 $managedPolicyBindingsClient = Get-Content (Join-Path $src "client/administration/IdentityAccessManagedPolicyBindingsClient.ts") -Raw
@@ -116,6 +120,8 @@ $classRequirements = @(
     @{ Source = $tenantsClient; ClassName = "IdentityAccessTenantsClient"; Methods = @("list", "get", "create", "update") },
     @{ Source = $tenantUsersClient; ClassName = "IdentityAccessTenantUsersClient"; Methods = @("list") },
     @{ Source = $membershipsClient; ClassName = "IdentityAccessMembershipsClient"; Methods = @("list", "get", "findByUser", "create", "update") },
+    @{ Source = $membershipCandidatesClient; ClassName = "IdentityAccessMembershipCandidatesClient"; Methods = @("findByLogin", "createMembershipByLogin") },
+    @{ Source = $tenantGroupAssignmentsClient; ClassName = "IdentityAccessTenantGroupAssignmentsClient"; Methods = @("list") },
     @{ Source = $mfaClient; ClassName = "IdentityAccessMfaClient"; Methods = @("listProviders", "getPolicy", "createPolicy", "updatePolicy", "listAuthenticators", "getUserSecurityState", "revokeAuthenticator", "revokeAuthenticatorForRecovery") },
     @{ Source = $managedPoliciesClient; ClassName = "IdentityAccessManagedPoliciesClient"; Methods = @("list", "get", "create", "update", "listVersions", "getVersion", "createVersion", "publishVersion", "listStatements", "addStatement", "removeStatement") },
     @{ Source = $managedPolicyBindingsClient; ClassName = "IdentityAccessManagedPolicyBindingsClient"; Methods = @("listAvailablePolicies", "list", "add", "remove") },
@@ -139,7 +145,7 @@ foreach ($requirement in $classRequirements) {
     }
 }
 
-if ($administrationClient -notmatch 'public\s+readonly\s+context\s*:' -or $administrationClient -notmatch 'public\s+readonly\s+users\s*:' -or $administrationClient -notmatch 'public\s+readonly\s+tenantUsers\s*:' -or $administrationClient -notmatch 'public\s+readonly\s+mfa\s*:' -or $administrationClient -notmatch 'public\s+readonly\s+managedPolicies\s*:' -or $administrationClient -notmatch 'public\s+readonly\s+managedPolicyBindings\s*:' -or $administrationClient -notmatch 'public\s+readonly\s+scopeAuthority\s*:' -or $administrationClient -notmatch 'public\s+readonly\s+securityAudit\s*:') {
+if ($administrationClient -notmatch 'public\s+readonly\s+context\s*:' -or $administrationClient -notmatch 'public\s+readonly\s+users\s*:' -or $administrationClient -notmatch 'public\s+readonly\s+tenantUsers\s*:' -or $administrationClient -notmatch 'public\s+readonly\s+membershipCandidates\s*:' -or $administrationClient -notmatch 'public\s+readonly\s+tenantGroupAssignments\s*:' -or $administrationClient -notmatch 'public\s+readonly\s+mfa\s*:' -or $administrationClient -notmatch 'public\s+readonly\s+managedPolicies\s*:' -or $administrationClient -notmatch 'public\s+readonly\s+managedPolicyBindings\s*:' -or $administrationClient -notmatch 'public\s+readonly\s+scopeAuthority\s*:' -or $administrationClient -notmatch 'public\s+readonly\s+securityAudit\s*:') {
     throw "IdentityAccessAdministrationClient must compose the focused administration clients."
 }
 if ($allSource -match 'client_secret') { throw "The TypeScript public-client implementation must not introduce client_secret." }
@@ -159,6 +165,11 @@ $requiredNextFiles = @(
     "server/IdentityAccessServerConnector.ts",
     "contracts/AdminActionState.ts",
     "components/AdminEntityAutocomplete.tsx",
+    "components/AdminExactMemberLookup.tsx",
+    "components/AdminAddTenantMemberDialog.tsx",
+    "components/AdminManageMemberGroupsDialog.tsx",
+    "server/IdentityAccessAdminMembershipOverviewService.ts",
+    "app/api/identity/membership-candidates/route.ts",
     "contracts/AdminEntityReferenceOption.ts",
     "contracts/AdminEntityReferenceKind.ts",
     "server/IdentityAccessAdminEntityReferencePresentation.ts",
@@ -395,7 +406,7 @@ foreach ($methodName in @(
     if ($mutationService -notmatch ("\b" + [regex]::Escape($methodName) + "\s*\(")) { throw "IdentityAccessAdminMutationService is missing $methodName." }
 }
 if ($usersPage -notmatch 'updateUserAction' -or $tenantsPage -notmatch 'updateTenantAction' -or $membershipsPage -notmatch 'updateTenantMembershipAction') { throw "Directory administration must expose server-confirmed edit operations." }
-if ($usersPage -notmatch 'AdminRecordContext' -or $usersPage -notmatch '/identity/memberships\?userId=' -or $usersPage -notmatch '/identity/mfa\?userId=' -or $usersPage -notmatch '/identity/sessions\?userId=') { throw "User administration must retain direct server-routed detail navigation into membership, MFA, and session-security context." }
+if ($usersPage -notmatch 'AdminRecordContext' -or $usersPage -notmatch '/identity/memberships\?tenantId=' -or $usersPage -notmatch '/identity/mfa\?userId=' -or $usersPage -notmatch '/identity/sessions\?userId=') { throw "User administration must retain tenant-centric membership navigation plus direct MFA and session-security detail navigation." }
 if ($usersPage -notmatch 'AdminAccessInsight' -or $usersPage -notmatch 'IdentityAccessAdminAccessInsightService' -or $usersPage -notmatch 'hasTenantContext') { throw "Selected user administration must retain server-composed tenant assignment provenance without assuming a tenant context exists." }
 if ($tenantsPage -notmatch 'AdminRecordContext' -or $groupsPage -notmatch 'AdminRecordContext' -or $policiesPage -notmatch 'AdminRecordContext' -or $resourceScopesPage -notmatch 'AdminRecordContext' -or $membershipsPage -notmatch 'AdminRecordContext') { throw "Administration detail and relationship pages must retain explicit selected-record context." }
 if ($groupsPage -notmatch 'addGroupMemberAction' -or $groupsPage -notmatch 'removeGroupMemberAction' -or $groupsPage -notmatch 'addManagedGroupPolicyBindingAction' -or $groupsPage -notmatch 'removeManagedGroupPolicyBindingAction') { throw "Group administration must expose member operations and managed-policy binding operations." }
@@ -494,10 +505,9 @@ if ($groupsPage -notmatch 'resourceScopeId\s*!==\s*undefined') { throw "Group po
 if ($entityReferencePresentation -notmatch 'export\s+class\s+IdentityAccessAdminEntityReferencePresentation\b' -or $entityReferencePresentation -notmatch 'static\s+users\s*\(' -or $entityReferencePresentation -notmatch 'static\s+tenantMemberships\s*\(' -or $entityReferencePresentation -notmatch 'static\s+resourceScopes\s*\(') { throw "Entity reference presentation must remain a focused class over typed administration records." }
 if ($entityReferenceSearchService -notmatch 'export\s+class\s+IdentityAccessAdminEntityReferenceSearchService\b' -or $entityReferenceSearchService -notmatch 'minimumSearchLength\s*=\s*3' -or $entityReferenceSearchService -notmatch 'maximumResults\s*=\s*20' -or $entityReferenceSearchService -notmatch '\.list\([^\)]*options' -or $entityReferenceSearchService -match 'authorization\.evaluate|isAllowed\s*\(') { throw "Entity-reference lookup must remain a focused bounded server-side search class without RBAC reimplementation." }
 if ($entityReferenceRoute -notmatch 'IdentityAccessAdminEntityReferenceSearchService' -or $entityReferenceRoute -notmatch 'export\s+async\s+function\s+GET\b' -or $entityReferenceRoute -match '\.list\(') { throw "Entity-reference API route must remain a thin adapter over the server-side search class." }
-if ($membershipsPage -notmatch 'AdminEntityAutocomplete[^>]+name="tenantId"[^>]+kind="tenant"' -or $membershipsPage -notmatch 'AdminEntityAutocomplete[^>]+name="userId"[^>]+kind="user"') { throw "Tenant membership creation/lookup must select both tenant and user explicitly through server-backed autocomplete." }
+if ($membershipsPage -notmatch 'IdentityAccessAdminMembershipOverviewService' -or $membershipsPage -notmatch 'AdminMembershipTenantTable' -or $membershipsPage -notmatch 'AdminMembershipMemberTable' -or $membershipsPage -notmatch 'overview\.scopeWide') { throw "Tenant membership administration must retain the tenant-centric scoped overview instead of the legacy tenant/user lookup workflow." }
 if ($mfaPage -match 'users\.list\([^\)]*limit:\s*200' -or $authorityPage -match '(?:users\.list|scopeAuthority\.listGroups|scopeAuthority\.listPolicies)\([^\)]*limit:\s*200') { throw "MFA and scope-authority autocompletes must not preload directory catalogs." }
 foreach ($requiredUsage in @(
-    @{ Source = $membershipsPage; Pattern = 'AdminEntityAutocomplete[^>]+name="userId"'; Label = 'membership user' },
     @{ Source = $groupsPage; Pattern = 'AdminEntityAutocomplete[^>]+name="tenantMembershipId"'; Label = 'group tenant member' },
     @{ Source = $groupsPage; Pattern = 'AdminEntityAutocomplete[^>]+name="managedPolicyId"[^>]+kind="managed-policy"'; Label = 'managed group policy binding' },
     @{ Source = $groupsPage; Pattern = 'AdminEntityAutocomplete[^>]+name="resourceScopeId"'; Label = 'group resource scope' },

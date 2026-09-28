@@ -55,7 +55,7 @@ export default async function UsersPage({ searchParams }: { readonly searchParam
           <AdminStatusField name="status" defaultValue={String(selectedUser.status)} />
         </AdminMutationDialog>
       ) : null}
-      <Link className="ia-button ia-button-secondary ia-button-compact" href={`/identity/memberships?userId=${encodeURIComponent(selectedUser.userId)}${context ? `&tenantId=${encodeURIComponent(context.tenantId)}` : ""}`}><AdminIcon name="memberships" />Membership</Link>
+      <Link className="ia-button ia-button-secondary ia-button-compact" href={context ? `/identity/memberships?tenantId=${encodeURIComponent(context.tenantId)}` : "/identity/memberships"}><AdminIcon name="memberships" />Memberships</Link>
       {scopeWide ? <Link className="ia-button ia-button-secondary ia-button-compact" href={`/identity/mfa?userId=${encodeURIComponent(selectedUser.userId)}`}><AdminIcon name="mfa" />MFA state</Link> : null}
       {scopeWide ? <Link className="ia-button ia-button-secondary ia-button-compact" href={`/identity/sessions?userId=${encodeURIComponent(selectedUser.userId)}`}><AdminIcon name="sessions" />Sessions</Link> : null}
       {scopeWide ? <Link className="ia-button ia-button-secondary ia-button-compact" href={`/identity/security-audit?userId=${encodeURIComponent(selectedUser.userId)}`}><AdminIcon name="audit" />Security audit</Link> : null}

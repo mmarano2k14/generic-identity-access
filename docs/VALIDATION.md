@@ -33,7 +33,7 @@ part of the source manifest.
 
 The TypeScript source-consistency gate also pins the class-only runtime architecture, typed administration method set, bounded core list APIs, route-aware `IdentityAccessAdminUiBuilder`, explicit tenant authorization context, and the runnable Next.js administration host. It verifies the class-based server-only login/OIDC lifecycle, HTTP-only cookie posture, pinned host framework versions, single-file CSS ownership, and the absence of `NEXT_PUBLIC_` security configuration. It rejects reintroduction of a functional client factory, a parallel administration runtime client class, or client-secret support.
 
-For the Next.js administration module it additionally requires server-only class-based mutation orchestration, thin Server Action adapters, destructive session-revocation confirmation, loading/error state files, a real `/identity` overview, structured record-detail presentation, and exactly one custom stylesheet at `examples/nextjs/admin/styles/identity-access-admin.css`. CSS Modules, component-local style blocks, React inline style objects, and raw JSON record dumps are rejected. The central stylesheet must retain premium design tokens, automatic dark-mode support, and reduced-motion handling.
+For the Next.js administration module it additionally requires server-only class-based mutation orchestration, thin Server Action adapters, destructive session-revocation confirmation, loading/error state files, a real `/identity` overview, structured record-detail presentation, and exactly one custom stylesheet at `examples/nextjs/admin/styles/identity-access-admin.css`. CSS Modules, component-local style blocks, React inline style objects, and raw JSON record dumps are rejected. The central stylesheet must retain shared design tokens, automatic dark-mode support, and reduced-motion handling.
 
 The same gate pins the `0.58.0` failure boundary: mutation services must not own transport-error presentation, Server Actions delegate safe classification to `IdentityAccessAdminFailurePresentation`, structured action state distinguishes recovery guidance, stale `409` responses require current-state reload, invalid protected sessions route back to sign-in, and session investigation must not infer state when audit evidence is technically unavailable.
 
@@ -422,12 +422,12 @@ The complete repository gate remains:
 .\scripts\verify.ps1
 ```
 
-`0.50.0` is the final planned backend/security milestone in the current sequence. Once GREEN, the next planned work is UI/UX refinement. Any validation defect is corrected as `0.50.x` before that transition.
+The `0.50.0` verification contract covers credential-security behavior that later administration and authentication surfaces must preserve. A repository result is not GREEN when these backend guarantees fail.
 
 
-## 0.51.0 administration UI/UX refinement gate
+## 0.51.0 administration UI/UX gate
 
-Version `0.51.0` keeps the UI refinement phase inside the existing TypeScript/Next.js verification chain rather than creating a parallel frontend gate.
+Version `0.51.0` keeps administration UI validation inside the existing TypeScript/Next.js verification chain rather than creating a parallel frontend gate.
 
 `scripts/verify-typescript-source-consistency.ps1` now additionally requires:
 
@@ -472,3 +472,55 @@ Version `0.60.5` extends TypeScript source-consistency validation for relationsh
 Version `0.60.6` pins server-backed relationship autocomplete behavior. The TypeScript source-consistency gate requires a three-character minimum, bounded results, debounce/cancellation, a focused server-only search class, the thin `/api/identity/entity-references` route, and explicit Tenant + User selection for tenant-membership creation. It rejects preloaded `options={...}` usage on `AdminEntityAutocomplete` and raw editable administrable foreign-ID fields.
 
 The public TypeScript client exposes optional bounded `search` on administration list options; client tests verify query encoding and reject terms shorter than three or longer than 128 characters before transport. PostgreSQL migration `0022_administration_search_indexes.sql` supports the display-name and resource external-ID prefix searches. Complete Windows/.NET verification remains `./scripts/verify.ps1`; TypeScript-only validation is not repository GREEN.
+## Group-as-Template and tenant-group qualification
+
+Version `0.64.0` preserves checksum-protected migrations `0026_group_templates.sql` and `0027_group_template_flag_foundation.sql`, then adds append-only migration `0028_simplify_group_templates.sql`. Historical migrations must remain byte-compatible with databases that have already recorded their checksums. Run:
+
+```powershell
+$env:PGPASSFILE = (Resolve-Path .\scripts\postgresql\.pgpass.local).Path
+psql -U postgres -d generic_identity_access_default -c "SELECT current_database(), current_user;"
+.\scripts\postgresql\apply-default-schema.ps1
+.\scripts\postgresql\verify-group-as-template.ps1
+.\scripts\verify-group-as-template-source-consistency.ps1
+```
+
+The PostgreSQL gate proves that `identity_access.group_templates`, `origin`, and `template_id` are retired and that `user_groups.is_template` is present and constrained. Migration `0028` removes only the known artificial development template instances through explicit relationship cleanup and fails rather than silently discarding unexpected legacy global template definitions.
+
+The source gate pins the unified `UserGroup` model, explicit `Create from template` path, target-tenant delegation checks, managed-policy-only cloning, absence of membership cloning, scope-authorized reusable-definition mutation, unified TypeScript group client, and removal of the separate `Available group templates` UI catalogue.
+
+## Administration end-to-end qualification
+
+The complete administration qualification combines repository verification, external RBAC compatibility, live PostgreSQL validation, backup/restore validation, and real-browser evidence.
+
+Run:
+
+```powershell
+.\scripts\verify-administration-qualification.ps1 `
+  -RbacReferenceDirectory 'D:\Dev\Personal\multiplexed-rbac\implementations\dotnet\src\Multiplexed.Rbac.Core\bin\Release\net10.0' `
+  -Configuration Release
+```
+
+Before the browser portion continues, keep the API running on `http://127.0.0.1:5080` and the Next.js administration host running on `http://127.0.0.1:3000`. Use `127.0.0.1` consistently with the registered OIDC callback.
+
+The browser evidence covers OIDC sign-in, tenant/member counts, empty-tenant creation, one-table `Template Yes/No` group presentation, `Create from template`, safe member addition, `Manage groups`, tenant isolation, identity-scope-only reusable-definition mutation, managed authorization ALLOW/DENY, Sessions, MFA, and logout.
+
+A run using `-SkipBackupRestore` or `-SkipBrowserQualification` is partial and must not be described as complete qualification.
+
+## Unified reusable-group model qualification
+
+The current group model requires browser evidence that:
+
+- Groups are presented through one real-group list with `Template Yes/No`;
+- `Create from template` creates a normal target-tenant group;
+- compatible managed-policy bindings are copied;
+- source memberships are not copied;
+- only identity-scope administration can promote, demote, or mutate reusable group definitions;
+- tenant delegation remains bounded by the caller's authority in the target tenant.
+
+The full repository gate remains:
+
+```powershell
+.\scripts\verify.ps1 -Configuration Release
+```
+
+Then run the PostgreSQL gates and `scripts/verify-administration-qualification.ps1` against the migrated local database. A source-only, frontend-only, or TypeScript-only pass is not a complete repository result.

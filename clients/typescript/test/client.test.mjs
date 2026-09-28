@@ -55,6 +55,9 @@ test("the root client is a composition facade with focused class responsibilitie
   assert.equal(typeof api.administration.context.get, "function");
   assert.equal(typeof api.administration.users.list, "function");
   assert.equal(typeof api.administration.groups.list, "function");
+  assert.equal(typeof api.administration.groups.listTemplates, "function");
+  assert.equal(typeof api.administration.groups.createFromTemplate, "function");
+  assert.equal(typeof api.administration.groups.updateReusable, "function");
   assert.equal(typeof api.administration.securityAudit.list, "function");
   assert.equal(typeof api.administration.managedPolicies.list, "function");
   assert.equal(typeof api.administration.managedPolicyBindings.list, "function");
@@ -815,6 +818,7 @@ const adminTenantId = "42422222-2222-2222-2222-222222222222";
 const adminUserId = "42433333-3333-3333-3333-333333333333";
 const adminMembershipId = "42444444-4444-4444-4444-444444444444";
 const adminGroupId = "42455555-5555-5555-5555-555555555555";
+const adminGroupTemplateId = "42455555-aaaa-aaaa-aaaa-aaaaaaaaaaaa";
 const adminPolicyId = "42466666-6666-6666-6666-666666666666";
 const adminStatementId = "42477777-7777-7777-7777-777777777777";
 const adminManagedPolicyId = "42499999-1111-1111-1111-111111111111";
@@ -947,6 +951,46 @@ test("group membership administration supports list, add, and idempotent not-fou
 
 
 
+
+test("reusable groups use the normal group model and clone only through the tenant group surface", async () => {
+  let call = 0;
+  const api = client(async (url, init) => {
+    call++;
+    const tenantBase = `https://identity.example.test/api/v1/identity-scopes/${adminScopeId}/tenants/${adminTenantId}/applications/admin-app/groups`;
+    const globalBase = `https://identity.example.test/api/v1/identity-scopes/${adminScopeId}/applications/admin-app/reusable-groups`;
+    if (call === 1) {
+      assert.equal(url, `${tenantBase}/templates?limit=20`);
+      assert.equal(init.method, "GET");
+      return json([{ tenantId: adminTenantId, groupId: adminGroupTemplateId, displayName: "Read Only", status: 1, isTemplate: true, version: 2 }]);
+    }
+    if (call === 2) {
+      assert.equal(url, `${tenantBase}/from-template`);
+      assert.equal(init.method, "POST");
+      assert.deepEqual(JSON.parse(init.body), {
+        sourceTenantId: adminTenantId,
+        sourceGroupId: adminGroupTemplateId,
+        groupId: "00000000-0000-0000-0000-000000000000",
+      });
+      return json({ tenantId: adminTenantId, groupId: adminGroupId, displayName: "Read Only", status: 1, isTemplate: false, version: 1 }, 201);
+    }
+    assert.equal(url, `${globalBase}/${adminTenantId}/${adminGroupTemplateId}`);
+    assert.equal(init.method, "PUT");
+    assert.deepEqual(JSON.parse(init.body), { displayName: "Read Only Users", status: 1, isTemplate: false, expectedVersion: 2 });
+    return json({ tenantId: adminTenantId, groupId: adminGroupTemplateId, displayName: "Read Only Users", status: 1, isTemplate: false, version: 3 });
+  });
+
+  const templates = await api.administration.groups.listTemplates(adminTenantContext, { limit: 20 });
+  assert.equal(templates[0].groupId, adminGroupTemplateId);
+  assert.equal(templates[0].isTemplate, true);
+  const instance = await api.administration.groups.createFromTemplate(adminTenantContext, {
+    sourceTenantId: adminTenantId,
+    sourceGroupId: adminGroupTemplateId,
+  });
+  assert.equal(instance.isTemplate, false);
+  assert.equal((await api.administration.groups.updateReusable(adminBearerContext, adminTenantId, adminGroupTemplateId, {
+    displayName: "Read Only Users", status: 1, isTemplate: false, expectedVersion: 2,
+  })).version, 3);
+});
 
 test("managed policy binding administration keeps shared policy identity separate from tenant binding scope", async () => {
   let call = 0;
@@ -1411,7 +1455,7 @@ test("bounded administration list methods preserve explicit paging and typed rec
     }
     if (call === 3) {
       assert.equal(url, `https://identity.example.test/api/v1/identity-scopes/${adminScopeId}/tenants/${adminTenantId}/applications/admin-app/groups?offset=5`);
-      return json([{ groupId: adminGroupId, displayName: "Operators", status: 1, version: 4 }]);
+      return json([{ tenantId: adminTenantId, groupId: adminGroupId, displayName: "Operators", status: 1, isTemplate: false, version: 4 }]);
     }
     assert.equal(url, `https://identity.example.test/api/v1/identity-scopes/${adminScopeId}/applications/admin-app/managed-policies`);
     return json([{ policyId: adminManagedPolicyId, policyKey: "operators", displayName: "Operators", status: 1, defaultVersion: 3, version: 7 }]);
@@ -1582,4 +1626,57 @@ test("MFA administration stays provider-neutral and class-based", async () => {
   assert.equal(typeof api.administration.mfa.createPolicy, "function");
   assert.equal(typeof api.administration.mfa.listAuthenticators, "function");
   assert.equal(requests.every((request) => request.init.headers.Authorization === "Bearer header.payload.signature"), true);
+});
+
+test("tenant group assignment aggregate and exact-login membership candidate stay tenant scoped", async () => {
+  let call = 0;
+  const api = client(async (url, init) => {
+    call++;
+    if (call === 1) {
+      assert.equal(url, `https://identity.example.test/api/v1/identity-scopes/${adminScopeId}/tenants/${adminTenantId}/applications/admin-app/group-memberships`);
+      assert.equal(init.method, "GET");
+      return json([{ groupId: adminGroupId, tenantMembershipId: adminMembershipId, userId: adminUserId }]);
+    }
+    if (call === 2) {
+      assert.equal(url, `https://identity.example.test/api/v1/identity-scopes/${adminScopeId}/applications/admin-app/tenants/${adminTenantId}/membership-candidates/by-login?loginIdentifier=alice%40example.test`);
+      assert.equal(init.method, "GET");
+      return json({
+        userId: adminUserId,
+        displayName: "Alice",
+        userStatus: 1,
+        existingMembershipId: null,
+        existingMembershipStatus: null,
+      });
+    }
+
+    assert.equal(url, `https://identity.example.test/api/v1/identity-scopes/${adminScopeId}/applications/admin-app/tenants/${adminTenantId}/membership-candidates/by-login/membership`);
+    assert.equal(init.method, "POST");
+    assert.deepEqual(JSON.parse(init.body), { loginIdentifier: "alice@example.test", status: 1 });
+    return json({
+      membershipId: adminMembershipId,
+      tenantId: adminTenantId,
+      userId: adminUserId,
+      status: 1,
+      version: 1,
+    }, 201);
+  });
+
+  assert.deepEqual(await api.administration.tenantGroupAssignments.list(adminTenantContext), [
+    { groupId: adminGroupId, tenantMembershipId: adminMembershipId, userId: adminUserId },
+  ]);
+  assert.deepEqual(await api.administration.membershipCandidates.findByLogin(adminTenantContext, "alice@example.test"), {
+    userId: adminUserId,
+    displayName: "Alice",
+    userStatus: 1,
+  });
+  assert.deepEqual(await api.administration.membershipCandidates.createMembershipByLogin(
+    adminTenantContext,
+    "alice@example.test",
+  ), {
+    membershipId: adminMembershipId,
+    tenantId: adminTenantId,
+    userId: adminUserId,
+    status: 1,
+    version: 1,
+  });
 });

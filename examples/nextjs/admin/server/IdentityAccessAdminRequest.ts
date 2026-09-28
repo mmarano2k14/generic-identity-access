@@ -118,6 +118,10 @@ export class IdentityAccessAdminRequest {
     return new IdentityAuthorizationContext(this.client, this.tenantContextFor(tenantId));
   }
 
+  public tenantAuthorizationFor(tenantId: string): IdentityAuthorizationContext {
+    return new IdentityAuthorizationContext(this.client, this.tenantContextFor(tenantId));
+  }
+
   public adminUiBuilder(): IdentityAccessAdminUiBuilder {
     const builder = new IdentityAccessAdminUiBuilder(this.scopeAuthorization(), { basePath: "/identity" }).withAll();
     const tenantAuthorizations = this.#effectiveContext.activeTenantMemberships.map((membership) =>

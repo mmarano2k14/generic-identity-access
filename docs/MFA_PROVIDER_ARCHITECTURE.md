@@ -163,7 +163,7 @@ client.administration.mfa.revokeAuthenticatorForRecovery(...)
 
 The root `IdentityAccessClient` remains a composition facade.
 
-## Forward roadmap
+## Provider implementation history
 
 ```text
 0.43.x  generic MFA foundation + provider registry
@@ -194,6 +194,6 @@ Version `0.49.0` adds durable local-session authentication assurance, exact-sess
 
 Session assurance and OIDC MFA integration are implemented in `0.49.0`; see `MFA_SESSION_ASSURANCE_OIDC.md` for exact boundaries.
 
-## Backend security closure
+## Integrated security boundary
 
-The provider/core sequence is followed by session-assurance/OIDC integration (`0.49.0`) and account-recovery/credential-security hardening (`0.50.0`). `0.50.0` is the final planned backend/security milestone in this sequence; subsequent planned work is UI/UX refinement rather than another MFA provider.
+Provider execution is complemented by session-assurance/OIDC integration (`0.49.0`) and account-recovery/credential-security hardening (`0.50.0`). Together these contracts define the backend MFA and credential-security boundary consumed by the administration and authentication surfaces; UI behavior must preserve these guarantees rather than introduce an independent MFA decision path.

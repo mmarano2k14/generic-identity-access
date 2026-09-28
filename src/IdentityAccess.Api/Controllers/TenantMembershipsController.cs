@@ -12,7 +12,9 @@ namespace IdentityAccess.Api.Controllers
     [ApiController]
     [Route("api/v1/identity-scopes/{identityScopeId:guid}/applications/{applicationKey}/tenants/{tenantId:guid}/memberships")]
     [Produces("application/json")]
-    public sealed class TenantMembershipsController(OptionalFeature<IDirectoryAdministrationService> feature) : ControllerBase
+    public sealed class TenantMembershipsController(
+        OptionalFeature<IDirectoryAdministrationService> feature,
+        OptionalFeature<ITenantMembershipCreationAuthorizationGuard> directCreateGuardFeature) : ControllerBase
     {
         /// <summary>Lists tenant memberships in a bounded deterministic window.</summary>
         [HttpGet]
@@ -63,6 +65,17 @@ namespace IdentityAccess.Api.Controllers
             CancellationToken cancellationToken)
         {
             if (!feature.TryGet(out var service)) return ApiProblems.DirectoryAdministrationUnavailable();
+            if (!directCreateGuardFeature.TryGet(out var directCreateGuard)) return ApiProblems.AdministrationAuthorizationUnavailable();
+            var trustedContext = HttpContext.Features.Get<AdministrationRequestContextFeature>();
+            if (trustedContext is null) return ApiProblems.AdministrationAuthorizationUnavailable();
+            var directCreate = await directCreateGuard.AuthorizeDirectCreateAsync(trustedContext.Context, cancellationToken);
+            if (directCreate.Decision == AdministrationAccessDecision.Denied)
+                return ApiProblems.Forbidden(
+                    "Direct membership creation requires identity-scope authority",
+                    "Tenant-scoped administrators must add members through exact-login resolution.");
+            if (directCreate.Decision != AdministrationAccessDecision.Allowed)
+                return ApiProblems.AdministrationAuthorizationUnavailable();
+
             var membershipId = request.MembershipId == Guid.Empty ? Guid.NewGuid() : request.MembershipId;
             var created = await service.CreateTenantMembershipAsync(identityScopeId, new ApplicationKey(applicationKey),
                 tenantId, membershipId, request.UserId, request.Status, cancellationToken);

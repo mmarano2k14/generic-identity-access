@@ -57,18 +57,33 @@ namespace IdentityAccess.Application.Administration
         /// <summary>Lists user groups in a bounded deterministic window.</summary>
         Task<IReadOnlyList<VersionedRecord<UserGroup>>> ListGroupsAsync(Guid identityScopeId, Guid tenantId,
             ApplicationKey application, string? search, int offset, int limit, CancellationToken cancellationToken);
-        /// <summary>Creates a user group.</summary>
+        /// <summary>Lists active real groups explicitly marked as reusable templates.</summary>
+        Task<IReadOnlyList<VersionedRecord<UserGroup>>> ListGroupTemplatesAsync(Guid identityScopeId,
+            ApplicationKey application, string? search, int offset, int limit, bool activeOnly,
+            CancellationToken cancellationToken);
+        /// <summary>Creates a normal user group.</summary>
         Task<VersionedRecord<UserGroup>> CreateGroupAsync(Guid identityScopeId, Guid tenantId,
             ApplicationKey application, Guid groupId, string displayName, GroupStatus status,
             CancellationToken cancellationToken);
-        /// <summary>Updates a user group using optimistic concurrency.</summary>
+        /// <summary>Creates a normal tenant group from a reusable source group and clones managed-policy bindings only.</summary>
+        Task<VersionedRecord<UserGroup>?> CreateGroupFromTemplateAsync(Guid identityScopeId, Guid tenantId,
+            ApplicationKey application, Guid sourceTenantId, Guid sourceGroupId, Guid groupId,
+            CancellationToken cancellationToken);
+        /// <summary>Updates a user group using optimistic concurrency while preserving reusable-template state.</summary>
         Task<VersionedRecord<UserGroup>> UpdateGroupAsync(Guid identityScopeId, Guid tenantId,
             ApplicationKey application, Guid groupId, string displayName, GroupStatus status, long expectedVersion,
             CancellationToken cancellationToken);
+        /// <summary>Updates a real group definition and its reusable-template marker from identity-scope administration.</summary>
+        Task<VersionedRecord<UserGroup>> UpdateReusableGroupAsync(Guid identityScopeId, Guid tenantId,
+            ApplicationKey application, Guid groupId, string displayName, GroupStatus status, bool isTemplate,
+            long expectedVersion, CancellationToken cancellationToken);
 
         /// <summary>Lists members of the requested user group.</summary>
         Task<IReadOnlyList<GroupMembership>> ListGroupMembersAsync(Guid identityScopeId, Guid tenantId,
             ApplicationKey application, Guid groupId, CancellationToken cancellationToken);
+        /// <summary>Lists all group-membership assignments inside one tenant/application boundary.</summary>
+        Task<IReadOnlyList<GroupMembership>> ListTenantGroupAssignmentsAsync(Guid identityScopeId, Guid tenantId,
+            ApplicationKey application, CancellationToken cancellationToken);
         /// <summary>Adds a tenant member to the requested user group.</summary>
         Task<GroupMembership?> AddGroupMemberAsync(Guid identityScopeId, Guid tenantId, ApplicationKey application,
             Guid groupId, Guid tenantMembershipId, CancellationToken cancellationToken);

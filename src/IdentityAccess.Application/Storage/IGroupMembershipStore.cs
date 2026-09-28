@@ -21,5 +21,9 @@ namespace IdentityAccess.Application.Storage
         /// <summary>Lists group membership records for the supplied scope.</summary>
         Task<IReadOnlyList<GroupMembership>> ListAsync(ResolvedDatabaseRoute route, GroupReference group,
             CancellationToken cancellationToken);
+
+        /// <summary>Lists all group-membership edges for one tenant/application boundary.</summary>
+        Task<IReadOnlyList<GroupMembership>> ListForTenantAsync(ResolvedDatabaseRoute route, TenantReference tenant,
+            ApplicationKey application, CancellationToken cancellationToken);
     }
 }
