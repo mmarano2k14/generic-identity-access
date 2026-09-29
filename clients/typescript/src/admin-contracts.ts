@@ -60,6 +60,23 @@ export interface IdentityUpdateUserRequest {
   readonly expectedVersion: number;
 }
 
+export interface IdentityPasswordCredentialMetadataRecord {
+  readonly userId: string;
+  readonly loginIdentifier: string;
+  readonly failedAccessCount: number;
+  readonly lockoutUntil?: string;
+  readonly version: number;
+}
+
+export interface IdentityCreatePasswordCredentialRequest {
+  readonly loginIdentifier: string;
+  readonly password: string;
+}
+
+export interface IdentityChangePasswordCredentialRequest extends IdentityCreatePasswordCredentialRequest {
+  readonly expectedVersion: number;
+}
+
 export interface IdentityTenantRecord {
   readonly tenantId: string;
   readonly displayName: string;
@@ -122,10 +139,23 @@ export interface IdentityGroupRecord {
   readonly version: number;
 }
 
+export interface IdentityGroupTemplateResourceScopeRequirement {
+  readonly sourceResourceScopeId: string;
+  readonly modelVersion: number;
+  readonly scopeType: string;
+  readonly displayName: string;
+}
+
+export interface IdentityGroupTemplateResourceScopeMapping {
+  readonly sourceResourceScopeId: string;
+  readonly targetResourceScopeId: string;
+}
+
 export interface IdentityCreateGroupFromTemplateRequest {
   readonly sourceTenantId: string;
   readonly sourceGroupId: string;
   readonly groupId?: string;
+  readonly resourceScopeMappings?: readonly IdentityGroupTemplateResourceScopeMapping[];
 }
 
 export interface IdentityUpdateReusableGroupRequest {

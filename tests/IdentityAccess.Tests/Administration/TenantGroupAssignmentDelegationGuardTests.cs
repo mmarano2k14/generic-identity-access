@@ -89,7 +89,9 @@ namespace IdentityAccess.Tests.Administration
             var guard = Guard(reader, tenant, new TenantGroupAssignmentFakeScopeAuthorization(IdentityAuthorizationResult.Deny()));
 
             var result = await guard.AuthorizeGrantCopyAsync(
-                Context(), TenantId, TargetTenantId, App, GroupId, TestContext.Current.CancellationToken);
+                Context(), TenantId, TargetTenantId, App, GroupId,
+                new Dictionary<Guid, Guid>(),
+                TestContext.Current.CancellationToken);
 
             Assert.Equal(AdministrationAccessDecision.Allowed, result.Decision);
             Assert.Equal(TenantId, reader.LastGroup!.Tenant.TenantId);
@@ -99,6 +101,31 @@ namespace IdentityAccess.Tests.Administration
 
         [Fact]
         public async Task Clone_delegation_translates_resource_scope_to_target_tenant()
+        {
+            var resourceScopeId = Guid.Parse("a1000000-0000-0000-0000-000000000008");
+            var targetResourceScopeId = Guid.Parse("a1000000-0000-0000-0000-000000000009");
+            var reader = new TenantGroupAssignmentFakeGroupGrantReader([
+                new GroupCapabilityGrant(
+                    new CapabilityPattern("billing", "invoice", "read"),
+                    new ResourceScopeReference(new TenantReference(ScopeId, TenantId), App, resourceScopeId),
+                    false)
+            ]);
+            var tenant = new TenantGroupAssignmentFakeTenantAuthorization(IdentityAuthorizationResult.Allow());
+            var guard = Guard(reader, tenant, new TenantGroupAssignmentFakeScopeAuthorization(IdentityAuthorizationResult.Deny()));
+
+            var result = await guard.AuthorizeGrantCopyAsync(
+                Context(), TenantId, TargetTenantId, App, GroupId,
+                new Dictionary<Guid, Guid> { [resourceScopeId] = targetResourceScopeId },
+                TestContext.Current.CancellationToken);
+
+            Assert.Equal(AdministrationAccessDecision.Allowed, result.Decision);
+            Assert.NotNull(tenant.Request!.ResourceScope);
+            Assert.Equal(TargetTenantId, tenant.Request.ResourceScope!.Tenant.TenantId);
+            Assert.Equal(targetResourceScopeId, tenant.Request.ResourceScope.ResourceScopeId);
+        }
+
+        [Fact]
+        public async Task Clone_delegation_denies_scoped_grant_without_target_mapping()
         {
             var resourceScopeId = Guid.Parse("a1000000-0000-0000-0000-000000000008");
             var reader = new TenantGroupAssignmentFakeGroupGrantReader([
@@ -111,12 +138,12 @@ namespace IdentityAccess.Tests.Administration
             var guard = Guard(reader, tenant, new TenantGroupAssignmentFakeScopeAuthorization(IdentityAuthorizationResult.Deny()));
 
             var result = await guard.AuthorizeGrantCopyAsync(
-                Context(), TenantId, TargetTenantId, App, GroupId, TestContext.Current.CancellationToken);
+                Context(), TenantId, TargetTenantId, App, GroupId,
+                new Dictionary<Guid, Guid>(),
+                TestContext.Current.CancellationToken);
 
-            Assert.Equal(AdministrationAccessDecision.Allowed, result.Decision);
-            Assert.NotNull(tenant.Request!.ResourceScope);
-            Assert.Equal(TargetTenantId, tenant.Request.ResourceScope!.Tenant.TenantId);
-            Assert.Equal(resourceScopeId, tenant.Request.ResourceScope.ResourceScopeId);
+            Assert.Equal(AdministrationAccessDecision.Denied, result.Decision);
+            Assert.Equal(0, tenant.CallCount);
         }
 
         [Theory]

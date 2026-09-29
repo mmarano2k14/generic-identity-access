@@ -19,6 +19,29 @@ export class IdentityAccessAdminMutationService {
     });
   }
 
+  public async createPasswordCredential(formData: FormData): Promise<void> {
+    await this.#request.client.administration.credentials.create(
+      this.#request.administrationContext,
+      IdentityAccessAdminMutationService.requiredText(formData, "userId", 64),
+      {
+        loginIdentifier: IdentityAccessAdminMutationService.requiredText(formData, "loginIdentifier", 320),
+        password: IdentityAccessAdminMutationService.requiredSecret(formData, "password"),
+      },
+    );
+  }
+
+  public async changePasswordCredential(formData: FormData): Promise<void> {
+    await this.#request.client.administration.credentials.changePassword(
+      this.#request.administrationContext,
+      IdentityAccessAdminMutationService.requiredText(formData, "userId", 64),
+      {
+        loginIdentifier: IdentityAccessAdminMutationService.requiredText(formData, "loginIdentifier", 320),
+        password: IdentityAccessAdminMutationService.requiredSecret(formData, "password"),
+        expectedVersion: IdentityAccessAdminMutationService.positiveInteger(formData, "expectedVersion"),
+      },
+    );
+  }
+
   public async createTenant(formData: FormData): Promise<void> {
     await this.#request.client.administration.tenants.create(this.#request.administrationContext, {
       displayName: IdentityAccessAdminMutationService.requiredText(formData, "displayName", 200),
@@ -63,11 +86,27 @@ export class IdentityAccessAdminMutationService {
     const source = IdentityAccessAdminMutationService.requiredText(formData, "sourceGroup", 160);
     const separator = source.indexOf(":");
     if (separator <= 0) throw new Error("Invalid reusable group selection.");
+
+    const resourceScopeMappings: Array<{
+      sourceResourceScopeId: string;
+      targetResourceScopeId: string;
+    }> = [];
+    for (const [name, value] of formData.entries()) {
+      if (!name.startsWith("resourceScopeMapping:")) continue;
+      const sourceResourceScopeId = name.slice("resourceScopeMapping:".length).trim();
+      const targetResourceScopeId = typeof value === "string" ? value.trim() : "";
+      if (!sourceResourceScopeId || !targetResourceScopeId) {
+        throw new Error("Every scoped template binding requires a target resource scope.");
+      }
+      resourceScopeMappings.push({ sourceResourceScopeId, targetResourceScopeId });
+    }
+
     await this.#request.client.administration.groups.createFromTemplate(
       this.#tenantContext(formData),
       {
         sourceTenantId: source.slice(0, separator),
         sourceGroupId: source.slice(separator + 1),
+        resourceScopeMappings,
       },
     );
   }
@@ -379,6 +418,14 @@ export class IdentityAccessAdminMutationService {
       throw new Error(`Invalid administration input: ${field} must contain between 1 and ${maxLength} characters.`);
     }
     return normalized;
+  }
+
+  private static requiredSecret(formData: FormData, field: string): string {
+    const value = formData.get(field);
+    if (typeof value !== "string" || value.length < 12 || value.length > 256) {
+      throw new Error(`Invalid administration input: ${field} must contain between 12 and 256 characters.`);
+    }
+    return value;
   }
 
   private static optionalText(formData: FormData, field: string, maxLength: number): string | undefined {

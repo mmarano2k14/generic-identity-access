@@ -54,6 +54,9 @@ test("the root client is a composition facade with focused class responsibilitie
   assert.equal(typeof api.authorization.evaluate, "function");
   assert.equal(typeof api.administration.context.get, "function");
   assert.equal(typeof api.administration.users.list, "function");
+  assert.equal(typeof api.administration.credentials.get, "function");
+  assert.equal(typeof api.administration.credentials.create, "function");
+  assert.equal(typeof api.administration.credentials.changePassword, "function");
   assert.equal(typeof api.administration.groups.list, "function");
   assert.equal(typeof api.administration.groups.listTemplates, "function");
   assert.equal(typeof api.administration.groups.createFromTemplate, "function");
@@ -888,6 +891,72 @@ test("typed user administration sends trusted Bearer provenance and optimistic c
 });
 
 
+test("typed password credential administration exposes metadata only and preserves secret request bodies", async () => {
+  let call = 0;
+  const api = client(async (url, init) => {
+    call++;
+    const path = `https://identity.example.test/api/v1/identity-scopes/${adminScopeId}/applications/admin-app/users/${adminUserId}/password-credential`;
+    assert.equal(url, path);
+    assert.equal(init.headers.Authorization, "Bearer header.payload.signature");
+
+    if (call === 1) {
+      assert.equal(init.method, "GET");
+      return json({
+        userId: adminUserId,
+        loginIdentifier: "alice@example.test",
+        failedAccessCount: 0,
+        lockoutUntil: null,
+        version: 1,
+      });
+    }
+
+    if (call === 2) {
+      assert.equal(init.method, "POST");
+      assert.deepEqual(JSON.parse(init.body), {
+        loginIdentifier: "alice@example.test",
+        password: "correct-horse-battery-staple",
+      });
+      return json({
+        userId: adminUserId,
+        loginIdentifier: "alice@example.test",
+        failedAccessCount: 0,
+        lockoutUntil: null,
+        version: 1,
+      }, 201);
+    }
+
+    assert.equal(init.method, "PUT");
+    assert.deepEqual(JSON.parse(init.body), {
+      loginIdentifier: "alice@example.test",
+      password: "different-correct-horse-battery-staple",
+      expectedVersion: 1,
+    });
+    return json({
+      userId: adminUserId,
+      loginIdentifier: "alice@example.test",
+      failedAccessCount: 0,
+      lockoutUntil: null,
+      version: 2,
+    });
+  });
+
+  assert.deepEqual(await api.administration.credentials.get(adminBearerContext, adminUserId), {
+    userId: adminUserId,
+    loginIdentifier: "alice@example.test",
+    failedAccessCount: 0,
+    version: 1,
+  });
+  assert.equal((await api.administration.credentials.create(adminBearerContext, adminUserId, {
+    loginIdentifier: "alice@example.test",
+    password: "correct-horse-battery-staple",
+  })).version, 1);
+  assert.equal((await api.administration.credentials.changePassword(adminBearerContext, adminUserId, {
+    loginIdentifier: "alice@example.test",
+    password: "different-correct-horse-battery-staple",
+    expectedVersion: 1,
+  })).version, 2);
+});
+
 test("typed nullable administration GET returns null on 404 without parsing an empty body", async () => {
   const api = client(async (_url, init) => {
     assert.equal(init.method, "GET");
@@ -952,8 +1021,9 @@ test("group membership administration supports list, add, and idempotent not-fou
 
 
 
-test("reusable groups use the normal group model and clone only through the tenant group surface", async () => {
+test("reusable groups expose scope requirements and remap scoped bindings during clone", async () => {
   let call = 0;
+  const targetScopeId = "42499999-9999-9999-9999-999999999999";
   const api = client(async (url, init) => {
     call++;
     const tenantBase = `https://identity.example.test/api/v1/identity-scopes/${adminScopeId}/tenants/${adminTenantId}/applications/admin-app/groups`;
@@ -964,12 +1034,26 @@ test("reusable groups use the normal group model and clone only through the tena
       return json([{ tenantId: adminTenantId, groupId: adminGroupTemplateId, displayName: "Read Only", status: 1, isTemplate: true, version: 2 }]);
     }
     if (call === 2) {
+      assert.equal(url, `${tenantBase}/templates/${adminTenantId}/${adminGroupTemplateId}/scope-requirements`);
+      assert.equal(init.method, "GET");
+      return json([{
+        sourceResourceScopeId: adminResourceScopeId,
+        modelVersion: 2,
+        scopeType: "business",
+        displayName: "Source Business",
+      }]);
+    }
+    if (call === 3) {
       assert.equal(url, `${tenantBase}/from-template`);
       assert.equal(init.method, "POST");
       assert.deepEqual(JSON.parse(init.body), {
         sourceTenantId: adminTenantId,
         sourceGroupId: adminGroupTemplateId,
         groupId: "00000000-0000-0000-0000-000000000000",
+        resourceScopeMappings: [{
+          sourceResourceScopeId: adminResourceScopeId,
+          targetResourceScopeId: targetScopeId,
+        }],
       });
       return json({ tenantId: adminTenantId, groupId: adminGroupId, displayName: "Read Only", status: 1, isTemplate: false, version: 1 }, 201);
     }
@@ -982,11 +1066,29 @@ test("reusable groups use the normal group model and clone only through the tena
   const templates = await api.administration.groups.listTemplates(adminTenantContext, { limit: 20 });
   assert.equal(templates[0].groupId, adminGroupTemplateId);
   assert.equal(templates[0].isTemplate, true);
+
+  const requirements = await api.administration.groups.listTemplateScopeRequirements(
+    adminTenantContext,
+    adminTenantId,
+    adminGroupTemplateId,
+  );
+  assert.deepEqual(requirements, [{
+    sourceResourceScopeId: adminResourceScopeId,
+    modelVersion: 2,
+    scopeType: "business",
+    displayName: "Source Business",
+  }]);
+
   const instance = await api.administration.groups.createFromTemplate(adminTenantContext, {
     sourceTenantId: adminTenantId,
     sourceGroupId: adminGroupTemplateId,
+    resourceScopeMappings: [{
+      sourceResourceScopeId: adminResourceScopeId,
+      targetResourceScopeId: targetScopeId,
+    }],
   });
   assert.equal(instance.isTemplate, false);
+
   assert.equal((await api.administration.groups.updateReusable(adminBearerContext, adminTenantId, adminGroupTemplateId, {
     displayName: "Read Only Users", status: 1, isTemplate: false, expectedVersion: 2,
   })).version, 3);

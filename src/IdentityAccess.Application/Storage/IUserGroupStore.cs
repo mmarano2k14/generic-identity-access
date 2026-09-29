@@ -23,12 +23,18 @@ namespace IdentityAccess.Application.Storage
         Task<VersionedRecord<UserGroup>> CreateAsync(ResolvedDatabaseRoute route, UserGroup group,
             CancellationToken cancellationToken);
 
+        /// <summary>Lists distinct resource scopes referenced by managed-policy bindings on one reusable source group.</summary>
+        Task<IReadOnlyList<GroupTemplateResourceScopeRequirement>> ListTemplateScopeRequirementsAsync(
+            ResolvedDatabaseRoute route, GroupReference sourceGroup, CancellationToken cancellationToken);
+
         /// <summary>
         /// Atomically creates a normal tenant group from a reusable source group and copies its managed-policy bindings.
-        /// Group memberships are intentionally never copied.
+        /// Scoped bindings require explicit source-to-target resource-scope mappings. Group memberships are never copied.
         /// </summary>
         Task<VersionedRecord<UserGroup>?> CreateFromTemplateAsync(ResolvedDatabaseRoute route,
-            GroupReference sourceGroup, GroupReference targetGroup, CancellationToken cancellationToken);
+            GroupReference sourceGroup, GroupReference targetGroup,
+            IReadOnlyDictionary<Guid, Guid> resourceScopeMappings,
+            CancellationToken cancellationToken);
 
         /// <summary>Updates a user group record using optimistic concurrency.</summary>
         Task<VersionedRecord<UserGroup>> UpdateAsync(ResolvedDatabaseRoute route, UserGroup group, long expectedVersion,

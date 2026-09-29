@@ -4,6 +4,7 @@ import type {
   IdentityCreateGroupRequest,
   IdentityGroupMemberRecord,
   IdentityGroupRecord,
+  IdentityGroupTemplateResourceScopeRequirement,
   IdentityTenantAdministrationContext,
   IdentityAdministrationListOptions,
   IdentityUpdateGroupRequest,
@@ -39,6 +40,24 @@ export class IdentityAccessGroupsClient {
     return this.#admin.get(path, context, (value) => IdentityAccessValueCodec.array(value, IdentityAccessAdministrationCodec.groupRecord), signal);
   }
 
+  public async listTemplateScopeRequirements(
+    context: IdentityTenantAdministrationContext,
+    sourceTenantIdValue: string,
+    sourceGroupIdValue: string,
+    signal?: AbortSignal,
+  ): Promise<readonly IdentityGroupTemplateResourceScopeRequirement[]> {
+    const path = `${IdentityAccessPathBuilder.tenantApplicationPath(context)}/groups/templates/${IdentityAccessValueCodec.uuid(sourceTenantIdValue)}/${IdentityAccessValueCodec.uuid(sourceGroupIdValue)}/scope-requirements`;
+    return this.#admin.get(
+      path,
+      context,
+      (value) => IdentityAccessValueCodec.array(
+        value,
+        IdentityAccessAdministrationCodec.groupTemplateResourceScopeRequirement,
+      ),
+      signal,
+    );
+  }
+
   public async get(
     context: IdentityTenantAdministrationContext,
     groupIdValue: string,
@@ -71,6 +90,10 @@ export class IdentityAccessGroupsClient {
       sourceTenantId: IdentityAccessValueCodec.uuid(request.sourceTenantId),
       sourceGroupId: IdentityAccessValueCodec.uuid(request.sourceGroupId),
       groupId: IdentityAccessValueCodec.optionalUuidOrEmpty(request.groupId),
+      resourceScopeMappings: (request.resourceScopeMappings ?? []).map((mapping) => ({
+        sourceResourceScopeId: IdentityAccessValueCodec.uuid(mapping.sourceResourceScopeId),
+        targetResourceScopeId: IdentityAccessValueCodec.uuid(mapping.targetResourceScopeId),
+      })),
     }, (value) => IdentityAccessAdministrationCodec.groupRecord(value), signal);
   }
 

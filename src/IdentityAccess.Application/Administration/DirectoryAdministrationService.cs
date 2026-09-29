@@ -213,15 +213,29 @@ namespace IdentityAccess.Application.Administration
             return created;
         }
 
+        /// <summary>Lists source resource scopes that must be remapped when cloning one reusable group.</summary>
+        public async Task<IReadOnlyList<GroupTemplateResourceScopeRequirement>> ListGroupTemplateScopeRequirementsAsync(
+            Guid identityScopeId, ApplicationKey application, Guid sourceTenantId, Guid sourceGroupId,
+            CancellationToken cancellationToken)
+        {
+            var route = await ResolveAsync(identityScopeId, application, cancellationToken);
+            return await groups.ListTemplateScopeRequirementsAsync(
+                route,
+                Group(identityScopeId, sourceTenantId, application, sourceGroupId),
+                cancellationToken);
+        }
+
         /// <summary>Creates a normal group from a reusable source group and clones managed-policy bindings only.</summary>
         public async Task<VersionedRecord<UserGroup>?> CreateGroupFromTemplateAsync(Guid identityScopeId, Guid tenantId,
             ApplicationKey application, Guid sourceTenantId, Guid sourceGroupId, Guid groupId,
+            IReadOnlyDictionary<Guid, Guid> resourceScopeMappings,
             CancellationToken cancellationToken)
         {
             var route = await ResolveAsync(identityScopeId, application, cancellationToken);
             var source = Group(identityScopeId, sourceTenantId, application, sourceGroupId);
             var target = Group(identityScopeId, tenantId, application, groupId);
-            var created = await groups.CreateFromTemplateAsync(route, source, target, cancellationToken);
+            var created = await groups.CreateFromTemplateAsync(
+                route, source, target, resourceScopeMappings, cancellationToken);
             if (created is null) return null;
             await AuditAsync(route, SecurityAuditEventType.GroupCreatedFromTemplate, identityScopeId, application,
                 tenantId, null, $"{sourceTenantId:D}:{sourceGroupId:D}:{groupId:D}", cancellationToken);

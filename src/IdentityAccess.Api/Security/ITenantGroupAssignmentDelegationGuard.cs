@@ -19,6 +19,7 @@ namespace IdentityAccess.Api.Security
             Guid targetTenantId,
             ApplicationKey application,
             Guid groupId,
+            IReadOnlyDictionary<Guid, Guid> resourceScopeMappings,
             CancellationToken cancellationToken);
     }
 }

@@ -7,6 +7,7 @@ import { AdminIcon } from "../../../components/AdminIcon";
 import { AdminMutationDialog } from "../../../components/AdminMutationDialog";
 import { AdminPageHeader } from "../../../components/AdminPageHeader";
 import { AdminRecordContext } from "../../../components/AdminRecordContext";
+import { AdminResourceScopeTypeFields } from "../../../components/AdminResourceScopeTypeFields";
 import { AdminSecurityBanner } from "../../../components/AdminSecurityBanner";
 import { AdminTenantContextSelector } from "../../../components/AdminTenantContextSelector";
 import { IdentityAccessAdminAuthorizedTenantService } from "../../../server/IdentityAccessAdminAuthorizedTenantService";
@@ -62,8 +63,7 @@ export default async function ResourceScopesPage({ searchParams }: { readonly se
             <input type="hidden" name="tenantId" value={tenant.tenantId} />
             <input type="hidden" name="resourceScopeId" value={scope.resourceScopeId} />
             <input type="hidden" name="expectedVersion" value={scope.version} />
-            <AdminField label="Security model version" name="modelVersion" type="number" min={1} step={1} defaultValue={scope.modelVersion} required />
-            <AdminField label="Scope type" name="scopeType" defaultValue={scope.scopeType} required maxLength={128} />
+            <AdminResourceScopeTypeFields initialModelVersion={scope.modelVersion} initialScopeType={scope.scopeType} />
             <AdminField label="External resource ID" name="externalResourceId" defaultValue={scope.externalResourceId} required maxLength={256} />
             <AdminField label="Display name" name="displayName" defaultValue={scope.displayName} required maxLength={200} />
             <AdminEntityAutocomplete label="Parent resource scope" name="parentResourceScopeId" kind="resource-scope" tenantId={tenant.tenantId} excludeIds={[scope.resourceScopeId]} defaultValue={scope.parentResourceScopeId ?? ""} emptyLabel="Root scope" hint="Optional. Type at least 3 characters of the parent scope display name/external ID." />
@@ -84,8 +84,7 @@ export default async function ResourceScopesPage({ searchParams }: { readonly se
             <input type="hidden" name="tenantId" value={context!.tenantId} />
             <input type="hidden" name="resourceScopeId" value={scope.resourceScopeId} />
             <input type="hidden" name="expectedVersion" value={scope.version} />
-            <AdminField label="Security model version" name="modelVersion" type="number" min={1} step={1} defaultValue={scope.modelVersion} required />
-            <AdminField label="Scope type" name="scopeType" defaultValue={scope.scopeType} required maxLength={128} />
+            <AdminResourceScopeTypeFields initialModelVersion={scope.modelVersion} initialScopeType={scope.scopeType} />
             <AdminField label="External resource ID" name="externalResourceId" defaultValue={scope.externalResourceId} required maxLength={256} />
             <AdminField label="Display name" name="displayName" defaultValue={scope.displayName} required maxLength={200} />
             <AdminEntityAutocomplete label="Parent resource scope" name="parentResourceScopeId" kind="resource-scope" tenantId={context!.tenantId} excludeIds={[scope.resourceScopeId]} defaultValue={scope.parentResourceScopeId ?? ""} emptyLabel="Root scope" hint="Optional. Type at least 3 characters of the parent scope display name/external ID." />
@@ -126,8 +125,7 @@ export default async function ResourceScopesPage({ searchParams }: { readonly se
               <input type="hidden" name="tenantId" value={context.tenantId} />
               <input type="hidden" name="resourceScopeId" value={selectedScope.resourceScopeId} />
               <input type="hidden" name="expectedVersion" value={selectedScope.version} />
-              <AdminField label="Security model version" name="modelVersion" type="number" min={1} step={1} defaultValue={selectedScope.modelVersion} required />
-              <AdminField label="Scope type" name="scopeType" defaultValue={selectedScope.scopeType} required maxLength={128} />
+              <AdminResourceScopeTypeFields initialModelVersion={selectedScope.modelVersion} initialScopeType={selectedScope.scopeType} />
               <AdminField label="External resource ID" name="externalResourceId" defaultValue={selectedScope.externalResourceId} required maxLength={256} />
               <AdminField label="Display name" name="displayName" defaultValue={selectedScope.displayName} required maxLength={200} />
               <AdminEntityAutocomplete label="Parent resource scope" name="parentResourceScopeId" kind="resource-scope" tenantId={context.tenantId} excludeIds={[selectedScope.resourceScopeId]} defaultValue={selectedScope.parentResourceScopeId ?? ""} emptyLabel="Root scope" hint="Optional. Type at least 3 characters of the parent scope display name/external ID." />

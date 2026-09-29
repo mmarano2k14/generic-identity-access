@@ -1,4 +1,5 @@
 using IdentityAccess.Application.Administration;
+using IdentityAccess.Application.Storage;
 using IdentityAccess.Domain;
 using Microsoft.AspNetCore.Mvc;
 using IdentityAccess.Api.Security;
@@ -48,6 +49,28 @@ namespace IdentityAccess.Api.Controllers
             return Ok(records.Select(GroupRecordResponse.From).ToArray());
         }
 
+        /// <summary>Lists source resource scopes that must be mapped before cloning one reusable group.</summary>
+        [HttpGet("templates/{sourceTenantId:guid}/{sourceGroupId:guid}/scope-requirements")]
+        [RequireAdministrationCapability(IdentityAccessAdministrationCapabilities.Resource, IdentityAccessAdministrationCapabilities.Groups, IdentityAccessAdministrationCapabilities.Read)]
+        public async Task<ActionResult<IReadOnlyList<GroupTemplateResourceScopeRequirementResponse>>> ListTemplateScopeRequirements(
+            Guid identityScopeId,
+            Guid tenantId,
+            string applicationKey,
+            Guid sourceTenantId,
+            Guid sourceGroupId,
+            CancellationToken cancellationToken)
+        {
+            _ = tenantId;
+            if (!feature.TryGet(out var service)) return ApiProblems.DirectoryAdministrationUnavailable();
+            var requirements = await service.ListGroupTemplateScopeRequirementsAsync(
+                identityScopeId,
+                new ApplicationKey(applicationKey),
+                sourceTenantId,
+                sourceGroupId,
+                cancellationToken);
+            return Ok(requirements.Select(GroupTemplateResourceScopeRequirementResponse.From).ToArray());
+        }
+
         [HttpGet("{groupId:guid}")]
         [RequireAdministrationCapability(IdentityAccessAdministrationCapabilities.Resource, IdentityAccessAdministrationCapabilities.Groups, IdentityAccessAdministrationCapabilities.Read)]
         public async Task<ActionResult<GroupRecordResponse>> Get(Guid identityScopeId, Guid tenantId,
@@ -81,12 +104,32 @@ namespace IdentityAccess.Api.Controllers
             string applicationKey, [FromBody] CreateGroupFromTemplateRequest request, CancellationToken cancellationToken)
         {
             if (request.SourceTenantId == Guid.Empty || request.SourceGroupId == Guid.Empty) return BadRequest();
+
+            var mappings = new Dictionary<Guid, Guid>();
+            foreach (var mapping in request.ResourceScopeMappings ?? [])
+            {
+                if (mapping.SourceResourceScopeId == Guid.Empty || mapping.TargetResourceScopeId == Guid.Empty)
+                    return ApiProblems.BadRequest(
+                        "Invalid resource-scope mapping",
+                        "Source and target resource-scope identifiers must be non-empty.");
+                if (!mappings.TryAdd(mapping.SourceResourceScopeId, mapping.TargetResourceScopeId))
+                    return ApiProblems.BadRequest(
+                        "Duplicate resource-scope mapping",
+                        $"Source resource scope '{mapping.SourceResourceScopeId:D}' is mapped more than once.");
+            }
+
             if (!delegationGuard.TryGet(out var delegation)) return ApiProblems.AdministrationAuthorizationUnavailable();
             var trustedContext = HttpContext.Features.Get<AdministrationRequestContextFeature>();
             if (trustedContext is null) return ApiProblems.AdministrationAuthorizationUnavailable();
             var application = new ApplicationKey(applicationKey);
             var delegationResult = await delegation.AuthorizeGrantCopyAsync(
-                trustedContext.Context, request.SourceTenantId, tenantId, application, request.SourceGroupId, cancellationToken);
+                trustedContext.Context,
+                request.SourceTenantId,
+                tenantId,
+                application,
+                request.SourceGroupId,
+                mappings,
+                cancellationToken);
             if (delegationResult.Decision == AdministrationAccessDecision.Denied)
                 return ApiProblems.Forbidden(
                     "Group template delegation denied",
@@ -94,12 +137,29 @@ namespace IdentityAccess.Api.Controllers
             if (delegationResult.Decision != AdministrationAccessDecision.Allowed)
                 return ApiProblems.AdministrationAuthorizationUnavailable();
             if (!feature.TryGet(out var service)) return ApiProblems.DirectoryAdministrationUnavailable();
+
             var groupId = request.GroupId == Guid.Empty ? Guid.NewGuid() : request.GroupId;
-            var created = await service.CreateGroupFromTemplateAsync(identityScopeId, tenantId,
-                application, request.SourceTenantId, request.SourceGroupId, groupId, cancellationToken);
-            return created is null
-                ? NotFound()
-                : StatusCode(StatusCodes.Status201Created, GroupRecordResponse.From(created));
+            try
+            {
+                var created = await service.CreateGroupFromTemplateAsync(
+                    identityScopeId,
+                    tenantId,
+                    application,
+                    request.SourceTenantId,
+                    request.SourceGroupId,
+                    groupId,
+                    mappings,
+                    cancellationToken);
+                return created is null
+                    ? NotFound()
+                    : StatusCode(StatusCodes.Status201Created, GroupRecordResponse.From(created));
+            }
+            catch (GroupTemplateScopeMappingException exception)
+            {
+                return ApiProblems.UnprocessableEntity(
+                    "Template resource-scope mapping required",
+                    exception.Message);
+            }
         }
 
         [HttpPut("{groupId:guid}")]

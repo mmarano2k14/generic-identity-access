@@ -25,7 +25,7 @@ namespace IdentityAccess.Api.Security
             ApplicationKey application,
             Guid groupId,
             CancellationToken cancellationToken) =>
-            AuthorizeAsync(context, tenantId, tenantId, application, groupId, cancellationToken);
+            AuthorizeAsync(context, tenantId, tenantId, application, groupId, null, cancellationToken);
 
         public ValueTask<AdministrationAccessResult> AuthorizeGrantCopyAsync(
             AdministrationRequestContext context,
@@ -33,8 +33,16 @@ namespace IdentityAccess.Api.Security
             Guid targetTenantId,
             ApplicationKey application,
             Guid groupId,
+            IReadOnlyDictionary<Guid, Guid> resourceScopeMappings,
             CancellationToken cancellationToken) =>
-            AuthorizeAsync(context, sourceTenantId, targetTenantId, application, groupId, cancellationToken);
+            AuthorizeAsync(
+                context,
+                sourceTenantId,
+                targetTenantId,
+                application,
+                groupId,
+                resourceScopeMappings,
+                cancellationToken);
 
         private async ValueTask<AdministrationAccessResult> AuthorizeAsync(
             AdministrationRequestContext context,
@@ -42,6 +50,7 @@ namespace IdentityAccess.Api.Security
             Guid targetTenantId,
             ApplicationKey application,
             Guid groupId,
+            IReadOnlyDictionary<Guid, Guid>? resourceScopeMappings,
             CancellationToken cancellationToken)
         {
             ArgumentNullException.ThrowIfNull(context);
@@ -84,9 +93,21 @@ namespace IdentityAccess.Api.Security
                 if (!grant.Pattern.IsConcrete || grant.IncludeDescendants)
                     return AdministrationAccessResult.Deny();
 
-                var targetScope = grant.TargetScope is null
-                    ? null
-                    : new ResourceScopeReference(targetTenant, application, grant.TargetScope.ResourceScopeId);
+                ResourceScopeReference? targetScope = null;
+                if (grant.TargetScope is not null)
+                {
+                    var sourceScopeId = grant.TargetScope.ResourceScopeId;
+                    var targetScopeId = resourceScopeMappings is not null &&
+                                        resourceScopeMappings.TryGetValue(sourceScopeId, out var mappedScopeId)
+                        ? mappedScopeId
+                        : sourceTenantId == targetTenantId
+                            ? sourceScopeId
+                            : Guid.Empty;
+                    if (targetScopeId == Guid.Empty)
+                        return AdministrationAccessResult.Deny();
+
+                    targetScope = new ResourceScopeReference(targetTenant, application, targetScopeId);
+                }
                 var result = await tenantAuthorization.AuthorizeAsync(
                     new IdentityAuthorizationRequest(
                         targetTenant,

@@ -39,6 +39,10 @@ namespace IdentityAccess.Api.Http
         public static ObjectResult NotFound(string title, string? detail = null) =>
             Result(StatusCodes.Status404NotFound, title, detail);
 
+        /// <summary>Creates an unprocessable-entity response.</summary>
+        public static ObjectResult UnprocessableEntity(string title, string? detail = null) =>
+            Result(StatusCodes.Status422UnprocessableEntity, title, detail);
+
         /// <summary>Creates the directory-administration unavailable response.</summary>
         public static ObjectResult DirectoryAdministrationUnavailable() =>
             Result(

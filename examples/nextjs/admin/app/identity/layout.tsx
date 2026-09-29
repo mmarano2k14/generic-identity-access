@@ -16,9 +16,9 @@ export default async function IdentityLayout({ children }: { readonly children: 
     redirect(hostSession.hasRefreshCredential() ? "/login?session=refresh" : "/login");
   }
 
-  const request = await IdentityAccessAdminRequest.fromCurrentRequest();
   let navigation: IdentityAccessAdminUiDefinition;
   try {
+    const request = await IdentityAccessAdminRequest.fromCurrentRequest();
     navigation = await request.adminUiBuilder().buildVisible();
   } catch (error) {
     if (error instanceof IdentityAccessClientError && error.code === "unauthenticated") {

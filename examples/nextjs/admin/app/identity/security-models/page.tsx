@@ -1,7 +1,9 @@
+import { IdentityAccessClientError } from "@identity-access/client";
 import Link from "next/link";
 import { registerSecurityModelManifestAction } from "../actions";
+import { addScopeTypeAction } from "./actions";
 import { AdminEntityTable } from "../../../components/AdminEntityTable";
-import { AdminField } from "../../../components/AdminField";
+import { AdminField, AdminSelectField } from "../../../components/AdminField";
 import { AdminMutationDialog } from "../../../components/AdminMutationDialog";
 import { AdminPageHeader } from "../../../components/AdminPageHeader";
 import { AdminRecordContext } from "../../../components/AdminRecordContext";
@@ -17,6 +19,9 @@ export default async function SecurityModelsPage({ searchParams }: { readonly se
   const selected = Number.isSafeInteger(selectedVersion) && selectedVersion! > 0
     ? await request.client.administration.securityModels.get(context, selectedVersion!)
     : null;
+  let scopeTypes = selected
+    ? await listScopeTypesIfAuthorized(request, selected.modelVersion)
+    : { available: true, records: [] as const };
 
   return (
     <section className="ia-page">
@@ -73,10 +78,63 @@ export default async function SecurityModelsPage({ searchParams }: { readonly se
               { label: "RBAC project", value: selected.rbacProject },
               { label: "Namespaces", value: selected.rbacNamespaces.join(", ") },
               { label: "Capabilities", value: selected.capabilities.length },
+              { label: "Scope types", value: scopeTypes.available ? scopeTypes.records.length : "Not authorized" },
               { label: "Manifest schema", value: selected.schemaVersion },
             ]}
+            actions={scopeTypes.available ? (
+              <AdminMutationDialog
+                title="Register scope type"
+                description="Register one generic resource-scope type for this immutable security-model version. Root types attach directly to a tenant; child types must reference another registered type in the same model version."
+                triggerLabel="Add scope type"
+                submitLabel="Register scope type"
+                action={addScopeTypeAction.bind(null, selected.modelVersion)}
+                triggerIcon="plus"
+                compact
+              >
+                <AdminField
+                  label="Scope type key"
+                  name="key"
+                  required
+                  maxLength={64}
+                  pattern="[a-z][a-z0-9-]{0,63}"
+                  placeholder="ecommerce"
+                  hint="Stable machine-readable key. Use lower-case letters, digits, and hyphens only."
+                />
+                <AdminField label="Display name" name="displayName" required maxLength={200} placeholder="E-commerce" />
+                <AdminSelectField
+                  label="Parent scope type"
+                  name="parentKey"
+                  defaultValue=""
+                  hint="Leave empty for a root type that can attach directly to the tenant. Child types inherit their required parent type from this declaration."
+                >
+                  <option value="">Root scope type</option>
+                  {scopeTypes.records.map((scopeType) => (
+                    <option key={scopeType.key} value={scopeType.key}>{scopeType.displayName} ({scopeType.key})</option>
+                  ))}
+                </AdminSelectField>
+              </AdminMutationDialog>
+            ) : undefined}
             closeHref="/identity/security-models"
           />
+
+          {scopeTypes.available ? (
+            <AdminEntityTable
+              title="Registered scope types"
+              description="Scope types belong to this security-model version and constrain Resource Scope creation. They do not grant permissions or define application business semantics."
+              entityLabel="scope types"
+              rows={scopeTypes.records.map((scopeType) => ({
+                id: scopeType.key,
+                name: scopeType.displayName,
+                status: scopeType.parentKey ? `Child of ${scopeType.parentKey}` : "Tenant root",
+                version: selected.modelVersion,
+              }))}
+            />
+          ) : (
+            <AdminSecurityBanner
+              title="Scope-type catalogue access is not granted."
+              description="The current administration context can inspect this security model but cannot read or register its resource-scope type catalogue."
+            />
+          )}
 
           <section className="ia-card">
             <div className="ia-card-heading"><div><p className="ia-card-kicker">Declared capabilities</p><h2>Resource / feature / action</h2><p>TRN previews combine these concrete capabilities with each registered namespace. They are descriptive previews, not authorization decisions.</p></div></div>
@@ -103,4 +161,16 @@ export default async function SecurityModelsPage({ searchParams }: { readonly se
       />
     </section>
   );
+}
+
+async function listScopeTypesIfAuthorized(request: IdentityAccessAdminRequest, modelVersion: number) {
+  try {
+    const records = await request.client.administration.securityModels.listScopeTypes(request.administrationContext, modelVersion);
+    return { available: true as const, records };
+  } catch (error) {
+    if (error instanceof IdentityAccessClientError && error.httpStatus === 403) {
+      return { available: false as const, records: [] as const };
+    }
+    throw error;
+  }
 }

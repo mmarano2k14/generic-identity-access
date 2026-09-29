@@ -65,9 +65,14 @@ namespace IdentityAccess.Application.Administration
         Task<VersionedRecord<UserGroup>> CreateGroupAsync(Guid identityScopeId, Guid tenantId,
             ApplicationKey application, Guid groupId, string displayName, GroupStatus status,
             CancellationToken cancellationToken);
+        /// <summary>Lists source resource scopes that must be remapped when cloning one reusable group.</summary>
+        Task<IReadOnlyList<GroupTemplateResourceScopeRequirement>> ListGroupTemplateScopeRequirementsAsync(
+            Guid identityScopeId, ApplicationKey application, Guid sourceTenantId, Guid sourceGroupId,
+            CancellationToken cancellationToken);
         /// <summary>Creates a normal tenant group from a reusable source group and clones managed-policy bindings only.</summary>
         Task<VersionedRecord<UserGroup>?> CreateGroupFromTemplateAsync(Guid identityScopeId, Guid tenantId,
             ApplicationKey application, Guid sourceTenantId, Guid sourceGroupId, Guid groupId,
+            IReadOnlyDictionary<Guid, Guid> resourceScopeMappings,
             CancellationToken cancellationToken);
         /// <summary>Updates a user group using optimistic concurrency while preserving reusable-template state.</summary>
         Task<VersionedRecord<UserGroup>> UpdateGroupAsync(Guid identityScopeId, Guid tenantId,

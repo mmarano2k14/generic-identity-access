@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { AdminCheckboxField, AdminField, AdminSelectField, AdminStatusField } from "../../../components/AdminField";
 import { AdminCreateGroupDialog } from "../../../components/AdminCreateGroupDialog";
+import { AdminCreateGroupFromTemplateDialog } from "../../../components/AdminCreateGroupFromTemplateDialog";
 import { AdminEntityAutocomplete } from "../../../components/AdminEntityAutocomplete";
 import { AdminEntityTable } from "../../../components/AdminEntityTable";
 import { AdminTenantGroupCatalog } from "../../../components/AdminGroupCatalog";
@@ -49,6 +50,20 @@ export default async function GroupsPage({ searchParams }: { readonly searchPara
     : [];
   const groups = context ? await request.client.administration.groups.list(context, { limit: 50 }) : [];
   const reusableGroups = context ? await request.client.administration.groups.listTemplates(context, { limit: 100 }) : [];
+  const [targetResourceScopes, reusableScopeRequirements] = context ? await Promise.all([
+    request.client.administration.resourceScopes.list(context, { limit: 200 }),
+    Promise.all(reusableGroups.map((group) =>
+      request.client.administration.groups.listTemplateScopeRequirements(
+        context,
+        group.tenantId,
+        group.groupId,
+      ))),
+  ]) : [[], []];
+  const reusableTemplateOptions = reusableGroups.map((group, index) => ({
+    value: `${group.tenantId}:${group.groupId}`,
+    displayName: group.displayName,
+    requirements: reusableScopeRequirements[index] ?? [],
+  }));
   const selectedGroup = context && groupId
     ? groups.find((group) => group.groupId === groupId) ?? await request.client.administration.groups.get(context, groupId)
     : null;
@@ -111,13 +126,12 @@ export default async function GroupsPage({ searchParams }: { readonly searchPara
   const createActions = context ? (
     <div className="ia-row-actions">
       <AdminCreateGroupDialog effectiveContext={request.effectiveContext} selectedTenantId={context.tenantId} />
-      <AdminMutationDialog title="Create from template" description="Create a new group in this tenant by copying the selected reusable group's managed policy bindings. Members are never copied." triggerLabel="Create from template" submitLabel="Create group" action={createGroupFromTemplateAction} triggerVariant="secondary">
-        <input type="hidden" name="tenantId" value={context.tenantId} />
-        <AdminSelectField label="Reusable group" name="sourceGroup" required defaultValue="">
-          <option value="" disabled>Select a template</option>
-          {reusableGroups.map((group) => <option key={`${group.tenantId}:${group.groupId}`} value={`${group.tenantId}:${group.groupId}`}>{group.displayName}</option>)}
-        </AdminSelectField>
-      </AdminMutationDialog>
+      <AdminCreateGroupFromTemplateDialog
+        tenantId={context.tenantId}
+        templates={reusableTemplateOptions}
+        targetResourceScopes={targetResourceScopes}
+        action={createGroupFromTemplateAction}
+      />
     </div>
   ) : undefined;
 

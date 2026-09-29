@@ -8,6 +8,7 @@ import type {
   IdentityEffectiveAdministrationContext,
   IdentityGroupMemberRecord,
   IdentityGroupPolicyBindingRecord,
+  IdentityGroupTemplateResourceScopeRequirement,
   IdentityManagedGroupPolicyBindingRecord,
   IdentityManagedPolicyRecord,
   IdentityManagedPolicyStatementRecord,
@@ -27,6 +28,7 @@ import type {
   IdentityTenantRecord,
   IdentityTenantUserRecord,
   IdentityUpdateResourceScopeRequest,
+  IdentityPasswordCredentialMetadataRecord,
   IdentityUserRecord,
 } from "../admin-contracts.js";
 import { IdentityAccessClientError } from "../errors.js";
@@ -110,6 +112,16 @@ export class IdentityAccessAdministrationCodec {
       status: IdentityAccessValueCodec.lifecycleStatus(data.status),
       isTemplate: IdentityAccessValueCodec.flag(data.isTemplate),
       version: IdentityAccessValueCodec.version(data.version),
+    };
+  }
+
+  public static groupTemplateResourceScopeRequirement(value: unknown): IdentityGroupTemplateResourceScopeRequirement {
+    const data = IdentityAccessValueCodec.object(value);
+    return {
+      sourceResourceScopeId: IdentityAccessValueCodec.uuid(IdentityAccessValueCodec.text(data.sourceResourceScopeId)),
+      modelVersion: IdentityAccessValueCodec.positiveInteger(data.modelVersion),
+      scopeType: IdentityAccessValueCodec.slug(IdentityAccessValueCodec.text(data.scopeType)),
+      displayName: IdentityAccessValueCodec.text(data.displayName),
     };
   }
 
@@ -238,6 +250,24 @@ export class IdentityAccessAdministrationCodec {
       policyId: IdentityAccessValueCodec.uuid(IdentityAccessValueCodec.text(data.policyId)),
       ...(resourceScopeId === undefined ? {} : { resourceScopeId }),
       includeDescendants: IdentityAccessValueCodec.flag(data.includeDescendants),
+    };
+  }
+
+  public static passwordCredentialMetadataRecord(value: unknown): IdentityPasswordCredentialMetadataRecord {
+    const data = IdentityAccessValueCodec.object(value);
+    const failedAccessCount = data.failedAccessCount;
+    if (typeof failedAccessCount !== "number" || !Number.isSafeInteger(failedAccessCount) || failedAccessCount < 0) {
+      throw new IdentityAccessClientError("protocol");
+    }
+    const lockoutUntil = data.lockoutUntil === null || data.lockoutUntil === undefined
+      ? undefined
+      : IdentityAccessValueCodec.timestamp(data.lockoutUntil);
+    return {
+      userId: IdentityAccessValueCodec.uuid(IdentityAccessValueCodec.text(data.userId)),
+      loginIdentifier: IdentityAccessValueCodec.text(data.loginIdentifier),
+      failedAccessCount,
+      ...(lockoutUntil === undefined ? {} : { lockoutUntil }),
+      version: IdentityAccessValueCodec.version(data.version),
     };
   }
 

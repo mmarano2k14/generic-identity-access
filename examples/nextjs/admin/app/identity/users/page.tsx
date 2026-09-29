@@ -10,10 +10,16 @@ import { AdminSecurityBanner } from "../../../components/AdminSecurityBanner";
 import { AdminTenantContextSelector } from "../../../components/AdminTenantContextSelector";
 import { IdentityAccessAdminAccessInsightService } from "../../../server/IdentityAccessAdminAccessInsightService";
 import { IdentityAccessAdminAuthorizedTenantService } from "../../../server/IdentityAccessAdminAuthorizedTenantService";
+import { IdentityAccessAdminCredentialReadService } from "../../../server/IdentityAccessAdminCredentialReadService";
 import { IdentityAccessAdminRequest } from "../../../server/IdentityAccessAdminRequest";
 import { IdentityAccessAdminTenantAggregateLoader } from "../../../server/IdentityAccessAdminTenantAggregateLoader";
 import { IdentityAccessAdminUserReadService } from "../../../server/IdentityAccessAdminUserReadService";
-import { createUserAction, updateUserAction } from "../actions";
+import {
+  changePasswordCredentialAction,
+  createPasswordCredentialAction,
+  createUserAction,
+  updateUserAction,
+} from "../actions";
 
 type SearchParams = { readonly tenantId?: string; readonly tenantView?: string; readonly userId?: string };
 
@@ -37,6 +43,10 @@ export default async function UsersPage({ searchParams }: { readonly searchParam
   const accessInsight = selectedUser && context
     ? await new IdentityAccessAdminAccessInsightService(request).inspectUser(selectedUser, context)
     : null;
+  const credentialRead = scopeWide && selectedUser
+    ? await new IdentityAccessAdminCredentialReadService(request).load(selectedUser.userId)
+    : { credential: null, failure: undefined };
+  const credential = credentialRead.credential;
 
   const create = scopeWide ? (
     <AdminMutationDialog title="Create user" description="Create a new stable identity record in the current identity scope." triggerLabel="Create user" submitLabel="Create user" action={createUserAction}>
@@ -54,6 +64,40 @@ export default async function UsersPage({ searchParams }: { readonly searchParam
           <AdminField label="Display name" name="displayName" defaultValue={selectedUser.displayName} required maxLength={200} />
           <AdminStatusField name="status" defaultValue={String(selectedUser.status)} />
         </AdminMutationDialog>
+      ) : null}
+      {scopeWide && !credentialRead.failure ? (
+        credential ? (
+          <AdminMutationDialog
+            title="Change password credential"
+            description="Replace this user's login identifier/password credential. A successful password change revokes existing sessions and refresh-token continuity."
+            triggerLabel="Change password"
+            submitLabel="Change password"
+            action={changePasswordCredentialAction}
+            triggerVariant="secondary"
+            triggerIcon="key"
+            compact
+          >
+            <input type="hidden" name="userId" value={selectedUser.userId} />
+            <input type="hidden" name="expectedVersion" value={credential.version} />
+            <AdminField label="Login identifier" name="loginIdentifier" defaultValue={credential.loginIdentifier} autoComplete="username" required maxLength={320} />
+            <AdminField label="New password" name="password" type="password" autoComplete="new-password" required minLength={12} maxLength={256} hint="12 to 256 characters. The password is submitted server-side and is never displayed again." />
+          </AdminMutationDialog>
+        ) : (
+          <AdminMutationDialog
+            title="Set password credential"
+            description="Configure the login identifier and initial password for this existing identity. This creates authentication material only; tenant/group authorization remains separate."
+            triggerLabel="Set credentials"
+            submitLabel="Set credentials"
+            action={createPasswordCredentialAction}
+            triggerVariant="secondary"
+            triggerIcon="key"
+            compact
+          >
+            <input type="hidden" name="userId" value={selectedUser.userId} />
+            <AdminField label="Login identifier" name="loginIdentifier" autoComplete="username" required maxLength={320} hint="Use a username or email according to the application's login convention." />
+            <AdminField label="Password" name="password" type="password" autoComplete="new-password" required minLength={12} maxLength={256} hint="12 to 256 characters. Password material is never returned by the administration API." />
+          </AdminMutationDialog>
+        )
       ) : null}
       <Link className="ia-button ia-button-secondary ia-button-compact" href={context ? `/identity/memberships?tenantId=${encodeURIComponent(context.tenantId)}` : "/identity/memberships"}><AdminIcon name="memberships" />Memberships</Link>
       {scopeWide ? <Link className="ia-button ia-button-secondary ia-button-compact" href={`/identity/mfa?userId=${encodeURIComponent(selectedUser.userId)}`}><AdminIcon name="mfa" />MFA state</Link> : null}
@@ -119,7 +163,7 @@ export default async function UsersPage({ searchParams }: { readonly searchParam
       ) : (
         <AdminEntityTable
           title={allTenants ? "Tenant-linked users across authorized tenants" : scopeWide ? "Identity directory" : "Tenant user directory"}
-          description={allTenants ? "Each row is backed by a tenant membership and carries the concrete tenant boundary used for its read." : scopeWide ? "Create and edit identity metadata without exposing credentials." : "Only users joined to the active tenant are returned by the tenant-constrained server query."}
+          description={allTenants ? "Each row is backed by a tenant membership and carries the concrete tenant boundary used for its read." : scopeWide ? "Create and edit identity metadata without exposing credential secrets." : "Only users joined to the active tenant are returned by the tenant-constrained server query."}
           entityLabel="users"
           selectedId={selectedUser?.userId}
           rows={rows}
@@ -135,7 +179,16 @@ export default async function UsersPage({ searchParams }: { readonly searchParam
           version={selectedUser.version}
           facts={[
             { label: "Identity record", value: "Stable user" },
-            { label: "Credential exposure", value: "None" },
+            ...(scopeWide ? [{
+              label: "Password credential",
+              value: credentialRead.failure ? "Unavailable" : credential ? "Configured" : "Not configured",
+            }] : []),
+            ...(credential ? [
+              { label: "Login identifier", value: credential.loginIdentifier },
+              { label: "Failed attempts", value: String(credential.failedAccessCount) },
+              { label: "Locked until", value: credential.lockoutUntil ?? "—" },
+              { label: "Credential version", value: `v${credential.version}` },
+            ] : []),
             ...(context ? [{ label: "Tenant context", value: context.tenantId, mono: true }] : []),
           ]}
           actions={selectedUserActions}
@@ -147,7 +200,10 @@ export default async function UsersPage({ searchParams }: { readonly searchParam
         <AdminSecurityBanner title="Tenant access insight unavailable." description="Select a server-authorized tenant context before composing tenant-scoped assignment provenance for this identity." />
       ) : null}
       {allTenants ? <AdminSecurityBanner title="All authorized tenants is a membership-backed collection view." description="The aggregate never converts memberships into permission. Details always enter one concrete tenant context before tenant-scoped access insight is composed." /> : null}
-      <AdminSecurityBanner title="Credentials stay separate." description="This directory view exposes identity metadata only. Password material, session tokens, refresh tokens, and authenticator secrets are never part of these records." />
+      {selectedUser && scopeWide && credentialRead.failure ? (
+        <AdminSecurityBanner title={credentialRead.failure.title} description={credentialRead.failure.message} />
+      ) : null}
+      <AdminSecurityBanner title="Password secrets stay separate." description="Scope administration can configure secret-free password credential metadata for a selected user, but password hashes, plaintext passwords, session tokens, refresh tokens, and authenticator secrets are never returned to this page." />
     </section>
   );
 }

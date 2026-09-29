@@ -17,6 +17,14 @@ export async function updateUserAction(_state: AdminActionState, formData: FormD
   return execute("/identity/users", "User updated.", (service) => service.updateUser(formData));
 }
 
+export async function createPasswordCredentialAction(_state: AdminActionState, formData: FormData): Promise<AdminActionState> {
+  return execute("/identity/users", "Password credential configured.", (service) => service.createPasswordCredential(formData));
+}
+
+export async function changePasswordCredentialAction(_state: AdminActionState, formData: FormData): Promise<AdminActionState> {
+  return execute("/identity/users", "Password credential updated and existing sessions revoked.", (service) => service.changePasswordCredential(formData));
+}
+
 export async function createTenantAction(_state: AdminActionState, formData: FormData): Promise<AdminActionState> {
   return execute(["/identity/tenants", "/identity/memberships"], "Tenant created.", (service) => service.createTenant(formData));
 }

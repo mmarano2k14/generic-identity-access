@@ -1,6 +1,7 @@
 import { IdentityAccessHttpTransport } from "../IdentityAccessHttpTransport.js";
 import { IdentityAccessAdministrationTransport } from "./IdentityAccessAdministrationTransport.js";
 import { IdentityAccessAdministrationContextClient } from "./IdentityAccessAdministrationContextClient.js";
+import { IdentityAccessCredentialsClient } from "./IdentityAccessCredentialsClient.js";
 import { IdentityAccessGroupsClient } from "./IdentityAccessGroupsClient.js";
 import { IdentityAccessMembershipCandidatesClient } from "./IdentityAccessMembershipCandidatesClient.js";
 import { IdentityAccessTenantGroupAssignmentsClient } from "./IdentityAccessTenantGroupAssignmentsClient.js";
@@ -21,6 +22,7 @@ import { IdentityAccessUsersClient } from "./IdentityAccessUsersClient.js";
 export class IdentityAccessAdministrationClient {
   public readonly context: IdentityAccessAdministrationContextClient;
   public readonly users: IdentityAccessUsersClient;
+  public readonly credentials: IdentityAccessCredentialsClient;
   public readonly tenants: IdentityAccessTenantsClient;
   public readonly memberships: IdentityAccessMembershipsClient;
   public readonly membershipCandidates: IdentityAccessMembershipCandidatesClient;
@@ -40,6 +42,7 @@ export class IdentityAccessAdministrationClient {
     const admin = new IdentityAccessAdministrationTransport(transport);
     this.context = new IdentityAccessAdministrationContextClient(admin);
     this.users = new IdentityAccessUsersClient(admin);
+    this.credentials = new IdentityAccessCredentialsClient(admin);
     this.tenants = new IdentityAccessTenantsClient(admin);
     this.memberships = new IdentityAccessMembershipsClient(admin);
     this.membershipCandidates = new IdentityAccessMembershipCandidatesClient(admin);

@@ -5,6 +5,7 @@ import type { IdentityEffectiveAdministrationContext } from "@identity-access/cl
 import { createResourceScopeAction } from "../app/identity/actions";
 import { AdminEntityAutocomplete } from "./AdminEntityAutocomplete";
 import { AdminField, AdminStatusField } from "./AdminField";
+import { AdminResourceScopeTypeFields } from "./AdminResourceScopeTypeFields";
 import { AdminMutationDialog } from "./AdminMutationDialog";
 import { AdminTenantTargetField } from "./AdminTenantTargetField";
 
@@ -28,8 +29,7 @@ export function AdminCreateResourceScopeDialog({ effectiveContext, selectedTenan
       action={createResourceScopeAction}
     >
       <AdminTenantTargetField effectiveContext={effectiveContext} selectedTenantId={selectedTenantId} onTenantChange={setTenantId} />
-      <AdminField label="Security model version" name="modelVersion" type="number" min={1} step={1} required />
-      <AdminField label="Scope type" name="scopeType" required maxLength={128} />
+      <AdminResourceScopeTypeFields />
       <AdminField label="External resource ID" name="externalResourceId" required maxLength={256} />
       <AdminField label="Display name" name="displayName" required maxLength={200} />
       <div key={tenantId || "no-tenant"}>
