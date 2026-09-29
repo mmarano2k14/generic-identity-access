@@ -85,6 +85,28 @@ export class IdentityAccessPathBuilder {
     return `api/v1/identity-scopes/${scope}/tenants/${tenant}/applications/${application}/users`;
   }
 
+  /** Builds the tenant-local Organization Directory base path hosted by IdentityAccess.Api. */
+  public static organizationDirectoryPath(context: IdentityTenantAdministrationContext): string {
+    const scope = IdentityAccessValueCodec.uuid(context.identityScopeId);
+    const tenant = IdentityAccessValueCodec.uuid(context.tenantId);
+    const application = IdentityAccessValueCodec.slug(context.applicationKey);
+    IdentityAccessPathBuilder.credentialHeaders(context.credential);
+    return `api/v1/identity-scopes/${scope}/applications/${application}/tenants/${tenant}/organizations`;
+  }
+
+  /** Builds the member-centric OrganizationMembership read path. */
+  public static tenantMembershipOrganizationsPath(
+    context: IdentityTenantAdministrationContext,
+    tenantMembershipIdValue: string,
+  ): string {
+    const scope = IdentityAccessValueCodec.uuid(context.identityScopeId);
+    const tenant = IdentityAccessValueCodec.uuid(context.tenantId);
+    const application = IdentityAccessValueCodec.slug(context.applicationKey);
+    const tenantMembershipId = IdentityAccessValueCodec.uuid(tenantMembershipIdValue);
+    IdentityAccessPathBuilder.credentialHeaders(context.credential);
+    return `api/v1/identity-scopes/${scope}/applications/${application}/tenants/${tenant}/tenant-memberships/${tenantMembershipId}/organizations`;
+  }
+
   public static scopeAuthorityPath(context: IdentityAdministrationContext): string {
     return `${IdentityAccessPathBuilder.administrationBasePath(context)}/scope-authority`;
   }

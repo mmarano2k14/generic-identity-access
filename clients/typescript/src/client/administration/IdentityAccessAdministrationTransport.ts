@@ -57,6 +57,21 @@ export class IdentityAccessAdministrationTransport {
     );
   }
 
+  /** Executes a POST action that accepts a JSON request body and returns HTTP 200 JSON. */
+  public async postJsonAction<T>(
+    path: string,
+    context: IdentityAdministrationContext,
+    body: IdentityJsonObject,
+    decode: (body: unknown, status: number) => T,
+    signal?: AbortSignal,
+  ): Promise<T> {
+    return this.#transport.requestJson(
+      path,
+      this.jsonOptions("POST", context, body, signal, [200]),
+      decode,
+    );
+  }
+
   public async put<T>(
     path: string,
     context: IdentityAdministrationContext,

@@ -140,6 +140,24 @@ namespace IdentityAccess.Application.Security
         /// <summary>A real group was marked or unmarked as reusable.</summary>
         GroupReusableAvailabilityChanged = 68,
         /// <summary>A normal tenant group was created from a reusable real group definition.</summary>
-        GroupCreatedFromTemplate = 69
+        GroupCreatedFromTemplate = 69,
+        /// <summary>An Organization was created.</summary>
+        OrganizationCreated = 70,
+        /// <summary>An Organization definition was updated.</summary>
+        OrganizationUpdated = 71,
+        /// <summary>An Organization lifecycle status was changed.</summary>
+        OrganizationStatusChanged = 72,
+        /// <summary>A tenant member was added to an Organization.</summary>
+        OrganizationMembershipAdded = 73,
+        /// <summary>An Organization membership lifecycle status was changed.</summary>
+        OrganizationMembershipStatusChanged = 74,
+        /// <summary>A tenant member was removed from an Organization.</summary>
+        OrganizationMembershipRemoved = 75,
+        /// <summary>An Organization was linked to an Identity Access ResourceScope.</summary>
+        OrganizationResourceScopeLinked = 76,
+        /// <summary>An Organization ResourceScope link was replaced.</summary>
+        OrganizationResourceScopeRelinked = 77,
+        /// <summary>An Organization ResourceScope link was removed.</summary>
+        OrganizationResourceScopeUnlinked = 78
     }
 }

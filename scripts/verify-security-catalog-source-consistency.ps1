@@ -105,4 +105,32 @@ if ($catalogService -match 'IsAllowed\s*\(' -or $catalogService -match 'authoriz
     throw "Application security-catalog registration must not evaluate authorization or become a second RBAC engine."
 }
 
+
+$adminManifestPath = Require-File "config/identity-access-admin-security-manifest.json"
+$adminManifest = Get-Content $adminManifestPath -Raw | ConvertFrom-Json
+
+if ([int]$adminManifest.modelVersion -ne 3) {
+    throw "Identity Access administration security manifest must use modelVersion 3 after Organization Directory security capabilities were added."
+}
+
+$identityResource = @($adminManifest.resources | Where-Object { $_.name -eq "identity-access" })
+if ($identityResource.Count -ne 1) {
+    throw "Identity Access administration security manifest must contain exactly one identity-access resource."
+}
+
+$adminFeatures = @($identityResource[0].features | ForEach-Object { [string]$_.name })
+foreach ($requiredFeature in @("organization", "organization-membership", "organization-scope-link")) {
+    if ($adminFeatures -notcontains $requiredFeature) {
+        throw "Identity Access administration security manifest is missing required Organization Directory feature '$requiredFeature'."
+    }
+}
+
+Require-Text "src/IdentityAccess.Api/Controllers/OrganizationsController.cs" "IdentityAccessAdministrationCapabilities.Organizations"
+Require-Text "src/IdentityAccess.Api/Controllers/OrganizationMembershipsController.cs" "IdentityAccessAdministrationCapabilities.OrganizationMemberships"
+Require-Text "src/IdentityAccess.Api/Controllers/TenantMembershipOrganizationsController.cs" "IdentityAccessAdministrationCapabilities.OrganizationMemberships"
+Require-Text "src/IdentityAccess.Api/Controllers/OrganizationResourceScopeLinksController.cs" "IdentityAccessAdministrationCapabilities.OrganizationScopeLinks"
+Require-Text "src/IdentityAccess.Api/Controllers/OrganizationsController.cs" "SecurityAuditEventType.OrganizationCreated"
+Require-Text "src/IdentityAccess.Api/Controllers/OrganizationMembershipsController.cs" "SecurityAuditEventType.OrganizationMembershipAdded"
+Require-Text "src/IdentityAccess.Api/Controllers/OrganizationResourceScopeLinksController.cs" "SecurityAuditEventType.OrganizationResourceScopeLinked"
+
 Write-Host "Application security-catalog source consistency validation passed."

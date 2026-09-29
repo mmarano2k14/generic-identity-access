@@ -1,0 +1,45 @@
+import { IdentityAccessHttpTransport } from "../IdentityAccessHttpTransport.js";
+import { IdentityAccessAdministrationContextClient } from "./IdentityAccessAdministrationContextClient.js";
+import { IdentityAccessCredentialsClient } from "./IdentityAccessCredentialsClient.js";
+import { IdentityAccessGroupsClient } from "./IdentityAccessGroupsClient.js";
+import { IdentityAccessMembershipCandidatesClient } from "./IdentityAccessMembershipCandidatesClient.js";
+import { IdentityAccessTenantGroupAssignmentsClient } from "./IdentityAccessTenantGroupAssignmentsClient.js";
+import { IdentityAccessMembershipsClient } from "./IdentityAccessMembershipsClient.js";
+import { IdentityAccessManagedPoliciesClient } from "./IdentityAccessManagedPoliciesClient.js";
+import { IdentityAccessManagedPolicyBindingsClient } from "./IdentityAccessManagedPolicyBindingsClient.js";
+import { IdentityAccessMfaClient } from "./IdentityAccessMfaClient.js";
+import { IdentityAccessOrganizationsClient } from "./IdentityAccessOrganizationsClient.js";
+import { IdentityAccessOrganizationMembershipsClient } from "./IdentityAccessOrganizationMembershipsClient.js";
+import { IdentityAccessOrganizationResourceScopeLinksClient } from "./IdentityAccessOrganizationResourceScopeLinksClient.js";
+import { IdentityAccessResourceScopesClient } from "./IdentityAccessResourceScopesClient.js";
+import { IdentityAccessScopeAuthorityClient } from "./IdentityAccessScopeAuthorityClient.js";
+import { IdentityAccessSecurityAuditClient } from "./IdentityAccessSecurityAuditClient.js";
+import { IdentityAccessSecurityModelsClient } from "./IdentityAccessSecurityModelsClient.js";
+import { IdentityAccessSessionsClient } from "./IdentityAccessSessionsClient.js";
+import { IdentityAccessTenantsClient } from "./IdentityAccessTenantsClient.js";
+import { IdentityAccessTenantUsersClient } from "./IdentityAccessTenantUsersClient.js";
+import { IdentityAccessUsersClient } from "./IdentityAccessUsersClient.js";
+/** Groups administration responsibilities while keeping each domain in its own class. */
+export declare class IdentityAccessAdministrationClient {
+    readonly context: IdentityAccessAdministrationContextClient;
+    readonly users: IdentityAccessUsersClient;
+    readonly credentials: IdentityAccessCredentialsClient;
+    readonly tenants: IdentityAccessTenantsClient;
+    readonly memberships: IdentityAccessMembershipsClient;
+    readonly membershipCandidates: IdentityAccessMembershipCandidatesClient;
+    readonly tenantGroupAssignments: IdentityAccessTenantGroupAssignmentsClient;
+    readonly tenantUsers: IdentityAccessTenantUsersClient;
+    readonly mfa: IdentityAccessMfaClient;
+    readonly organizations: IdentityAccessOrganizationsClient;
+    readonly organizationMemberships: IdentityAccessOrganizationMembershipsClient;
+    readonly organizationResourceScopeLinks: IdentityAccessOrganizationResourceScopeLinksClient;
+    readonly managedPolicies: IdentityAccessManagedPoliciesClient;
+    readonly managedPolicyBindings: IdentityAccessManagedPolicyBindingsClient;
+    readonly groups: IdentityAccessGroupsClient;
+    readonly resourceScopes: IdentityAccessResourceScopesClient;
+    readonly securityModels: IdentityAccessSecurityModelsClient;
+    readonly sessions: IdentityAccessSessionsClient;
+    readonly securityAudit: IdentityAccessSecurityAuditClient;
+    readonly scopeAuthority: IdentityAccessScopeAuthorityClient;
+    constructor(transport: IdentityAccessHttpTransport);
+}

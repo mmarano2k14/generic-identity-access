@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "applicationKey": "admin-web",
-  "modelVersion": 2,
+  "modelVersion": 3,
   "rbac": {
     "project": "identity-access",
     "namespaces": [
@@ -74,6 +74,45 @@
             {
               "name": "write",
               "displayName": "Identity Access mfa-policy write"
+            }
+          ]
+        },
+        {
+          "name": "organization",
+          "actions": [
+            {
+              "name": "read",
+              "displayName": "Identity Access organization read"
+            },
+            {
+              "name": "write",
+              "displayName": "Identity Access organization write"
+            }
+          ]
+        },
+        {
+          "name": "organization-membership",
+          "actions": [
+            {
+              "name": "read",
+              "displayName": "Identity Access organization membership read"
+            },
+            {
+              "name": "write",
+              "displayName": "Identity Access organization membership write"
+            }
+          ]
+        },
+        {
+          "name": "organization-scope-link",
+          "actions": [
+            {
+              "name": "read",
+              "displayName": "Identity Access organization scope-link read"
+            },
+            {
+              "name": "write",
+              "displayName": "Identity Access organization scope-link write"
             }
           ]
         },

@@ -2,6 +2,7 @@ using IdentityAccess.Application.Routing;
 using IdentityAccess.Application.Storage;
 using IdentityAccess.Infrastructure.PostgreSql;
 using Microsoft.AspNetCore.Diagnostics;
+using OrganizationDirectory.Application.Storage;
 
 namespace IdentityAccess.Api.Http
 {
@@ -39,6 +40,120 @@ namespace IdentityAccess.Api.Http
                         StatusCodes.Status409Conflict,
                         "Concurrency conflict",
                         "The resource was modified by another operation."),
+
+                OrganizationConcurrencyException =>
+                    ApiProblems.Details(
+                        StatusCodes.Status409Conflict,
+                        "Organization concurrency conflict",
+                        "The organization was modified by another operation."),
+
+                OrganizationHierarchyConflictException =>
+                    ApiProblems.Details(
+                        StatusCodes.Status409Conflict,
+                        "Organization hierarchy conflict",
+                        "The requested organization hierarchy mutation is not allowed."),
+
+                OrganizationKeyConflictException =>
+                    ApiProblems.Details(
+                        StatusCodes.Status409Conflict,
+                        "Organization key conflict",
+                        "The organization key is already in use in this tenant."),
+
+                OrganizationIdentityConflictException =>
+                    ApiProblems.Details(
+                        StatusCodes.Status409Conflict,
+                        "Organization identity conflict",
+                        "The organization identity is already in use in this tenant."),
+
+                OrganizationParentNotFoundException =>
+                    ApiProblems.Details(
+                        StatusCodes.Status404NotFound,
+                        "Organization parent not found",
+                        "The requested parent organization does not exist in this tenant."),
+
+                OrganizationTenantNotFoundException =>
+                    ApiProblems.Details(
+                        StatusCodes.Status404NotFound,
+                        "Tenant not found",
+                        "The requested Identity Access tenant does not exist."),
+
+                OrganizationMembershipAlreadyExistsException =>
+                    ApiProblems.Details(
+                        StatusCodes.Status409Conflict,
+                        "Organization membership already exists",
+                        "The tenant member already belongs to this organization."),
+
+                OrganizationMembershipConcurrencyException =>
+                    ApiProblems.Details(
+                        StatusCodes.Status409Conflict,
+                        "Organization membership concurrency conflict",
+                        "The organization membership was modified by another operation."),
+
+                OrganizationMembershipReferenceNotFoundException =>
+                    ApiProblems.Details(
+                        StatusCodes.Status404NotFound,
+                        "Organization not found",
+                        "The requested organization does not exist in this tenant."),
+
+                TenantMembershipReferenceNotFoundException =>
+                    ApiProblems.Details(
+                        StatusCodes.Status404NotFound,
+                        "Tenant membership not found",
+                        "The requested Identity Access tenant membership does not exist in this tenant."),
+
+                TenantMembershipInactiveException =>
+                    ApiProblems.Details(
+                        StatusCodes.Status409Conflict,
+                        "Tenant membership inactive",
+                        "An inactive tenant membership cannot be added to or reactivated in an organization."),
+
+                OrganizationMembershipOrganizationInactiveException =>
+                    ApiProblems.Details(
+                        StatusCodes.Status409Conflict,
+                        "Organization inactive",
+                        "Organization membership cannot be added or activated while the organization is inactive."),
+
+                OrganizationResourceScopeLinkAlreadyExistsException =>
+                    ApiProblems.Details(
+                        StatusCodes.Status409Conflict,
+                        "Organization ResourceScope link already exists",
+                        "The Organization already has a ResourceScope link for this application."),
+
+                OrganizationResourceScopeAlreadyLinkedException =>
+                    ApiProblems.Details(
+                        StatusCodes.Status409Conflict,
+                        "ResourceScope already linked",
+                        "The ResourceScope is already linked to another Organization in this application."),
+
+                OrganizationResourceScopeLinkConcurrencyException =>
+                    ApiProblems.Details(
+                        StatusCodes.Status409Conflict,
+                        "Organization ResourceScope-link concurrency conflict",
+                        "The ResourceScope link was modified by another operation."),
+
+                OrganizationResourceScopeReferenceNotFoundException =>
+                    ApiProblems.Details(
+                        StatusCodes.Status404NotFound,
+                        "ResourceScope not found",
+                        "The requested ResourceScope does not exist in the expected tenant and application boundary."),
+
+                OrganizationResourceScopeInactiveException =>
+                    ApiProblems.Details(
+                        StatusCodes.Status409Conflict,
+                        "ResourceScope inactive",
+                        "An inactive ResourceScope cannot be newly linked or used to replace the current Organization link."),
+
+                OrganizationResourceScopeOrganizationNotFoundException =>
+                    ApiProblems.Details(
+                        StatusCodes.Status404NotFound,
+                        "Organization not found",
+                        "The requested Organization does not exist in this tenant."),
+
+                OrganizationResourceScopeOrganizationInactiveException =>
+                    ApiProblems.Details(
+                        StatusCodes.Status409Conflict,
+                        "Organization inactive",
+                        "ResourceScope linkage cannot be changed while the Organization is inactive."),
 
                 DatabaseRouteException =>
                     ApiProblems.Details(

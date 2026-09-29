@@ -37,6 +37,7 @@ builder.Services.AddIdentityAccessConfigurationRouting(
     builder.Environment.ContentRootPath);
 builder.Services.AddIdentityAccessPostgreSql(
     builder.Configuration.GetSection("IdentityAccess:PostgreSql"));
+builder.AddOrganizationDirectory();
 builder.AddIdentityAdministration();
 builder.Services.AddIdentityAccessAuthentication(
     builder.Configuration.GetSection("IdentityAccess:Authentication"),

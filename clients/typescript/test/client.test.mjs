@@ -65,6 +65,9 @@ test("the root client is a composition facade with focused class responsibilitie
   assert.equal(typeof api.administration.managedPolicies.list, "function");
   assert.equal(typeof api.administration.managedPolicyBindings.list, "function");
   assert.equal(typeof api.administration.memberships.list, "function");
+  assert.equal(typeof api.administration.organizations.list, "function");
+  assert.equal(typeof api.administration.organizationMemberships.listForTenantMembership, "function");
+  assert.equal(typeof api.administration.organizationResourceScopeLinks.get, "function");
   assert.equal(typeof api.administration.tenantUsers.list, "function");
   assert.equal(typeof api.administration.scopeAuthority.listGroups, "function");
   assert.equal(typeof api.administration.scopeAuthority.listPolicies, "function");
@@ -1781,4 +1784,121 @@ test("tenant group assignment aggregate and exact-login membership candidate sta
     status: 1,
     version: 1,
   });
+});
+
+
+test("Organization Directory client is composed into administration without a second API host", async () => {
+  const organizationId = "42eeeeee-eeee-eeee-eeee-eeeeeeeeeeee";
+  const urls = [];
+  const methods = [];
+  const api = client(async (url, init) => {
+    urls.push(url);
+    methods.push(init.method);
+    if (init.method === "GET") {
+      return json([{
+        identityScopeId: scopeId,
+        tenantId,
+        organizationId,
+        organizationKey: "urban-flower",
+        displayName: "Urban Flower",
+        organizationType: "business",
+        parentOrganizationId: null,
+        status: 1,
+        rowVersion: 1,
+        createdAt: "2026-09-29T00:00:00Z",
+        updatedAt: "2026-09-29T00:00:00Z",
+      }]);
+    }
+    return json({
+      identityScopeId: scopeId,
+      tenantId,
+      organizationId,
+      organizationKey: "urban-flower",
+      displayName: "Urban Flower",
+      organizationType: "business",
+      parentOrganizationId: null,
+      status: 1,
+      rowVersion: 1,
+      createdAt: "2026-09-29T00:00:00Z",
+      updatedAt: "2026-09-29T00:00:00Z",
+    }, 201);
+  });
+
+  const context = { identityScopeId: scopeId, applicationKey: "app-a", tenantId, credential: bearer };
+  const listed = await api.administration.organizations.list(context, { limit: 20 });
+  assert.equal(listed[0].organizationKey, "urban-flower");
+
+  await api.administration.organizations.create(context, {
+    organizationKey: "urban-flower",
+    displayName: "Urban Flower",
+    organizationType: "business",
+  });
+
+  assert.equal(urls[0], `https://identity.example.test/api/v1/identity-scopes/${scopeId}/applications/app-a/tenants/${tenantId}/organizations?limit=20`);
+  assert.equal(urls[1], `https://identity.example.test/api/v1/identity-scopes/${scopeId}/applications/app-a/tenants/${tenantId}/organizations`);
+  assert.deepEqual(methods, ["GET", "POST"]);
+});
+
+test("OrganizationMembership client uses organization-centric and member-centric routes", async () => {
+  const organizationId = "42eeeeee-eeee-eeee-eeee-eeeeeeeeeeee";
+  const tenantMembershipId = "42ffffff-ffff-ffff-ffff-ffffffffffff";
+  const seen = [];
+  const record = {
+    identityScopeId: scopeId,
+    tenantId,
+    organizationId,
+    tenantMembershipId,
+    status: 1,
+    rowVersion: 1,
+    createdAt: "2026-09-29T00:00:00Z",
+    updatedAt: "2026-09-29T00:00:00Z",
+  };
+  const api = client(async (url, init) => {
+    seen.push([url, init.method]);
+    if (init.method === "POST") return json(record, 201);
+    if (init.method === "DELETE") return new Response(null, { status: 204 });
+    return json([record]);
+  });
+  const context = { identityScopeId: scopeId, applicationKey: "app-a", tenantId, credential: bearer };
+
+  await api.administration.organizationMemberships.listForTenantMembership(context, tenantMembershipId, { limit: 10 });
+  await api.administration.organizationMemberships.add(context, organizationId, tenantMembershipId);
+  assert.equal(await api.administration.organizationMemberships.remove(context, organizationId, tenantMembershipId, 1), true);
+
+  assert.equal(seen[0][0], `https://identity.example.test/api/v1/identity-scopes/${scopeId}/applications/app-a/tenants/${tenantId}/tenant-memberships/${tenantMembershipId}/organizations?limit=10`);
+  assert.equal(seen[1][0], `https://identity.example.test/api/v1/identity-scopes/${scopeId}/applications/app-a/tenants/${tenantId}/organizations/${organizationId}/memberships`);
+  assert.equal(seen[2][0], `https://identity.example.test/api/v1/identity-scopes/${scopeId}/applications/app-a/tenants/${tenantId}/organizations/${organizationId}/memberships/${tenantMembershipId}?expectedRowVersion=1`);
+});
+
+test("Organization ResourceScope link client stays application-aware", async () => {
+  const organizationId = "42eeeeee-eeee-eeee-eeee-eeeeeeeeeeee";
+  const link = {
+    organizationId,
+    applicationKey: "app-a",
+    resourceScopeId,
+    scopeType: "organization",
+    modelVersion: 3,
+    status: 1,
+    rowVersion: 1,
+    createdAt: "2026-09-29T00:00:00Z",
+    updatedAt: "2026-09-29T00:00:00Z",
+  };
+  const seen = [];
+  const api = client(async (url, init) => {
+    seen.push([url, init.method, init.body]);
+    if (init.method === "DELETE") return new Response(null, { status: 204 });
+    return json(link, init.method === "POST" ? 201 : 200);
+  });
+  const context = { identityScopeId: scopeId, applicationKey: "app-a", tenantId, credential: bearer };
+
+  assert.equal((await api.administration.organizationResourceScopeLinks.get(context, organizationId)).resourceScopeId, resourceScopeId);
+  await api.administration.organizationResourceScopeLinks.create(context, organizationId, resourceScopeId);
+  await api.administration.organizationResourceScopeLinks.update(context, organizationId, resourceScopeId, 1);
+  assert.equal(await api.administration.organizationResourceScopeLinks.remove(context, organizationId, 1), true);
+
+  const expected = `https://identity.example.test/api/v1/identity-scopes/${scopeId}/applications/app-a/tenants/${tenantId}/organizations/${organizationId}/resource-scope-link`;
+  assert.equal(seen[0][0], expected);
+  assert.equal(seen[1][0], expected);
+  assert.equal(seen[2][0], expected);
+  assert.equal(seen[3][0], `${expected}?expectedRowVersion=1`);
 });

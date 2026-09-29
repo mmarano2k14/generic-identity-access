@@ -1,464 +1,178 @@
-# Generic Identity & Access
+# Generic Organization Directory
 
-Reusable identity, authentication, authorization, and access-control foundation built on .NET 10 and PostgreSQL.
+Reusable, application-agnostic organization identity and membership foundation built on .NET 10 and PostgreSQL.
 
-The service provides a generic multi-tenant directory, configurable PostgreSQL routing, resource-scope hierarchies, policy assignment, external RBAC integration, local password authentication, opaque sessions, and an ASP.NET Core MVC administration API.
+The repository models stable Organizations inside externally owned Tenant boundaries, supports hierarchical organization references, explicit `OrganizationMembership`, and application-aware links to external authorization Resource Scopes.
 
-The repository is application-agnostic. Consuming systems define their own resource-scope types and capability models without introducing product-specific concepts into the core.
-
-## Capabilities
-
-- ASP.NET Core MVC API with Swagger / OpenAPI.
-- Stable identity scopes, users, tenants, memberships, groups, and group membership.
-- Server-controlled PostgreSQL multi-database routing.
-- Optimistic concurrency through explicit row versions.
-- Application-defined resource-scope hierarchies.
-- Runtime authorization and administration use published managed policies only. Historical tenant-policy tables and migrations remain intact for schema history/data retention but are not an active grant source.
-- Application-managed reusable policy catalog with tenant-independent definitions, draft/published versions, immutable published content, shared administration UI, and tenant-scoped managed bindings.
-- Persistent whole-segment wildcard capability patterns.
-- Neutral RBAC adapter boundary with external wildcard evaluation.
-- Local password credential management, lockout, opaque sessions, registered redirect URIs, sensitive self-service password change, and recovery-code-backed account recovery.
-- Provider-neutral MFA policy and authenticator lifecycle with pluggable TOTP, recovery-code, and WebAuthn providers, policy-enforced provider execution, effective user MFA state, and hardened lost-factor administration.
-- Class-composed TypeScript / Next.js connector with separated system, authentication, OIDC, authorization, and administration responsibility classes, including a tenant-independent managed-policy catalog client, bounded core collection reads, a read-only security-audit administration path, and a multi-page server-first administration control center.
-
-## Next.js Administration Module
-
-`examples/nextjs/admin` contains a copyable App Router administration structure with separate pages for users, tenants, memberships, groups, shared managed policies, resource scopes, MFA, sessions, security audit, and identity-scope authority. Protected data loading, bearer provenance, validation, and API mutations stay server-side. Client Components are limited to presentation interaction and framework UI state. `IdentityAccessAdminUiBuilder` supplies permission-filtered route metadata but never replaces server-side authorization.
-
-Functional administration includes server-confirmed create/edit flows, explicit relationship mutation, loading/error/empty states, tenant-centric membership administration, safe exact-login member addition, managed-policy-only authorization, session/MFA administration, and browser qualification. Reusable group templates use the same `UserGroup` model as ordinary groups: `is_template = true` marks a real group as reusable. The Groups workspace therefore has one group table with `Template: Yes/No`; identity-scope administration may mark, unmark, and mutate reusable definitions, while authorized tenant administration may explicitly `Create from template`. Cloning copies compatible managed-policy bindings only, never memberships, and the server re-checks delegation against the target tenant.
-
-All custom administration CSS is owned by one file: `examples/nextjs/admin/styles/identity-access-admin.css`. Do not introduce `*.module.css`, component-local stylesheet files, or inline style objects. The shared design system, dark-mode tokens, responsive rules, authentication/recovery surfaces, and motion/accessibility treatment all remain centralized in this one stylesheet.
-
-The administration example is also a runnable standalone Next.js host. It contains a real `/login` route, server-side password -> OIDC Authorization Code + PKCE exchange, HTTP-only cookie handling, explicit sign-out, and the protected `/identity` workspace. The host keeps the existing class-based connector and authorization boundaries; it does not move Identity Access tokens or authorization decisions into browser code.
-
-Run it after configuring a real registered public authentication/OIDC client:
-
-```powershell
-cd examples\nextjs\admin
-Copy-Item .env.local.example .env.local
-npm install --package-lock=false
-npm run dev
-```
-
-Then open `http://127.0.0.1:3000/login`. The configured redirect URI must exactly match the URI registered by the Identity Access API.
-
-For a complete local administration root-of-trust setup, create the development administrator first:
-
-```powershell
-$env:PGPASSWORD = "<local-postgres-password>"
-.\scripts\authentication\bootstrap-dev-admin.ps1
-```
-
-The bootstrap uses login `admin`, securely prompts for the password, creates the required local user/tenant/credential/security-model/authority records, and writes the non-secret Next.js `.env.local` values. Start the API with the matching local authentication/OIDC/RBAC profile:
-
-```powershell
-$env:IDENTITY_ACCESS_POSTGRES_DEFAULT = "Host=127.0.0.1;Port=5432;Database=generic_identity_access_default;Username=postgres;Password=<password>"
-$env:IDENTITY_ACCESS_RBAC_REFERENCE_DIRECTORY = "<path-to-external-rbac-release-directory>"
-.\scripts\authentication\run-dev-admin-api.ps1
-```
-
-See [`docs/DEVELOPMENT_ADMIN_BOOTSTRAP.md`](docs/DEVELOPMENT_ADMIN_BOOTSTRAP.md).
-
-
-### Groups, managed policies, and user assignment
-
-Permissions are defined in published managed policies and granted to groups through managed-policy bindings. Users receive those permissions by belonging to the corresponding group within the tenant.
+## Core principle
 
 ```text
-User
-  -> TenantMembership
-  -> GroupMembership
-  -> UserGroup
-  -> Managed Policy Binding
-  -> Published Managed Policy Version
-  -> Capability statements
-  -> RBAC decision
+OrganizationMembership
+= organizational belonging
+
+GroupMembership + Managed Policy + ResourceScope
+= authorization
 ```
 
-The optional `Resource scope` on a managed-policy binding only narrows where the selected policy applies. It is not a capability selector. Capabilities such as `user / read` or `group / write` belong to the managed policy itself.
+The directory does not authenticate users or evaluate permissions. Those responsibilities remain with Generic Identity & Access or another compatible identity/authorization system.
 
-Reusable templates follow the same model. An identity-scope administrator can mark a real group as reusable. `Create from template` creates a new normal group in the target tenant, copies compatible managed-policy bindings, and never copies source memberships. Users are assigned to the resulting tenant group through normal group membership.
+## Current state
 
-See [`docs/ADMINISTRATION_TENANTS_MEMBERSHIPS_AND_GROUPS.md`](docs/ADMINISTRATION_TENANTS_MEMBERSHIPS_AND_GROUPS.md) and [`docs/MANAGED_POLICY_CATALOG.md`](docs/MANAGED_POLICY_CATALOG.md).
+Version `0.2.0` adds the first durable PostgreSQL implementation for Organizations:
+
+- checksum-protected SQL migration metadata;
+- tenant-isolated `organization_directory.organizations`;
+- tenant-local parent foreign keys;
+- database-enforced deep hierarchy-cycle rejection;
+- tenant-local organization-key uniqueness;
+- optimistic concurrency through `row_version`;
+- `IOrganizationStore` and `PostgreSqlOrganizationStore`;
+- deterministic paging and key lookup;
+- controlled stale-write, duplicate-key and hierarchy-conflict errors;
+- PostgreSQL schema, migration-integrity and hierarchy validation scripts.
+
+`OrganizationMembership` and ResourceScope-link persistence remain domain contracts only until their dedicated implementation increments.
 
 ## Architecture
 
 ```text
-ASP.NET Core API
-      |
-      v
-MVC Controllers
-      |
-      v
-Application Services
-      |
-      +-------------------+-------------------+
-      |                   |                   |
-      v                   v                   v
-Directory             Authorization       Authentication
-      |                   |                   |
-      v                   v                   v
-Routing / Stores     RBAC Adapter       Credentials / Sessions
-      |                   |                   |
-      v                   v                   v
-PostgreSQL         External RBAC       PostgreSQL
+External Identity System
+  Tenant
+  TenantMembership
+        │
+        v
+Generic Organization Directory
+  Organization
+  Organization hierarchy
+  OrganizationMembership
+  OrganizationResourceScopeLink
+        │
+        v
+External Authorization System
+  ResourceScope
+  Groups / Policies / RBAC
 ```
 
-Identity, database placement, authentication, authorization, and application resource hierarchy remain separate concerns.
+See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 
-See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the architectural contracts and invariants.
-
-See [`docs/MFA_PROVIDER_ARCHITECTURE.md`](docs/MFA_PROVIDER_ARCHITECTURE.md) for the generic MFA/provider boundary, [`docs/TOTP_PROVIDER.md`](docs/TOTP_PROVIDER.md) for TOTP, [`docs/RECOVERY_PROVIDER.md`](docs/RECOVERY_PROVIDER.md) for recovery codes, [`docs/WEBAUTHN_REGISTRATION.md`](docs/WEBAUTHN_REGISTRATION.md) plus [`docs/WEBAUTHN_AUTHENTICATION.md`](docs/WEBAUTHN_AUTHENTICATION.md) for passkey/WebAuthn, and [`docs/MFA_INTEGRATION_HARDENING.md`](docs/MFA_INTEGRATION_HARDENING.md) for cross-provider policy and administration hardening; [`docs/MFA_SESSION_ASSURANCE_OIDC.md`](docs/MFA_SESSION_ASSURANCE_OIDC.md) for durable session assurance, MFA step-up, and OIDC integration.
-
-## Repository Structure
+## Repository structure
 
 ```text
 src/
-  IdentityAccess.Api/
-  IdentityAccess.Application/
-  IdentityAccess.Authorization/
-  IdentityAccess.Contracts/
-  IdentityAccess.Domain/
-  IdentityAccess.Infrastructure.Authentication/
-  IdentityAccess.Infrastructure.ConfigurationRouting/
-  IdentityAccess.Infrastructure.PostgreSql/
-  IdentityAccess.Mfa.Totp/
-  IdentityAccess.Mfa.Recovery/
-  IdentityAccess.Mfa.WebAuthn/
-  IdentityAccess.Rbac/
-  IdentityAccess.Rbac.MultiplexedAdapter/
+  OrganizationDirectory.Api/
+  OrganizationDirectory.Application/
+  OrganizationDirectory.Contracts/
+  OrganizationDirectory.Domain/
+  OrganizationDirectory.Infrastructure.PostgreSql/
+    Migrations/
 
 tests/
-  IdentityAccess.Tests/
-  IdentityAccess.Rbac.MultiplexedIntegrationTests/
+  OrganizationDirectory.Tests/
 
-clients/
-  typescript/
-
-examples/
-  nextjs/
+scripts/
+  postgresql/
+  verify.ps1
 
 docs/
+  ARCHITECTURE.md
+  IMPLEMENTATION_ROADMAP.md
+  POSTGRESQL_SCHEMA_AND_CONCURRENCY.md
+  VALIDATION.md
 ```
 
-C# source uses block-scoped namespaces and one declared top-level type per file. See [`docs/SOURCE_LAYOUT.md`](docs/SOURCE_LAYOUT.md).
+## Build and test
 
-## Requirements
+Requirements:
 
 - .NET 10 SDK
-- PostgreSQL 18 or another validated compatible PostgreSQL release
-- Node.js for the TypeScript client tests
-- external RBAC binaries only when running the dedicated RBAC compatibility suite
+- PostgreSQL client tools for live database validation
 
-Current centrally managed .NET package versions are documented in [`docs/DEPENDENCIES.md`](docs/DEPENDENCIES.md).
-
-## Build and Test
-
-From the repository root:
+Run repository verification:
 
 ```powershell
 .\scripts\verify.ps1 -Configuration Release
 ```
 
-The standard verification now also runs TypeScript source-consistency, build, tests, and strict type checking.
-
-Equivalent commands:
-
-```powershell
-dotnet restore IdentityAccess.sln
-dotnet build IdentityAccess.sln -c Release --no-restore
-dotnet test IdentityAccess.sln -c Release --no-build --no-restore
-```
-
-Validation procedures are documented in [`docs/VALIDATION.md`](docs/VALIDATION.md).
-
 ## Local PostgreSQL
 
-The default local development database is:
+Default development database:
 
 ```text
-generic_identity_access_default
+generic_organization_directory_default
 ```
 
-The owned schema is:
-
-```text
-identity_access
-```
-
-The complete migration-derived schema, relationship model, integrity rules, and concurrency contract are documented in [`docs/POSTGRESQL_SCHEMA_AND_CONCURRENCY.md`](docs/POSTGRESQL_SCHEMA_AND_CONCURRENCY.md).
-
-Create the database:
+Create it once:
 
 ```powershell
 psql -U postgres -d postgres -f .\scripts\postgresql\create-default-database.sql
 ```
 
-Apply schema migrations:
+Apply migrations:
 
 ```powershell
-$env:PGPASSWORD = "<postgres-password>"
 .\scripts\postgresql\apply-default-schema.ps1
-Remove-Item Env:PGPASSWORD
 ```
 
-Database routing is server-controlled. Clients never provide connection strings, secret references, destination keys, or database names.
-
-See [`docs/ROUTING_CONFIGURATION.md`](docs/ROUTING_CONFIGURATION.md).
-
-## Running the API
+Validate migration integrity and organization hierarchy/concurrency:
 
 ```powershell
-dotnet run --project src\IdentityAccess.Api --launch-profile http
+.\scripts\postgresql\verify-migration-integrity.ps1
+.\scripts\postgresql\verify-organizations.ps1
 ```
 
-Development URL:
-
-```text
-http://127.0.0.1:5080
-```
-
-Swagger UI:
-
-```text
-http://127.0.0.1:5080/swagger
-```
-
-OpenAPI document:
-
-```text
-http://127.0.0.1:5080/swagger/v1/swagger.json
-```
-
-No route is currently mapped to `/`; a `404` at the root URL is expected.
-
-## Authorization
-
-Active authorization is managed-policy only. The grant path is:
-
-```text
-User
-  -> TenantMembership
-  -> GroupMembership
-  -> UserGroup
-  -> Managed policy binding
-  -> Published managed-policy version
-  -> Capability statements
-  -> Optional resource scope
-  -> Assigned capability grants
-  -> TRN materialization
-  -> External RBAC engine
-```
-
-Capabilities such as `user / read`, `user / write`, or `group / read` are declared by the application's registered security model and selected into a managed-policy version. A group receives permissions by binding a **published managed policy** to that group.
-
-The `Resource scope` field on a managed-policy binding is **not** a permission selector. It optionally narrows an already selected managed policy to one concrete resource scope (and, when supported, its descendants). Leave it empty when the policy should not be narrowed to one resource-scope record.
-
-Users receive the group's grants through group membership. A reusable group template follows the same model: it is a real `UserGroup` with `is_template = true`; `Create from template` copies managed-policy bindings into a new normal tenant group and never copies memberships.
-
-TRN materialization is owned by `IdentityAccess.Rbac`. Wildcard authorization is not reimplemented by this repository; the external RBAC engine remains the decision authority for the supported wildcard forms.
-
-The external compatibility suite can be run with:
+Run the Npgsql persistence contract against the same migrated database:
 
 ```powershell
-.\scripts\verify-multiplexed-rbac.ps1 `
-  -ReferenceDirectory "<path-to-external-rbac-release-directory>"
+$env:ORGANIZATION_DIRECTORY_POSTGRES_DEFAULT = "Host=127.0.0.1;Port=5432;Database=generic_organization_directory_default;Username=postgres;Password=<password>"
+.\scripts\postgresql\verify-store.ps1
 ```
 
-See [`docs/RBAC_EXTERNAL_ADAPTER.md`](docs/RBAC_EXTERNAL_ADAPTER.md).
+Environment overrides:
 
-## Authentication
+```text
+ORGANIZATION_DIRECTORY_POSTGRES_DATABASE
+ORGANIZATION_DIRECTORY_POSTGRES_USER
+```
 
-The service currently provides a local authentication foundation with:
+Use standard PostgreSQL mechanisms such as `PGPASSFILE` or `PGPASSWORD` for local credentials; do not commit passwords.
 
-- password hashing;
-- credential metadata;
-- failed-attempt tracking and lockout;
-- opaque random session tokens;
-- hashed session-token persistence;
-- session validation and logout;
-- registered login and post-logout redirect URIs.
+See [`docs/POSTGRESQL_SCHEMA_AND_CONCURRENCY.md`](docs/POSTGRESQL_SCHEMA_AND_CONCURRENCY.md).
 
-OAuth 2.0 / OpenID Connect Authorization Code + PKCE, rotating refresh tokens, process-pinned multi-key RSA signing-key rotation, and Bearer access-token validation for protected administration APIs are implemented for registered public clients. Bearer authentication revalidates the referenced local session and current active user before entering the existing RBAC pipeline. The provider-neutral MFA policy/authenticator foundation, optional TOTP provider, hash-only single-use recovery-code provider, and WebAuthn/passkey registration/authentication provider are implemented. Concrete provider execution is constrained by the current application MFA policy, administration exposes effective user MFA state, normal revocation protects the final non-recovery verification factor required by a Required policy, and explicit lost-factor revocation revokes active local sessions. Local sessions now persist password-only or multi-factor assurance, exact-session TOTP/recovery/WebAuthn step-up can raise that assurance, and OIDC authorization enforces current Required-MFA freshness while pinning `auth_time`, `acr`, and `amr` into issued grants and tokens. Self-service password change re-authenticates the current password, requires recent MFA when the current policy is `Required`, rejects direct current-password reuse, and revokes existing sessions plus refresh-token continuity. Recovery codes can perform a pre-authentication password recovery through the registered client route with atomic single-use consumption and the same session/refresh invalidation. A generic declarative step-up requirement for arbitrary non-OIDC business operations remains application policy rather than a repository-wide controller attribute.
+## Development API
 
-See [`docs/LOCAL_AUTHENTICATION_FOUNDATION.md`](docs/LOCAL_AUTHENTICATION_FOUNDATION.md).
-
-## Security Principles
-
-- Authentication and authorization fail closed.
-- A database route is not an authorization decision.
-- A TRN is not a credential.
-- Resource-scope filtering occurs before external RBAC evaluation.
-- Wildcard evaluation is delegated to the external RBAC engine.
-- Mutable records use optimistic concurrency; stale writes are rejected.
-- Operation state is not shared globally between concurrent requests.
-- Secrets and connection strings are never exposed through public API contracts.
-- Redirect URIs are registered and matched server-side.
-
-## Documentation
-
-- [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — current architecture and invariants.
-- [`docs/ROUTING_CONFIGURATION.md`](docs/ROUTING_CONFIGURATION.md) — routing configuration contract.
-- [`docs/POSTGRESQL_SCHEMA_AND_CONCURRENCY.md`](docs/POSTGRESQL_SCHEMA_AND_CONCURRENCY.md) — migration-derived database schema, integrity, relationships, and concurrency model.
-- [`docs/PERMISSION_POLICY_FOUNDATION.md`](docs/PERMISSION_POLICY_FOUNDATION.md) — permission and policy model.
-- [`docs/MANAGED_POLICY_CATALOG.md`](docs/MANAGED_POLICY_CATALOG.md) — reusable application-managed policy definitions and versioning.
-- [`docs/ADMINISTRATION_TENANTS_MEMBERSHIPS_AND_GROUPS.md`](docs/ADMINISTRATION_TENANTS_MEMBERSHIPS_AND_GROUPS.md) — tenant, membership, group, reusable-template, policy-binding, and user-assignment model.
-- [`docs/RESOURCE_SCOPE_HIERARCHY.md`](docs/RESOURCE_SCOPE_HIERARCHY.md) — generic resource hierarchy and scoped bindings.
-- [`docs/RBAC_EXTERNAL_ADAPTER.md`](docs/RBAC_EXTERNAL_ADAPTER.md) — external RBAC boundary.
-- [`docs/LOCAL_AUTHENTICATION_FOUNDATION.md`](docs/LOCAL_AUTHENTICATION_FOUNDATION.md) — local authentication and sessions.
-- [`docs/MFA_PROVIDER_ARCHITECTURE.md`](docs/MFA_PROVIDER_ARCHITECTURE.md) — generic MFA/provider ownership boundary.
-- [`docs/TOTP_PROVIDER.md`](docs/TOTP_PROVIDER.md) — TOTP provider security and persistence model.
-- [`docs/RECOVERY_PROVIDER.md`](docs/RECOVERY_PROVIDER.md) — recovery-code generation, hash-only storage, replacement, and single-use consumption.
-- [`docs/WEBAUTHN_REGISTRATION.md`](docs/WEBAUTHN_REGISTRATION.md) — WebAuthn/passkey registration, challenge validation, and public credential persistence.
-- [`docs/WEBAUTHN_AUTHENTICATION.md`](docs/WEBAUTHN_AUTHENTICATION.md) — WebAuthn/passkey assertion verification, signature counters, backup state, and atomic challenge consumption.
-- [`docs/MFA_INTEGRATION_HARDENING.md`](docs/MFA_INTEGRATION_HARDENING.md) — cross-provider policy enforcement, effective user state, safe revocation, and lost-factor administration.
-- [`docs/MFA_SESSION_ASSURANCE_OIDC.md`](docs/MFA_SESSION_ASSURANCE_OIDC.md) — durable local-session assurance, provider step-up, OIDC MFA freshness, and `auth_time`/`acr`/`amr` propagation.
-- [`docs/ACCOUNT_RECOVERY_AND_CREDENTIAL_SECURITY.md`](docs/ACCOUNT_RECOVERY_AND_CREDENTIAL_SECURITY.md) — self-service password replacement, recovery-code account recovery, and credential-change invalidation.
-- [`docs/CONTROLLER_API_AND_SWAGGER.md`](docs/CONTROLLER_API_AND_SWAGGER.md) — controller and OpenAPI conventions.
-- [`docs/SOURCE_LAYOUT.md`](docs/SOURCE_LAYOUT.md) — C# source conventions.
-- [`docs/VALIDATION.md`](docs/VALIDATION.md) — validation procedures.
-- [`docs/DEPENDENCIES.md`](docs/DEPENDENCIES.md) — toolchain and package versions.
-- [`docs/PRODUCTION_QUALIFICATION.md`](docs/PRODUCTION_QUALIFICATION.md) — release-candidate gates, backup/restore validation, and operational hardening.
-- [`docs/ADMIN_UI_E2E_QUALIFICATION.md`](docs/ADMIN_UI_E2E_QUALIFICATION.md) — real-browser administration qualification and evidence collection.
-- [`docs/DEVELOPMENT_ADMIN_BOOTSTRAP.md`](docs/DEVELOPMENT_ADMIN_BOOTSTRAP.md) — local root administrator bootstrap and runnable admin-host setup.
-
-## Status
-
-The repository is under active development and is not represented as production-certified. Production deployment requires completed security qualification, operational observability, backup/restore validation, and deployment-specific hardening.
-
-## Public API documentation
-
-.NET builds emit XML documentation for the supported public API surface. Missing public API documentation is treated as a build failure. See `docs/PUBLIC_API_DOCUMENTATION.md`.
-
-
-## Health and Diagnostics
-
-The API exposes controller-based health and diagnostics backed by ASP.NET Core health
-checks:
+The current host exposes:
 
 ```text
 GET /health/live
-GET /health/ready
 GET /api/v1/system/info
 ```
 
-Readiness and service metadata are derived from the services configured in the running
-host. Module version information comes from the API assembly rather than a hardcoded
-diagnostic value.
-
-See `docs/HEALTH_AND_DIAGNOSTICS.md`.
-
-
-## Observability and Security Audit
-
-HTTP responses expose a server-generated `X-Correlation-ID`, request-completion logs use
-structured correlation scopes, and security-relevant operations can be persisted to the
-PostgreSQL `identity_access.security_events` audit table.
-
-See `docs/OBSERVABILITY_AND_SECURITY_AUDIT.md`.
-
-
-## Session Lifecycle
-
-Local sessions are validated against current account state. User suspension invalidates
-existing sessions, password change revokes subject sessions and refresh-token continuity, recovery-code account recovery invalidates both, and administration endpoints support user-wide and registered-client-wide revocation.
-
-See `docs/SESSION_LIFECYCLE.md`.
-
-
-## Trusted Administration Context
-
-Administrative requests can establish a server-validated per-request identity from a local
-session without trusting caller-supplied user, scope, application, tenant, or permission
-claims.
-
-The trusted context is attached to the current `HttpContext` only. Capability authorization
-remains fail-closed until the authorization service and external RBAC adapter are connected.
-
-See `docs/TRUSTED_ADMINISTRATION_CONTEXT.md`.
-
-
-## Administration RBAC Authorization
-
-Tenant-scoped administration routes can delegate capability decisions through
-`IdentityAuthorizationService` to the external RBAC engine.
-
-RBAC project, namespace, and adapter location are trusted server configuration. Routes
-without a tenant target remain fail-closed until a separate identity-scope administration
-authority model is defined.
-
-See `docs/ADMINISTRATION_RBAC_AUTHORIZATION.md`.
-
-
-## Identity-Scope Administration Authority
-
-Administration routes without a tenant target use dedicated identity-scope administration
-groups and policies. Tenant permissions are never promoted into scope-wide authority.
-
-Both tenant and identity-scope grant paths delegate final wildcard decisions to the same
-external RBAC engine.
-
-See `docs/IDENTITY_SCOPE_ADMINISTRATION_AUTHORITY.md`.
-
-
-## Identity-Scope Authority Administration API
-
-After explicit first-admin bootstrap, scope-authority groups, memberships, policies,
-statements, and bindings are managed through RBAC-protected MVC endpoints rather than
-direct SQL.
-
-See `docs/IDENTITY_SCOPE_AUTHORITY_ADMINISTRATION.md`.
-
-
-## Transactional Security Mutation Ledger
-
-Security-sensitive PostgreSQL state changes are captured by an append-only mutation ledger
-inside the same transaction as the source mutation. Semantic security events remain
-higher-level enrichment.
-
-See `docs/TRANSACTIONAL_SECURITY_MUTATION_LEDGER.md`.
-
-
-## External RBAC Compatibility Hardening
-
-The runtime-only external RBAC adapter validates and process-pins the external binary
-contract before administration authorization is enabled. Compatibility reports expose
-assembly versions and SHA-256 fingerprints without leaking external types into the generic
-core.
-
-See `docs/RBAC_EXTERNAL_ADAPTER.md`.
-
-
-## OAuth 2.0 / OpenID Connect
-
-The authentication module supports a strict public-client Authorization Code + PKCE S256
-OpenID Connect flow with exact registered redirects, one-time hashed authorization codes,
-RS256 access/ID tokens, process-pinned active-key rotation with multi-key JWKS publication, rotating SHA-256-persisted refresh-token families, consumed-token replay revocation, strict Bearer validation for protected administration APIs, current session/user continuity checks, discovery, and JWKS.
-
-The authorization endpoint consumes an already validated local session; browser/login UI
-remains a separate host concern.
-
-See `docs/OIDC_AUTHORIZATION_CODE_PKCE.md`.
-
-## Production Qualification
-
-Repository and live-database qualification is consolidated in:
+Run it with:
 
 ```powershell
-.\scripts\verify-production-qualification.ps1 `
-  -RbacReferenceDirectory "<multiplexed-rbac-release-directory>" `
-  -Configuration Release
+dotnet run --project src\OrganizationDirectory.Api
 ```
 
-The full production gate includes repository build/tests, external RBAC compatibility, PostgreSQL security and concurrency validation, OIDC live database fixtures, group-as-template validation, and a disposable backup/restore cycle. Run it against a dedicated qualification database.
+Organization administration endpoints are introduced in the next implementation increment after persistence has been qualified.
 
-Complete administration qualification additionally requires real-browser evidence. Start the API on `http://127.0.0.1:5080` and the Next.js host on `http://127.0.0.1:3000`, then run:
+## Scope boundaries
 
-```powershell
-.\scripts\verify-administration-qualification.ps1 `
-  -RbacReferenceDirectory "<multiplexed-rbac-release-directory>" `
-  -Configuration Release
+The core intentionally does not define:
+
+```text
+BusinessProfile
+Commerce
+Finance
+Inventory
+Hospitality
+Providers
+BusinessEntity
+Evidence
+Agents
+Authentication
+OIDC
+MFA
+RBAC wildcard evaluation
 ```
 
-A run using `-SkipBackupRestore` or `-SkipBrowserQualification` is partial and must not be reported as fully GREEN. See `docs/PRODUCTION_QUALIFICATION.md` and `docs/ADMIN_UI_E2E_QUALIFICATION.md`.
-
+Consumer applications own application-specific semantics. Identity and authorization systems own authentication and permission decisions.

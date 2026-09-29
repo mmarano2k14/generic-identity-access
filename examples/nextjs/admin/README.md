@@ -223,3 +223,21 @@ The durable mapping logic remains outside React in `IdentityAccessAdminEntityRef
 `/identity/policies` is the shared managed-policy catalog workspace. It is identity-scope/application scoped and intentionally does not accept tenant selection. Identity-scope administrators can create reusable policy definitions, create draft versions pinned to registered security-model versions, edit draft capability statements through the manifest-backed catalog, publish immutable versions, and select a published default version.
 
 Tenant administrators do not own policy definitions. They consume active shared policies through the tenant-scoped managed binding workflow under Groups. The host no longer lists or removes legacy tenant-owned policy bindings; only managed bindings are active.
+
+## Organization Directory inside Memberships
+
+Organization Directory is intentionally embedded in the existing `/identity/memberships` workspace. No second Next.js application, host, or project selector is introduced.
+
+For a selected tenant the Memberships page can show and administer:
+
+```text
+Tenant members
+Group assignments
+Member Organization memberships
+Organization hierarchy
+Organization lifecycle
+Organization -> ResourceScope mapping
+```
+
+Organization membership remains belonging only. Permission continues to flow through groups, Managed Policies, ResourceScopes, and server-side RBAC evaluation.
+

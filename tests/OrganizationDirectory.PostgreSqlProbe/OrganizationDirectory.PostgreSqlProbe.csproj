@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Npgsql" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../src/OrganizationDirectory.Domain/OrganizationDirectory.Domain.csproj" />
+    <ProjectReference Include="../../src/OrganizationDirectory.Application/OrganizationDirectory.Application.csproj" />
+    <ProjectReference Include="../../src/OrganizationDirectory.Infrastructure.PostgreSql/OrganizationDirectory.Infrastructure.PostgreSql.csproj" />
+  </ItemGroup>
+</Project>

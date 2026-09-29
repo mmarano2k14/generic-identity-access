@@ -85,6 +85,27 @@ namespace IdentityAccess.Api.Http
                 "Resource scope administration unavailable",
                 "Routing and PostgreSQL persistence must be configured before resource scopes can be administered.");
 
+        /// <summary>Creates the organization-directory administration unavailable response.</summary>
+        public static ObjectResult OrganizationAdministrationUnavailable() =>
+            Result(
+                StatusCodes.Status503ServiceUnavailable,
+                "Organization administration unavailable",
+                "Shared PostgreSQL organization persistence must be configured before organization administration can execute.");
+
+        /// <summary>Creates the organization-membership administration unavailable response.</summary>
+        public static ObjectResult OrganizationMembershipAdministrationUnavailable() =>
+            Result(
+                StatusCodes.Status503ServiceUnavailable,
+                "Organization membership administration unavailable",
+                "Shared PostgreSQL organization membership persistence must be configured before organization membership administration can execute.");
+
+        /// <summary>Creates the Organization ResourceScope-link administration unavailable response.</summary>
+        public static ObjectResult OrganizationResourceScopeLinkAdministrationUnavailable() =>
+            Result(
+                StatusCodes.Status503ServiceUnavailable,
+                "Organization ResourceScope linkage unavailable",
+                "Shared PostgreSQL ResourceScope linkage services must be configured before Organization ResourceScope administration can execute.");
+
         /// <summary>Creates the identity-scope authority administration unavailable response.</summary>
         public static ObjectResult IdentityScopeAuthorityAdministrationUnavailable() =>
             Result(

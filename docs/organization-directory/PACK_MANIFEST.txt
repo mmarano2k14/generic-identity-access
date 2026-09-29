@@ -1,0 +1,8 @@
+Integrated Organization Directory Pack 02
+
+Shared database: generic_identity_access_default
+Organization schema: organization_directory
+Identity schema: identity_access
+
+This pack does NOT replace Directory.Build.props, Directory.Packages.props, root README.md, or root CHANGELOG.md.
+Organization Directory change history is kept in docs/organization-directory/CHANGELOG.md.

@@ -31,6 +31,32 @@ The bootstrap is idempotent for these identities. Re-running it resets the local
 - `PGPASSWORD` configured for local `psql` commands when password authentication is required
 - a built compatible external RBAC reference directory for the API runtime
 
+
+## PowerShell compatibility and manifest model version
+
+The bootstrap supports Windows PowerShell 5.1 as well as current PowerShell releases.
+
+`ConvertFrom-Json` is intentionally invoked without the newer `-Depth` parameter, and the
+manifest fingerprint uses framework-compatible SHA-256 APIs.
+
+When `-ModelVersion` is omitted, the bootstrap uses the `modelVersion` declared by the
+selected security manifest. An explicitly supplied `-ModelVersion` must still match the
+manifest exactly.
+
+For the current administration manifest this means a normal bootstrap command automatically
+uses model version 3:
+
+```powershell
+$env:PGPASSWORD = "<local-postgres-password>"
+.\scripts\authentication\bootstrap-dev-admin.ps1
+```
+
+An explicit equivalent remains valid:
+
+```powershell
+.\scripts\authentication\bootstrap-dev-admin.ps1 -ModelVersion 3
+```
+
 ## Create the local administrator
 
 From the repository root:
@@ -58,7 +84,7 @@ The tenant administrator grant is materialized exclusively through the managed-p
 
 The bootstrap is idempotent for an already registered manifest/model pair. If the manifest fingerprint changes, reuse of that `ModelVersion` fails closed; increment the model version instead of mutating capabilities already pinned by a published managed-policy version.
 
-The development bootstrap reads the same JSON manifest shape used by application registration. It does not maintain a second hardcoded feature/action catalog. `-SecurityManifestPath` can select another development manifest, while `-ApplicationKey`, `-ModelVersion`, `-RbacProject`, and `-RbacNamespace` must match the selected manifest. The script projects every declared namespace and concrete capability into PostgreSQL so the Security Models workspace and catalog-backed Policy Builder are usable immediately. This is a development-only repair/bootstrap path and does not replace immutable public manifest registration for deployed applications.
+The development bootstrap reads the same JSON manifest shape used by application registration. It does not maintain a second hardcoded feature/action catalog. `-SecurityManifestPath` can select another development manifest. `-ApplicationKey`, `-RbacProject`, and `-RbacNamespace` must match the selected manifest. `-ModelVersion` is optional; when omitted it is read from the selected manifest, and when supplied it must match exactly. The script projects every declared namespace and concrete capability into PostgreSQL so the Security Models workspace and catalog-backed Policy Builder are usable immediately. This is a development-only repair/bootstrap path and does not replace immutable public manifest registration for deployed applications.
 
 The resulting login identifier is:
 

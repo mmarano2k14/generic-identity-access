@@ -40,6 +40,9 @@ export type IdentityMembershipStatus = 1 | 2;
 export type IdentityGroupStatus = 1 | 2;
 export type IdentityPolicyStatus = 1 | 2;
 export type IdentityResourceScopeStatus = 1 | 2;
+export type IdentityOrganizationStatus = 1 | 2;
+export type IdentityOrganizationMembershipStatus = 1 | 2;
+export type IdentityOrganizationResourceScopeLinkStatus = 1 | 2;
 
 export interface IdentityUserRecord {
   readonly userId: string;
@@ -343,6 +346,84 @@ export interface IdentityUpdateResourceScopeRequest {
   readonly parentResourceScopeId?: string;
   readonly status: IdentityResourceScopeStatus;
   readonly expectedVersion: number;
+}
+
+export interface IdentityOrganizationRecord {
+  readonly identityScopeId: string;
+  readonly tenantId: string;
+  readonly organizationId: string;
+  readonly organizationKey: string;
+  readonly displayName: string;
+  readonly organizationType: string;
+  readonly parentOrganizationId?: string;
+  readonly status: IdentityOrganizationStatus;
+  readonly rowVersion: number;
+  readonly createdAt: string;
+  readonly updatedAt: string;
+}
+
+export interface IdentityOrganizationTreeNodeRecord {
+  readonly organization: IdentityOrganizationRecord;
+  readonly children: readonly IdentityOrganizationTreeNodeRecord[];
+}
+
+export interface IdentityCreateOrganizationRequest {
+  readonly organizationId?: string;
+  readonly organizationKey: string;
+  readonly displayName: string;
+  readonly organizationType: string;
+  readonly parentOrganizationId?: string;
+}
+
+export interface IdentityUpdateOrganizationRequest {
+  readonly displayName: string;
+  readonly organizationType: string;
+  readonly parentOrganizationId?: string;
+  readonly expectedRowVersion: number;
+}
+
+export interface IdentityOrganizationLifecycleRequest {
+  readonly expectedRowVersion: number;
+}
+
+export interface IdentityOrganizationMembershipRecord {
+  readonly identityScopeId: string;
+  readonly tenantId: string;
+  readonly organizationId: string;
+  readonly tenantMembershipId: string;
+  readonly status: IdentityOrganizationMembershipStatus;
+  readonly rowVersion: number;
+  readonly createdAt: string;
+  readonly updatedAt: string;
+}
+
+export interface IdentityCreateOrganizationMembershipRequest {
+  readonly tenantMembershipId: string;
+}
+
+export interface IdentityOrganizationMembershipLifecycleRequest {
+  readonly expectedRowVersion: number;
+}
+
+export interface IdentityOrganizationResourceScopeLinkRecord {
+  readonly organizationId: string;
+  readonly applicationKey: string;
+  readonly resourceScopeId: string;
+  readonly scopeType: string;
+  readonly modelVersion: number;
+  readonly status: IdentityOrganizationResourceScopeLinkStatus;
+  readonly rowVersion: number;
+  readonly createdAt: string;
+  readonly updatedAt: string;
+}
+
+export interface IdentityCreateOrganizationResourceScopeLinkRequest {
+  readonly resourceScopeId: string;
+}
+
+export interface IdentityUpdateOrganizationResourceScopeLinkRequest {
+  readonly resourceScopeId: string;
+  readonly expectedRowVersion: number;
 }
 
 export interface IdentityScopeTypeRecord {

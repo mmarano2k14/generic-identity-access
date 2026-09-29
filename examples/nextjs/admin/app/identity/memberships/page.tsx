@@ -2,6 +2,8 @@ import Link from "next/link";
 import { AdminField, AdminStatusField } from "../../../components/AdminField";
 import { AdminAddTenantMemberDialog } from "../../../components/AdminAddTenantMemberDialog";
 import { AdminManageMemberGroupsDialog, type AdminMemberGroupOption } from "../../../components/AdminManageMemberGroupsDialog";
+import { AdminManageMemberOrganizationsDialog, type AdminMemberOrganizationOption } from "../../../components/AdminManageMemberOrganizationsDialog";
+import { AdminOrganizationDirectoryPanel } from "../../../components/AdminOrganizationDirectoryPanel";
 import { AdminIcon } from "../../../components/AdminIcon";
 import { AdminMembershipMemberTable, AdminMembershipTenantTable } from "../../../components/AdminTenantMembershipOverview";
 import { AdminMutationDialog } from "../../../components/AdminMutationDialog";
@@ -9,17 +11,31 @@ import { AdminPageHeader } from "../../../components/AdminPageHeader";
 import { AdminRecordContext } from "../../../components/AdminRecordContext";
 import { AdminSecurityBanner } from "../../../components/AdminSecurityBanner";
 import { IdentityAccessAdminMembershipOverviewService } from "../../../server/IdentityAccessAdminMembershipOverviewService";
+import { IdentityAccessAdminOrganizationOverviewService } from "../../../server/IdentityAccessAdminOrganizationOverviewService";
 import { IdentityAccessAdminRequest } from "../../../server/IdentityAccessAdminRequest";
 import { createTenantAction, updateTenantMembershipAction } from "../actions";
 
 type SearchParams = {
   readonly tenantId?: string;
+  readonly membershipId?: string;
+  readonly organizationId?: string;
 };
 
 export default async function MembershipsPage({ searchParams }: { readonly searchParams: Promise<SearchParams> }) {
   const request = await IdentityAccessAdminRequest.fromCurrentRequest();
-  const { tenantId } = await searchParams;
-  const overview = await new IdentityAccessAdminMembershipOverviewService(request).load(tenantId);
+  const { tenantId, membershipId, organizationId } = await searchParams;
+  const overview = await new IdentityAccessAdminMembershipOverviewService(request).load(
+    tenantId,
+    membershipId,
+  );
+
+  const organizationOverview = overview.selectedTenant
+    ? await new IdentityAccessAdminOrganizationOverviewService(request).load(
+        overview.selectedTenant.tenantId,
+        overview.selectedMembership,
+        organizationId,
+      )
+    : IdentityAccessAdminOrganizationOverviewService.empty();
 
   const createTenant = overview.scopeWide ? (
     <AdminMutationDialog
@@ -52,14 +68,13 @@ export default async function MembershipsPage({ searchParams }: { readonly searc
     assignedGroupIdsByMembership.set(assignment.tenantMembershipId, ids);
   }
 
-
   const selectedTenantId = overview.selectedTenant?.tenantId;
   const canManageGroups = overview.permissions.canReadGroups
     && overview.permissions.canReadGroupMemberships
     && overview.permissions.canManageGroupMemberships;
 
-  const groupOptionsFor = (membershipId: string): readonly AdminMemberGroupOption[] => {
-    const assigned = assignedGroupIdsByMembership.get(membershipId) ?? new Set<string>();
+  const groupOptionsFor = (tenantMembershipId: string): readonly AdminMemberGroupOption[] => {
+    const assigned = assignedGroupIdsByMembership.get(tenantMembershipId) ?? new Set<string>();
     return overview.groups.map((group) => ({
       key: `group:${group.groupId}`,
       displayName: group.displayName,
@@ -68,7 +83,7 @@ export default async function MembershipsPage({ searchParams }: { readonly searc
     })).sort((left, right) => left.displayName.localeCompare(right.displayName));
   };
 
-  const badgesFor = (membershipId: string) => Array.from(assignedGroupIdsByMembership.get(membershipId) ?? [])
+  const badgesFor = (tenantMembershipId: string) => Array.from(assignedGroupIdsByMembership.get(tenantMembershipId) ?? [])
     .flatMap((groupId) => {
       const group = groupsById.get(groupId);
       return group ? [{ groupId: group.groupId, displayName: group.displayName, isTemplate: group.isTemplate }] : [];
@@ -97,6 +112,14 @@ export default async function MembershipsPage({ searchParams }: { readonly searc
               options={groupOptionsFor(member.membershipId)}
               enabled={canManageGroups}
             />
+            {organizationOverview.permissions.canReadOrganizations && organizationOverview.permissions.canReadOrganizationMemberships ? (
+              <Link
+                className="ia-button ia-button-secondary ia-button-compact"
+                href={`/identity/memberships?tenantId=${encodeURIComponent(selectedTenantId)}&membershipId=${encodeURIComponent(member.membershipId)}`}
+              >
+                <AdminIcon name="tenants" />Organizations
+              </Link>
+            ) : null}
             {overview.permissions.canAddMembers ? (
               <AdminMutationDialog
                 title="Edit tenant membership"
@@ -127,19 +150,50 @@ export default async function MembershipsPage({ searchParams }: { readonly searc
           version: overview.ownMembership.version,
           groups: badgesFor(overview.ownMembership.membershipId),
           actions: selectedTenantId ? (
-            <AdminManageMemberGroupsDialog
-              tenantId={selectedTenantId}
-              tenantMembershipId={overview.ownMembership.membershipId}
-              userDisplayName="Current user"
-              options={groupOptionsFor(overview.ownMembership.membershipId)}
-              enabled={canManageGroups}
-            />
+            <>
+              <AdminManageMemberGroupsDialog
+                tenantId={selectedTenantId}
+                tenantMembershipId={overview.ownMembership.membershipId}
+                userDisplayName="Current user"
+                options={groupOptionsFor(overview.ownMembership.membershipId)}
+                enabled={canManageGroups}
+              />
+              {organizationOverview.permissions.canReadOrganizations && organizationOverview.permissions.canReadOrganizationMemberships ? (
+                <Link
+                  className="ia-button ia-button-secondary ia-button-compact"
+                  href={`/identity/memberships?tenantId=${encodeURIComponent(selectedTenantId)}&membershipId=${encodeURIComponent(overview.ownMembership.membershipId)}`}
+                >
+                  <AdminIcon name="tenants" />Organizations
+                </Link>
+              ) : null}
+            </>
           ) : undefined,
         }]
       : [];
 
   const selectedTenantName = overview.selectedTenant?.displayName
     ?? (overview.selectedTenant ? "Current tenant" : undefined);
+
+  const currentOrganizationMemberships = new Map(
+    organizationOverview.selectedMemberOrganizationMemberships.map((membership) => [membership.organizationId, membership]),
+  );
+
+  const organizationOptions: readonly AdminMemberOrganizationOption[] = organizationOverview.organizations
+    .map((organization) => {
+      const current = currentOrganizationMemberships.get(organization.organizationId);
+      return {
+        key: `organization:${organization.organizationId}`,
+        displayName: organization.displayName,
+        organizationType: organization.organizationType,
+        checked: current?.status === 1,
+        locked: organization.status !== 1,
+      };
+    })
+    .sort((left, right) => left.displayName.localeCompare(right.displayName));
+
+  const canManageOrganizationsForMember = organizationOverview.permissions.canReadOrganizations
+    && organizationOverview.permissions.canReadOrganizationMemberships
+    && organizationOverview.permissions.canManageOrganizationMemberships;
 
   return (
     <section className="ia-page">
@@ -148,8 +202,8 @@ export default async function MembershipsPage({ searchParams }: { readonly searc
         badge={overview.scopeWide ? "Identity scope" : "Membership limited"}
         title="Memberships"
         description={overview.scopeWide
-          ? "Select a tenant boundary, inspect its member count, and manage tenant membership lifecycle without using technical user/tenant lookup pairs."
-          : "Your tenant visibility is derived from active trusted memberships. Other tenants and their directories are not loaded into this page."}
+          ? "Select a tenant boundary, inspect its members, groups, and Organizations without splitting administration into another application."
+          : "Your tenant visibility is derived from active trusted memberships. Organizations are managed inside the same Identity Membership workspace."}
         actions={createTenant}
       />
 
@@ -161,7 +215,7 @@ export default async function MembershipsPage({ searchParams }: { readonly searc
             kicker={overview.scopeWide ? "Selected tenant" : "Current tenant membership"}
             title={selectedTenantName ?? "Tenant"}
             description={overview.scopeWide
-              ? "Membership administration stays inside this concrete tenant boundary. Tenant creation and membership creation remain independent operations."
+              ? "Membership administration stays inside this concrete tenant boundary. Organization belonging and authorization remain separate relationships."
               : "This tenant is present because the authenticated subject has an active membership. No other tenant directory is exposed."}
             identifier={overview.selectedTenant.tenantId}
             status={overview.selectedTenant.status === undefined ? undefined : overview.selectedTenant.status === 1 ? "Active" : "Inactive"}
@@ -170,6 +224,7 @@ export default async function MembershipsPage({ searchParams }: { readonly searc
               { label: "Visibility", value: overview.scopeWide ? "Identity-scope administration" : directoryVisible ? "Delegated tenant administration" : "Own active membership" },
               { label: "Members visible", value: directoryVisible ? String(overview.members.length) : overview.ownMembership ? "1 (self)" : "0" },
               { label: "Groups visible", value: overview.permissions.canReadGroups ? String(overview.groups.length) : "Not authorized" },
+              { label: "Organizations visible", value: organizationOverview.permissions.canReadOrganizations ? String(organizationOverview.organizations.length) : "Not authorized" },
             ]}
             actions={selectedTenantId ? (
               <AdminAddTenantMemberDialog
@@ -181,7 +236,53 @@ export default async function MembershipsPage({ searchParams }: { readonly searc
             closeHref="/identity/memberships"
             closeLabel="Back to tenants"
           />
+
           <AdminMembershipMemberTable rows={memberRows} selfOnly={!directoryVisible} />
+
+          {selectedTenantId && overview.selectedMembership ? (
+            <AdminRecordContext
+              kicker="Identity member · Organizations"
+              title={overview.selectedMembership.displayName}
+              description="Select the Organizations this tenant membership belongs to. This relationship does not grant permissions; groups, policies, ResourceScopes and RBAC remain authoritative."
+              identifier={overview.selectedMembership.membershipId}
+              facts={[
+                { label: "User ID", value: overview.selectedMembership.userId },
+                { label: "Organizations", value: String(organizationOverview.selectedMemberOrganizationMemberships.filter((membership) => membership.status === 1).length) },
+                { label: "Permission effect", value: "None — belonging only" },
+              ]}
+              actions={(
+                <AdminManageMemberOrganizationsDialog
+                  tenantId={selectedTenantId}
+                  tenantMembershipId={overview.selectedMembership.membershipId}
+                  userDisplayName={overview.selectedMembership.displayName}
+                  options={organizationOptions}
+                  enabled={canManageOrganizationsForMember}
+                />
+              )}
+              closeHref={`/identity/memberships?tenantId=${encodeURIComponent(selectedTenantId)}`}
+              closeLabel="Close member Organizations"
+            />
+          ) : null}
+
+          {organizationOverview.permissions.canReadOrganizations ? (
+            <AdminOrganizationDirectoryPanel
+              tenantId={overview.selectedTenant.tenantId}
+              organizations={organizationOverview.organizations}
+              selectedOrganization={organizationOverview.selectedOrganization}
+              selectedScopeLink={organizationOverview.selectedOrganizationScopeLink}
+              permissions={{
+                canManageOrganizations: organizationOverview.permissions.canManageOrganizations,
+                canReadScopeLinks: organizationOverview.permissions.canReadOrganizationScopeLinks,
+                canManageScopeLinks: organizationOverview.permissions.canManageOrganizationScopeLinks,
+                canReadResourceScopes: organizationOverview.permissions.canReadResourceScopes,
+              }}
+            />
+          ) : (
+            <AdminSecurityBanner
+              title="Organization Directory is not readable in this tenant."
+              description="The membership workspace stays visible, but Organization data is not requested unless identity-access/organization/read is allowed."
+            />
+          )}
         </>
       ) : (
         <AdminSecurityBanner
@@ -194,7 +295,7 @@ export default async function MembershipsPage({ searchParams }: { readonly searc
 
       <AdminSecurityBanner
         title="Membership is not permission."
-        description="Joining a tenant does not implicitly grant capabilities. Group assignments are tenant-scoped, templates remain globally immutable from tenant context, and managed policy/RBAC evaluation stays authoritative."
+        description="TenantMembership and OrganizationMembership establish belonging. Group assignments, Managed Policies, ResourceScopes, and external RBAC remain the authorization path."
       />
     </section>
   );

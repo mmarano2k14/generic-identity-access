@@ -3,7 +3,6 @@ import type {
   IdentityGroupRecord,
   IdentityTenantGroupAssignmentRecord,
   IdentityTenantMembershipRecord,
-  IdentityTenantRecord,
   IdentityTenantUserRecord,
 } from "@identity-access/client";
 import { IdentityAccessAdminRequest } from "./IdentityAccessAdminRequest";
@@ -15,6 +14,12 @@ export interface IdentityAccessAdminMembershipTenantSummary {
   readonly version?: number;
   readonly memberCount?: number;
   readonly ownMembershipId?: string;
+}
+
+export interface IdentityAccessAdminSelectedMembershipSummary {
+  readonly membershipId: string;
+  readonly userId: string;
+  readonly displayName: string;
 }
 
 export interface IdentityAccessAdminMembershipPermissions {
@@ -34,6 +39,7 @@ export interface IdentityAccessAdminMembershipOverview {
   readonly ownMembership: IdentityTenantMembershipRecord | null;
   readonly groups: readonly IdentityGroupRecord[];
   readonly groupAssignments: readonly IdentityTenantGroupAssignmentRecord[];
+  readonly selectedMembership: IdentityAccessAdminSelectedMembershipSummary | null;
   readonly permissions: IdentityAccessAdminMembershipPermissions;
 }
 
@@ -46,11 +52,7 @@ const noPermissions: IdentityAccessAdminMembershipPermissions = {
   canManageGroupMemberships: false,
 };
 
-/**
- * Composes the tenant-centric membership administration read model on the server.
- * Tenant collection visibility comes from the trusted effective context. Directory and
- * group detail are additionally capability-gated before their protected APIs are called.
- */
+/** Composes only tenant membership and group data for the Memberships workspace. */
 export class IdentityAccessAdminMembershipOverviewService {
   static readonly #tenantLimit = 50;
   static readonly #membershipPageSize = 200;
@@ -63,27 +65,37 @@ export class IdentityAccessAdminMembershipOverviewService {
     this.#request = request;
   }
 
-  public async load(requestedTenantId?: string): Promise<IdentityAccessAdminMembershipOverview> {
+  public async load(
+    requestedTenantId?: string,
+    requestedMembershipId?: string,
+  ): Promise<IdentityAccessAdminMembershipOverview> {
     if (this.#request.effectiveContext.tenantVisibility === "scope-wide") {
-      return this.#loadScopeWide(requestedTenantId);
+      return this.#loadScopeWide(requestedTenantId, requestedMembershipId);
     }
 
-    return this.#loadMembershipLimited(requestedTenantId);
+    return this.#loadMembershipLimited(requestedTenantId, requestedMembershipId);
   }
 
-  async #loadScopeWide(requestedTenantId?: string): Promise<IdentityAccessAdminMembershipOverview> {
+  async #loadScopeWide(
+    requestedTenantId?: string,
+    requestedMembershipId?: string,
+  ): Promise<IdentityAccessAdminMembershipOverview> {
     const tenants = await this.#request.client.administration.tenants.list(
       this.#request.administrationContext,
       { limit: IdentityAccessAdminMembershipOverviewService.#tenantLimit },
     );
 
-    const summaries = await Promise.all(tenants.map(async (tenant) => ({
-      tenantId: tenant.tenantId,
-      displayName: tenant.displayName,
-      status: tenant.status,
-      version: tenant.version,
-      memberCount: await this.#countMemberships(this.#request.tenantContextFor(tenant.tenantId)),
-    })));
+    const summaries = await Promise.all(
+      tenants.map(async (tenant) => ({
+        tenantId: tenant.tenantId,
+        displayName: tenant.displayName,
+        status: tenant.status,
+        version: tenant.version,
+        memberCount: await this.#countMemberships(
+          this.#request.tenantContextFor(tenant.tenantId),
+        ),
+      })),
+    );
 
     const requested = requestedTenantId?.trim().toLowerCase();
     const selectedTenant = requested
@@ -91,23 +103,21 @@ export class IdentityAccessAdminMembershipOverviewService {
       : null;
 
     if (requested && selectedTenant === null) {
-      throw new Error("The requested tenant is outside the loaded authorized tenant collection.");
+      throw new Error(
+        "The requested tenant is outside the loaded authorized tenant collection.",
+      );
     }
 
     if (!selectedTenant) {
-      return {
-        scopeWide: true,
-        tenants: summaries,
-        selectedTenant: null,
-        members: [],
-        ownMembership: null,
-        groups: [],
-        groupAssignments: [],
-        permissions: noPermissions,
-      };
+      return IdentityAccessAdminMembershipOverviewService.#empty(true, summaries);
     }
 
-    const detail = await this.#loadTenantDetail(selectedTenant.tenantId, false);
+    const detail = await this.#loadTenantDetail(
+      selectedTenant.tenantId,
+      false,
+      requestedMembershipId,
+    );
+
     return {
       scopeWide: true,
       tenants: summaries,
@@ -116,34 +126,38 @@ export class IdentityAccessAdminMembershipOverviewService {
     };
   }
 
-  async #loadMembershipLimited(requestedTenantId?: string): Promise<IdentityAccessAdminMembershipOverview> {
-    const activeMemberships = this.#request.effectiveContext.activeTenantMemberships;
+  async #loadMembershipLimited(
+    requestedTenantId?: string,
+    requestedMembershipId?: string,
+  ): Promise<IdentityAccessAdminMembershipOverview> {
+    const activeMemberships =
+      this.#request.effectiveContext.activeTenantMemberships;
     const requested = requestedTenantId?.trim().toLowerCase();
+
     const selectedReference = requested
-      ? activeMemberships.find((membership) => membership.tenantId === requested)
+      ? activeMemberships.find(
+          (membership) => membership.tenantId === requested,
+        )
       : activeMemberships.length === 1
         ? activeMemberships[0]
         : undefined;
 
-    const tenants: IdentityAccessAdminMembershipTenantSummary[] = activeMemberships.map((membership) => ({
-      tenantId: membership.tenantId,
-      ownMembershipId: membership.membershipId,
-    }));
+    const tenants: IdentityAccessAdminMembershipTenantSummary[] =
+      activeMemberships.map((membership) => ({
+        tenantId: membership.tenantId,
+        ownMembershipId: membership.membershipId,
+      }));
 
     if (!selectedReference) {
-      return {
-        scopeWide: false,
-        tenants,
-        selectedTenant: null,
-        members: [],
-        ownMembership: null,
-        groups: [],
-        groupAssignments: [],
-        permissions: noPermissions,
-      };
+      return IdentityAccessAdminMembershipOverviewService.#empty(false, tenants);
     }
 
-    const detail = await this.#loadTenantDetail(selectedReference.tenantId, true);
+    const detail = await this.#loadTenantDetail(
+      selectedReference.tenantId,
+      true,
+      requestedMembershipId,
+    );
+
     return {
       scopeWide: false,
       tenants,
@@ -155,9 +169,14 @@ export class IdentityAccessAdminMembershipOverviewService {
     };
   }
 
-  async #loadTenantDetail(tenantId: string, membershipLimited: boolean) {
+  async #loadTenantDetail(
+    tenantId: string,
+    membershipLimited: boolean,
+    requestedMembershipId?: string,
+  ) {
     const context = this.#request.tenantContextFor(tenantId);
     const authorization = this.#request.tenantAuthorizationFor(tenantId);
+
     const [
       canListMembers,
       canAddMembers,
@@ -166,12 +185,28 @@ export class IdentityAccessAdminMembershipOverviewService {
       canReadGroupMemberships,
       canManageGroupMemberships,
     ] = await Promise.all([
-      authorization.isAllowed("identity-access", "tenant-membership", "read"),
-      authorization.isAllowed("identity-access", "tenant-membership", "write"),
+      authorization.isAllowed(
+        "identity-access",
+        "tenant-membership",
+        "read",
+      ),
+      authorization.isAllowed(
+        "identity-access",
+        "tenant-membership",
+        "write",
+      ),
       authorization.isAllowed("identity-access", "group", "read"),
       authorization.isAllowed("identity-access", "group", "write"),
-      authorization.isAllowed("identity-access", "group-membership", "read"),
-      authorization.isAllowed("identity-access", "group-membership", "write"),
+      authorization.isAllowed(
+        "identity-access",
+        "group-membership",
+        "read",
+      ),
+      authorization.isAllowed(
+        "identity-access",
+        "group-membership",
+        "write",
+      ),
     ]);
 
     const permissions: IdentityAccessAdminMembershipPermissions = {
@@ -192,42 +227,120 @@ export class IdentityAccessAdminMembershipOverviewService {
 
     const [members, groups, groupAssignments] = await Promise.all([
       canListMembers
-        ? this.#request.client.administration.tenantUsers.list(
-            context,
-            { limit: IdentityAccessAdminMembershipOverviewService.#membershipPageSize },
-          )
+        ? this.#request.client.administration.tenantUsers.list(context, {
+            limit:
+              IdentityAccessAdminMembershipOverviewService.#membershipPageSize,
+          })
         : Promise.resolve([]),
       canReadGroups
-        ? this.#request.client.administration.groups.list(
-            context,
-            { limit: IdentityAccessAdminMembershipOverviewService.#groupLimit },
-          )
+        ? this.#request.client.administration.groups.list(context, {
+            limit: IdentityAccessAdminMembershipOverviewService.#groupLimit,
+          })
         : Promise.resolve([]),
       canReadGroupMemberships
-        ? this.#request.client.administration.tenantGroupAssignments.list(context)
+        ? this.#request.client.administration.tenantGroupAssignments.list(
+            context,
+          )
         : Promise.resolve([]),
     ]);
+
+    const selectedMembership =
+      IdentityAccessAdminMembershipOverviewService.#resolveSelectedMembership(
+        requestedMembershipId,
+        members,
+        ownMembership,
+      );
 
     return {
       members,
       ownMembership,
       groups,
       groupAssignments,
+      selectedMembership,
       permissions,
     };
   }
 
-  async #countMemberships(context: import("@identity-access/client").IdentityTenantAdministrationContext): Promise<number> {
+  async #countMemberships(
+    context: import("@identity-access/client").IdentityTenantAdministrationContext,
+  ): Promise<number> {
     let count = 0;
-    for (let offset = 0; offset < IdentityAccessAdminMembershipOverviewService.#maximumCountedMemberships; offset += IdentityAccessAdminMembershipOverviewService.#membershipPageSize) {
-      const page = await this.#request.client.administration.memberships.list(context, {
-        offset,
-        limit: IdentityAccessAdminMembershipOverviewService.#membershipPageSize,
-      });
+
+    for (
+      let offset = 0;
+      offset <
+      IdentityAccessAdminMembershipOverviewService.#maximumCountedMemberships;
+      offset += IdentityAccessAdminMembershipOverviewService.#membershipPageSize
+    ) {
+      const page =
+        await this.#request.client.administration.memberships.list(context, {
+          offset,
+          limit:
+            IdentityAccessAdminMembershipOverviewService.#membershipPageSize,
+        });
+
       count += page.length;
-      if (page.length < IdentityAccessAdminMembershipOverviewService.#membershipPageSize) return count;
+
+      if (
+        page.length <
+        IdentityAccessAdminMembershipOverviewService.#membershipPageSize
+      ) {
+        return count;
+      }
     }
 
-    throw new Error("Tenant membership count exceeds the supported administration UI boundary.");
+    throw new Error(
+      "Tenant membership count exceeds the supported administration UI boundary.",
+    );
+  }
+
+  static #resolveSelectedMembership(
+    requestedMembershipId: string | undefined,
+    members: readonly IdentityTenantUserRecord[],
+    ownMembership: IdentityTenantMembershipRecord | null,
+  ): IdentityAccessAdminSelectedMembershipSummary | null {
+    const requested = requestedMembershipId?.trim().toLowerCase();
+    if (!requested) return null;
+
+    const member = members.find(
+      (candidate) => candidate.membershipId === requested,
+    );
+
+    if (member) {
+      return {
+        membershipId: member.membershipId,
+        userId: member.userId,
+        displayName: member.displayName,
+      };
+    }
+
+    if (ownMembership?.membershipId === requested) {
+      return {
+        membershipId: ownMembership.membershipId,
+        userId: ownMembership.userId,
+        displayName: "Current user",
+      };
+    }
+
+    throw new Error(
+      "The requested membership is outside the loaded authorized tenant membership collection.",
+    );
+  }
+
+  static #empty(
+    scopeWide: boolean,
+    tenants: readonly IdentityAccessAdminMembershipTenantSummary[],
+  ): IdentityAccessAdminMembershipOverview {
+    return {
+      scopeWide,
+      tenants,
+      selectedTenant: null,
+      members: [],
+      ownMembership: null,
+      groups: [],
+      groupAssignments: [],
+      selectedMembership: null,
+      permissions: noPermissions,
+    };
   }
 }

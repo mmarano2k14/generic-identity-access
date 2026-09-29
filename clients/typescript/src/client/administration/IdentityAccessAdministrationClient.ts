@@ -9,6 +9,9 @@ import { IdentityAccessMembershipsClient } from "./IdentityAccessMembershipsClie
 import { IdentityAccessManagedPoliciesClient } from "./IdentityAccessManagedPoliciesClient.js";
 import { IdentityAccessManagedPolicyBindingsClient } from "./IdentityAccessManagedPolicyBindingsClient.js";
 import { IdentityAccessMfaClient } from "./IdentityAccessMfaClient.js";
+import { IdentityAccessOrganizationsClient } from "./IdentityAccessOrganizationsClient.js";
+import { IdentityAccessOrganizationMembershipsClient } from "./IdentityAccessOrganizationMembershipsClient.js";
+import { IdentityAccessOrganizationResourceScopeLinksClient } from "./IdentityAccessOrganizationResourceScopeLinksClient.js";
 import { IdentityAccessResourceScopesClient } from "./IdentityAccessResourceScopesClient.js";
 import { IdentityAccessScopeAuthorityClient } from "./IdentityAccessScopeAuthorityClient.js";
 import { IdentityAccessSecurityAuditClient } from "./IdentityAccessSecurityAuditClient.js";
@@ -29,6 +32,9 @@ export class IdentityAccessAdministrationClient {
   public readonly tenantGroupAssignments: IdentityAccessTenantGroupAssignmentsClient;
   public readonly tenantUsers: IdentityAccessTenantUsersClient;
   public readonly mfa: IdentityAccessMfaClient;
+  public readonly organizations: IdentityAccessOrganizationsClient;
+  public readonly organizationMemberships: IdentityAccessOrganizationMembershipsClient;
+  public readonly organizationResourceScopeLinks: IdentityAccessOrganizationResourceScopeLinksClient;
   public readonly managedPolicies: IdentityAccessManagedPoliciesClient;
   public readonly managedPolicyBindings: IdentityAccessManagedPolicyBindingsClient;
   public readonly groups: IdentityAccessGroupsClient;
@@ -49,6 +55,9 @@ export class IdentityAccessAdministrationClient {
     this.tenantGroupAssignments = new IdentityAccessTenantGroupAssignmentsClient(admin);
     this.tenantUsers = new IdentityAccessTenantUsersClient(admin);
     this.mfa = new IdentityAccessMfaClient(admin);
+    this.organizations = new IdentityAccessOrganizationsClient(admin);
+    this.organizationMemberships = new IdentityAccessOrganizationMembershipsClient(admin);
+    this.organizationResourceScopeLinks = new IdentityAccessOrganizationResourceScopeLinksClient(admin);
     this.managedPolicies = new IdentityAccessManagedPoliciesClient(admin);
     this.managedPolicyBindings = new IdentityAccessManagedPolicyBindingsClient(admin);
     this.groups = new IdentityAccessGroupsClient(admin);

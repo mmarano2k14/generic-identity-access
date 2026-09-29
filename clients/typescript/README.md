@@ -1,3 +1,5 @@
+Version 0.25.0 adds the Organization Directory connector to the existing administration composition. `administration.organizations`, `administration.organizationMemberships`, and `administration.organizationResourceScopeLinks` all use the common Identity Access API host and trusted tenant context; no second application or client root is introduced.
+
 Version 0.24.0 unifies reusable group-template operations under `administration.groups`. `IdentityGroupRecord` now exposes `isTemplate`; `groups.listTemplates()` lists reusable real groups, `groups.createFromTemplate()` creates a normal target-tenant group from one reusable group, and `groups.updateReusable()` is the identity-scope mutation path. The separate `administration.groupTemplates` client and origin/template provenance contracts are retired.
 
 Version 0.23.0 added `administration.membershipCandidates` for exact-login tenant membership resolution and `administration.tenantGroupAssignments` for tenant-scoped aggregate group assignment reads. These focused clients support safe Add member and member-group administration without exposing a global user directory to tenant-scoped administrators.
@@ -37,6 +39,12 @@ IdentityAccessClient
         │   └── IdentityAccessMembershipsClient
         ├── tenantUsers
         │   └── IdentityAccessTenantUsersClient
+        ├── organizations
+        │   └── IdentityAccessOrganizationsClient
+        ├── organizationMemberships
+        │   └── IdentityAccessOrganizationMembershipsClient
+        ├── organizationResourceScopeLinks
+        │   └── IdentityAccessOrganizationResourceScopeLinksClient
         ├── groups
         │   └── IdentityAccessGroupsClient
         │       ├── list / get / create / update
@@ -321,7 +329,7 @@ CSS Modules, component-local style files, `<style>` blocks, and React inline sty
 ```sh
 npm test
 npm run typecheck
-npm run smoke
+npm pack
 ```
 
 The repository-level `scripts/verify.ps1` also verifies the class-composed source layout, the runnable Next.js host, the single-CSS invariant, and the .NET suite.

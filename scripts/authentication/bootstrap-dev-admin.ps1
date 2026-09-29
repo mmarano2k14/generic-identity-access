@@ -5,7 +5,7 @@ param(
     [Guid]$UserId = [Guid]'00000000-0000-0000-0000-000000000003',
     [Guid]$MembershipId = [Guid]'00000000-0000-0000-0000-000000000004',
     [string]$ApplicationKey = 'admin-web',
-    [int]$ModelVersion = 1,
+    [int]$ModelVersion = 0,
     [string]$SecurityManifestPath,
     [string]$RbacProject = 'identity-access',
     [string]$RbacNamespace = 'administration',
@@ -33,15 +33,19 @@ if (-not (Test-Path $SecurityManifestPath -PathType Leaf)) {
     throw "Application security manifest was not found: $SecurityManifestPath"
 }
 
-$manifest = Get-Content $SecurityManifestPath -Raw | ConvertFrom-Json -Depth 32
+$manifest = Get-Content $SecurityManifestPath -Raw | ConvertFrom-Json
 if ($manifest.schemaVersion -ne 1) {
     throw 'The development bootstrap requires application security manifest schemaVersion 1.'
 }
 if ($manifest.applicationKey -ne $ApplicationKey) {
     throw "ApplicationKey must match the application security manifest: $($manifest.applicationKey)"
 }
-if ([int]$manifest.modelVersion -ne $ModelVersion) {
-    throw "ModelVersion must match the application security manifest: $($manifest.modelVersion)"
+$manifestModelVersion = [int]$manifest.modelVersion
+if ($ModelVersion -eq 0) {
+    $ModelVersion = $manifestModelVersion
+}
+elseif ($manifestModelVersion -ne $ModelVersion) {
+    throw "ModelVersion must match the application security manifest: $manifestModelVersion"
 }
 if ($ApplicationKey -notmatch '^[a-z][a-z0-9-]{0,63}$') {
     throw 'ApplicationKey is invalid.'
@@ -192,8 +196,15 @@ try {
         Add-FingerprintPart $fingerprintBuilder 'action' $capability.Action
         Add-FingerprintPart $fingerprintBuilder 'display' $capability.DisplayName
     }
-    $manifestHashBytes = [Security.Cryptography.SHA256]::HashData([Text.Encoding]::UTF8.GetBytes($fingerprintBuilder.ToString()))
-    $manifestSha256 = [Convert]::ToHexString($manifestHashBytes).ToLowerInvariant()
+    $sha256 = [Security.Cryptography.SHA256]::Create()
+    try {
+        $manifestHashBytes = $sha256.ComputeHash(
+            [Text.Encoding]::UTF8.GetBytes($fingerprintBuilder.ToString()))
+    }
+    finally {
+        $sha256.Dispose()
+    }
+    $manifestSha256 = ([BitConverter]::ToString($manifestHashBytes) -replace '-', '').ToLowerInvariant()
     $rbacProjectSql = Escape-SqlLiteral $manifestProject
     $namespaceValues = foreach ($namespaceValue in $manifestNamespaces) {
         $namespaceSql = Escape-SqlLiteral $namespaceValue

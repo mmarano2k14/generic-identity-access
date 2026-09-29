@@ -1,17 +1,14 @@
+
 **/bin/
 **/obj/
-**/node_modules/
-**/dist/
-**/.next/
 .vs/
-TestResults/
+.vscode/
 artifacts/
+TestResults/
+*.user
+*.suo
+*.nupkg
+*.snupkg
 .env
 .env.*
 !.env.example
-*.user
-*.suo
-*.tgz
-
-# Local PostgreSQL password files
-**/.pgpass.local

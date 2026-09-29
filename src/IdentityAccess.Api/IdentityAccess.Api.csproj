@@ -6,6 +6,9 @@
   <ItemGroup Label="Core">
     <ProjectReference Include="../IdentityAccess.Application/IdentityAccess.Application.csproj" />
     <ProjectReference Include="../IdentityAccess.Contracts/IdentityAccess.Contracts.csproj" />
+    <ProjectReference Include="../IdentityAccess.Domain/IdentityAccess.Domain.csproj" />
+    <ProjectReference Include="../OrganizationDirectory.Application/OrganizationDirectory.Application.csproj" />
+    <ProjectReference Include="../OrganizationDirectory.Domain/OrganizationDirectory.Domain.csproj" />
   </ItemGroup>
 
   <ItemGroup Label="Authorization">
@@ -24,5 +27,6 @@
     <ProjectReference Include="../IdentityAccess.Infrastructure.Authentication/IdentityAccess.Infrastructure.Authentication.csproj" />
     <ProjectReference Include="../IdentityAccess.Infrastructure.ConfigurationRouting/IdentityAccess.Infrastructure.ConfigurationRouting.csproj" />
     <ProjectReference Include="../IdentityAccess.Infrastructure.PostgreSql/IdentityAccess.Infrastructure.PostgreSql.csproj" />
+    <ProjectReference Include="../OrganizationDirectory.Infrastructure.PostgreSql/OrganizationDirectory.Infrastructure.PostgreSql.csproj" />
   </ItemGroup>
 </Project>

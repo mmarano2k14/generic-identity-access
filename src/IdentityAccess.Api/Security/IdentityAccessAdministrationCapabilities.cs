@@ -48,6 +48,15 @@ namespace IdentityAccess.Api.Security
         /// <summary>Gets the resource-scope administration feature.</summary>
         public const string ResourceScopes = "resource-scope";
 
+        /// <summary>Gets the organization-directory administration feature.</summary>
+        public const string Organizations = "organization";
+
+        /// <summary>Gets the organization-membership administration feature.</summary>
+        public const string OrganizationMemberships = "organization-membership";
+
+        /// <summary>Gets the Organization-to-ResourceScope link administration feature.</summary>
+        public const string OrganizationScopeLinks = "organization-scope-link";
+
         /// <summary>Gets the session administration feature.</summary>
         public const string Sessions = "session";
 

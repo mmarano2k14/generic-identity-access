@@ -13,6 +13,10 @@ import type {
   IdentityManagedPolicyRecord,
   IdentityManagedPolicyStatementRecord,
   IdentityManagedPolicyVersionRecord,
+  IdentityOrganizationMembershipRecord,
+  IdentityOrganizationRecord,
+  IdentityOrganizationResourceScopeLinkRecord,
+  IdentityOrganizationTreeNodeRecord,
   IdentityGroupRecord,
   IdentityPolicyRecord,
   IdentityPolicyStatementRecord,
@@ -283,6 +287,64 @@ export class IdentityAccessAdministrationCodec {
       ...(parentResourceScopeId === undefined ? {} : { parentResourceScopeId }),
       status: IdentityAccessValueCodec.lifecycleStatus(data.status),
       version: IdentityAccessValueCodec.version(data.version),
+    };
+  }
+
+  public static organizationRecord(value: unknown): IdentityOrganizationRecord {
+    const data = IdentityAccessValueCodec.object(value);
+    const parentOrganizationId = IdentityAccessValueCodec.nullableUuid(data.parentOrganizationId);
+    return {
+      identityScopeId: IdentityAccessValueCodec.uuid(IdentityAccessValueCodec.text(data.identityScopeId)),
+      tenantId: IdentityAccessValueCodec.uuid(IdentityAccessValueCodec.text(data.tenantId)),
+      organizationId: IdentityAccessValueCodec.uuid(IdentityAccessValueCodec.text(data.organizationId)),
+      organizationKey: IdentityAccessValueCodec.slug(IdentityAccessValueCodec.text(data.organizationKey)),
+      displayName: IdentityAccessValueCodec.text(data.displayName),
+      organizationType: IdentityAccessValueCodec.slug(IdentityAccessValueCodec.text(data.organizationType)),
+      ...(parentOrganizationId === undefined ? {} : { parentOrganizationId }),
+      status: IdentityAccessValueCodec.lifecycleStatus(data.status),
+      rowVersion: IdentityAccessValueCodec.version(data.rowVersion),
+      createdAt: IdentityAccessValueCodec.timestamp(data.createdAt),
+      updatedAt: IdentityAccessValueCodec.timestamp(data.updatedAt),
+    };
+  }
+
+  public static organizationTreeNodeRecord(value: unknown): IdentityOrganizationTreeNodeRecord {
+    const data = IdentityAccessValueCodec.object(value);
+    return {
+      organization: IdentityAccessAdministrationCodec.organizationRecord(data.organization),
+      children: IdentityAccessValueCodec.array(
+        data.children,
+        (entry) => IdentityAccessAdministrationCodec.organizationTreeNodeRecord(entry),
+      ),
+    };
+  }
+
+  public static organizationMembershipRecord(value: unknown): IdentityOrganizationMembershipRecord {
+    const data = IdentityAccessValueCodec.object(value);
+    return {
+      identityScopeId: IdentityAccessValueCodec.uuid(IdentityAccessValueCodec.text(data.identityScopeId)),
+      tenantId: IdentityAccessValueCodec.uuid(IdentityAccessValueCodec.text(data.tenantId)),
+      organizationId: IdentityAccessValueCodec.uuid(IdentityAccessValueCodec.text(data.organizationId)),
+      tenantMembershipId: IdentityAccessValueCodec.uuid(IdentityAccessValueCodec.text(data.tenantMembershipId)),
+      status: IdentityAccessValueCodec.lifecycleStatus(data.status),
+      rowVersion: IdentityAccessValueCodec.version(data.rowVersion),
+      createdAt: IdentityAccessValueCodec.timestamp(data.createdAt),
+      updatedAt: IdentityAccessValueCodec.timestamp(data.updatedAt),
+    };
+  }
+
+  public static organizationResourceScopeLinkRecord(value: unknown): IdentityOrganizationResourceScopeLinkRecord {
+    const data = IdentityAccessValueCodec.object(value);
+    return {
+      organizationId: IdentityAccessValueCodec.uuid(IdentityAccessValueCodec.text(data.organizationId)),
+      applicationKey: IdentityAccessValueCodec.slug(IdentityAccessValueCodec.text(data.applicationKey)),
+      resourceScopeId: IdentityAccessValueCodec.uuid(IdentityAccessValueCodec.text(data.resourceScopeId)),
+      scopeType: IdentityAccessValueCodec.slug(IdentityAccessValueCodec.text(data.scopeType)),
+      modelVersion: IdentityAccessValueCodec.positiveInteger(data.modelVersion),
+      status: IdentityAccessValueCodec.lifecycleStatus(data.status),
+      rowVersion: IdentityAccessValueCodec.version(data.rowVersion),
+      createdAt: IdentityAccessValueCodec.timestamp(data.createdAt),
+      updatedAt: IdentityAccessValueCodec.timestamp(data.updatedAt),
     };
   }
 

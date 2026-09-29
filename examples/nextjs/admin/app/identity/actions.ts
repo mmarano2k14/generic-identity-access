@@ -5,6 +5,9 @@ import type { AdminActionState } from "../../contracts/AdminActionState";
 import { IdentityAccessAdminFailurePresentation } from "../../server/IdentityAccessAdminFailurePresentation";
 import { IdentityAccessAdminManagedPolicyMutationService } from "../../server/IdentityAccessAdminManagedPolicyMutationService";
 import { IdentityAccessAdminMutationService } from "../../server/IdentityAccessAdminMutationService";
+import { IdentityAccessAdminOrganizationMembershipMutationService } from "../../server/IdentityAccessAdminOrganizationMembershipMutationService";
+import { IdentityAccessAdminOrganizationMutationService } from "../../server/IdentityAccessAdminOrganizationMutationService";
+import { IdentityAccessAdminOrganizationScopeLinkMutationService } from "../../server/IdentityAccessAdminOrganizationScopeLinkMutationService";
 import { IdentityAccessAdminRequest } from "../../server/IdentityAccessAdminRequest";
 import { IdentityAccessAdminSecurityModelFailurePresentation } from "../../server/IdentityAccessAdminSecurityModelFailurePresentation";
 import { IdentityAccessAdminSecurityModelMutationService } from "../../server/IdentityAccessAdminSecurityModelMutationService";
@@ -122,6 +125,38 @@ export async function updateResourceScopeAction(_state: AdminActionState, formDa
   return execute("/identity/resource-scopes", "Resource scope updated.", (service) => service.updateResourceScope(formData));
 }
 
+export async function createOrganizationAction(_state: AdminActionState, formData: FormData): Promise<AdminActionState> {
+  return executeOrganization("/identity/memberships", "Organization created.", (service) => service.createOrganization(formData));
+}
+
+export async function updateOrganizationAction(_state: AdminActionState, formData: FormData): Promise<AdminActionState> {
+  return executeOrganization("/identity/memberships", "Organization updated.", (service) => service.updateOrganization(formData));
+}
+
+export async function enableOrganizationAction(_state: AdminActionState, formData: FormData): Promise<AdminActionState> {
+  return executeOrganization("/identity/memberships", "Organization enabled.", (service) => service.enableOrganization(formData));
+}
+
+export async function disableOrganizationAction(_state: AdminActionState, formData: FormData): Promise<AdminActionState> {
+  return executeOrganization("/identity/memberships", "Organization disabled.", (service) => service.disableOrganization(formData));
+}
+
+export async function replaceTenantMemberOrganizationsAction(_state: AdminActionState, formData: FormData): Promise<AdminActionState> {
+  return executeOrganizationMembership("/identity/memberships", "Organization memberships updated.", (service) => service.replaceTenantMemberOrganizations(formData));
+}
+
+export async function linkOrganizationResourceScopeAction(_state: AdminActionState, formData: FormData): Promise<AdminActionState> {
+  return executeOrganizationScopeLink("/identity/memberships", "Organization ResourceScope linked.", (service) => service.link(formData));
+}
+
+export async function relinkOrganizationResourceScopeAction(_state: AdminActionState, formData: FormData): Promise<AdminActionState> {
+  return executeOrganizationScopeLink("/identity/memberships", "Organization ResourceScope link updated.", (service) => service.relink(formData));
+}
+
+export async function unlinkOrganizationResourceScopeAction(_state: AdminActionState, formData: FormData): Promise<AdminActionState> {
+  return executeOrganizationScopeLink("/identity/memberships", "Organization ResourceScope link removed.", (service) => service.unlink(formData));
+}
+
 export async function createScopeAuthorityGroupAction(_state: AdminActionState, formData: FormData): Promise<AdminActionState> {
   return execute("/identity/authority", "Scope authority group created.", (service) => service.createScopeAuthorityGroup(formData));
 }
@@ -192,6 +227,92 @@ async function execute(
     return { status: "success", message: typeof result === "string" ? result : defaultSuccessMessage };
   } catch (error) {
     return { status: "error", failure: IdentityAccessAdminFailurePresentation.fromMutation(error) };
+  }
+}
+
+
+async function executeOrganization(
+  revalidationPath: string | readonly string[],
+  defaultSuccessMessage: string,
+  operation: (
+    service: IdentityAccessAdminOrganizationMutationService,
+  ) => Promise<void | string>,
+): Promise<AdminActionState> {
+  return executeSpecialized(
+    revalidationPath,
+    defaultSuccessMessage,
+    (request) =>
+      new IdentityAccessAdminOrganizationMutationService(request),
+    operation,
+  );
+}
+
+async function executeOrganizationMembership(
+  revalidationPath: string | readonly string[],
+  defaultSuccessMessage: string,
+  operation: (
+    service: IdentityAccessAdminOrganizationMembershipMutationService,
+  ) => Promise<void | string>,
+): Promise<AdminActionState> {
+  return executeSpecialized(
+    revalidationPath,
+    defaultSuccessMessage,
+    (request) =>
+      new IdentityAccessAdminOrganizationMembershipMutationService(
+        request,
+      ),
+    operation,
+  );
+}
+
+async function executeOrganizationScopeLink(
+  revalidationPath: string | readonly string[],
+  defaultSuccessMessage: string,
+  operation: (
+    service: IdentityAccessAdminOrganizationScopeLinkMutationService,
+  ) => Promise<void | string>,
+): Promise<AdminActionState> {
+  return executeSpecialized(
+    revalidationPath,
+    defaultSuccessMessage,
+    (request) =>
+      new IdentityAccessAdminOrganizationScopeLinkMutationService(
+        request,
+      ),
+    operation,
+  );
+}
+
+async function executeSpecialized<TService>(
+  revalidationPath: string | readonly string[],
+  defaultSuccessMessage: string,
+  factory: (request: IdentityAccessAdminRequest) => TService,
+  operation: (service: TService) => Promise<void | string>,
+): Promise<AdminActionState> {
+  try {
+    const request =
+      await IdentityAccessAdminRequest.fromCurrentRequest();
+    const result = await operation(factory(request));
+    const paths =
+      typeof revalidationPath === "string"
+        ? [revalidationPath]
+        : revalidationPath;
+
+    for (const path of paths) revalidatePath(path);
+
+    return {
+      status: "success",
+      message:
+        typeof result === "string"
+          ? result
+          : defaultSuccessMessage,
+    };
+  } catch (error) {
+    return {
+      status: "error",
+      failure:
+        IdentityAccessAdminFailurePresentation.fromMutation(error),
+    };
   }
 }
 

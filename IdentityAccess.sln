@@ -30,12 +30,48 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IdentityAccess.Mfa.Recovery
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IdentityAccess.Mfa.WebAuthn", "src\IdentityAccess.Mfa.WebAuthn\IdentityAccess.Mfa.WebAuthn.csproj", "{C6B4D5F1-6E1B-4A58-A92F-5B2BB88CFA46}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OrganizationDirectory.Contracts", "src\OrganizationDirectory.Contracts\OrganizationDirectory.Contracts.csproj", "{1E302BA3-5E85-5C3F-AD32-4773CFBB8CCA}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OrganizationDirectory.Domain", "src\OrganizationDirectory.Domain\OrganizationDirectory.Domain.csproj", "{5A3333AB-C1AA-55D3-8481-E8050002DE1A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OrganizationDirectory.Application", "src\OrganizationDirectory.Application\OrganizationDirectory.Application.csproj", "{910EA0A8-7504-550B-BB04-85AAD7763F85}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OrganizationDirectory.Infrastructure.PostgreSql", "src\OrganizationDirectory.Infrastructure.PostgreSql\OrganizationDirectory.Infrastructure.PostgreSql.csproj", "{B3876F23-6514-5FB7-96A1-8FA2710DB8FB}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OrganizationDirectory.Tests", "tests\OrganizationDirectory.Tests\OrganizationDirectory.Tests.csproj", "{997B6D47-15AB-5D21-96C7-278E1921ADD8}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OrganizationDirectory.PostgreSqlProbe", "tests\OrganizationDirectory.PostgreSqlProbe\OrganizationDirectory.PostgreSqlProbe.csproj", "{1F26D797-12E7-5521-B87F-90EA62E9BBB6}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{1E302BA3-5E85-5C3F-AD32-4773CFBB8CCA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1E302BA3-5E85-5C3F-AD32-4773CFBB8CCA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1E302BA3-5E85-5C3F-AD32-4773CFBB8CCA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1E302BA3-5E85-5C3F-AD32-4773CFBB8CCA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5A3333AB-C1AA-55D3-8481-E8050002DE1A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5A3333AB-C1AA-55D3-8481-E8050002DE1A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5A3333AB-C1AA-55D3-8481-E8050002DE1A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5A3333AB-C1AA-55D3-8481-E8050002DE1A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{910EA0A8-7504-550B-BB04-85AAD7763F85}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{910EA0A8-7504-550B-BB04-85AAD7763F85}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{910EA0A8-7504-550B-BB04-85AAD7763F85}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{910EA0A8-7504-550B-BB04-85AAD7763F85}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B3876F23-6514-5FB7-96A1-8FA2710DB8FB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B3876F23-6514-5FB7-96A1-8FA2710DB8FB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B3876F23-6514-5FB7-96A1-8FA2710DB8FB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B3876F23-6514-5FB7-96A1-8FA2710DB8FB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{997B6D47-15AB-5D21-96C7-278E1921ADD8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{997B6D47-15AB-5D21-96C7-278E1921ADD8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{997B6D47-15AB-5D21-96C7-278E1921ADD8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{997B6D47-15AB-5D21-96C7-278E1921ADD8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1F26D797-12E7-5521-B87F-90EA62E9BBB6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1F26D797-12E7-5521-B87F-90EA62E9BBB6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1F26D797-12E7-5521-B87F-90EA62E9BBB6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1F26D797-12E7-5521-B87F-90EA62E9BBB6}.Release|Any CPU.Build.0 = Release|Any CPU
 		{C6B4D5F1-6E1B-4A58-A92F-5B2BB88CFA46}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{C6B4D5F1-6E1B-4A58-A92F-5B2BB88CFA46}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C6B4D5F1-6E1B-4A58-A92F-5B2BB88CFA46}.Release|Any CPU.ActiveCfg = Release|Any CPU
