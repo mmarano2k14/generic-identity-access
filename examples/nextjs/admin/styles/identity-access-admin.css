@@ -63,7 +63,7 @@ a { color: inherit; }
 
 .ia-icon { width: 19px; height: 19px; flex: 0 0 auto; }
 .ia-shell { min-height: 100vh; display: grid; grid-template-columns: var(--ia-sidebar-width) minmax(0, 1fr); }
-.ia-workspace { min-width: 0; display: grid; grid-template-rows: auto 1fr; }
+.ia-workspace { min-width: 0; min-height: 100vh; display: grid; grid-template-rows: auto 1fr; }
 
 /* Navigation */
 .ia-navigation {

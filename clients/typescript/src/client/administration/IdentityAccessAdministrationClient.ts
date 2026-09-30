@@ -10,6 +10,11 @@ import { IdentityAccessManagedPoliciesClient } from "./IdentityAccessManagedPoli
 import { IdentityAccessManagedPolicyBindingsClient } from "./IdentityAccessManagedPolicyBindingsClient.js";
 import { IdentityAccessMfaClient } from "./IdentityAccessMfaClient.js";
 import { IdentityAccessOrganizationsClient } from "./IdentityAccessOrganizationsClient.js";
+import { IdentityAccessOrganisationProfilesClient } from "./IdentityAccessOrganisationProfilesClient.js";
+import { IdentityAccessOrganisationProfileDomainOverridesClient } from "./IdentityAccessOrganisationProfileDomainOverridesClient.js";
+import { IdentityAccessOrganisationProfileEffectiveVersionsClient } from "./IdentityAccessOrganisationProfileEffectiveVersionsClient.js";
+import { IdentityAccessOrganisationProfileTemplatesClient } from "./IdentityAccessOrganisationProfileTemplatesClient.js";
+import { IdentityAccessOrganisationProfileTemplateVersionsClient } from "./IdentityAccessOrganisationProfileTemplateVersionsClient.js";
 import { IdentityAccessOrganizationMembershipsClient } from "./IdentityAccessOrganizationMembershipsClient.js";
 import { IdentityAccessOrganizationResourceScopeLinksClient } from "./IdentityAccessOrganizationResourceScopeLinksClient.js";
 import { IdentityAccessResourceScopesClient } from "./IdentityAccessResourceScopesClient.js";
@@ -33,6 +38,11 @@ export class IdentityAccessAdministrationClient {
   public readonly tenantUsers: IdentityAccessTenantUsersClient;
   public readonly mfa: IdentityAccessMfaClient;
   public readonly organizations: IdentityAccessOrganizationsClient;
+  public readonly organisationProfiles: IdentityAccessOrganisationProfilesClient;
+  public readonly organisationProfileDomainOverrides: IdentityAccessOrganisationProfileDomainOverridesClient;
+  public readonly organisationProfileEffectiveVersions: IdentityAccessOrganisationProfileEffectiveVersionsClient;
+  public readonly organisationProfileTemplates: IdentityAccessOrganisationProfileTemplatesClient;
+  public readonly organisationProfileTemplateVersions: IdentityAccessOrganisationProfileTemplateVersionsClient;
   public readonly organizationMemberships: IdentityAccessOrganizationMembershipsClient;
   public readonly organizationResourceScopeLinks: IdentityAccessOrganizationResourceScopeLinksClient;
   public readonly managedPolicies: IdentityAccessManagedPoliciesClient;
@@ -56,6 +66,11 @@ export class IdentityAccessAdministrationClient {
     this.tenantUsers = new IdentityAccessTenantUsersClient(admin);
     this.mfa = new IdentityAccessMfaClient(admin);
     this.organizations = new IdentityAccessOrganizationsClient(admin);
+    this.organisationProfiles = new IdentityAccessOrganisationProfilesClient(admin);
+    this.organisationProfileDomainOverrides = new IdentityAccessOrganisationProfileDomainOverridesClient(admin);
+    this.organisationProfileEffectiveVersions = new IdentityAccessOrganisationProfileEffectiveVersionsClient(admin);
+    this.organisationProfileTemplates = new IdentityAccessOrganisationProfileTemplatesClient(admin);
+    this.organisationProfileTemplateVersions = new IdentityAccessOrganisationProfileTemplateVersionsClient(admin);
     this.organizationMemberships = new IdentityAccessOrganizationMembershipsClient(admin);
     this.organizationResourceScopeLinks = new IdentityAccessOrganizationResourceScopeLinksClient(admin);
     this.managedPolicies = new IdentityAccessManagedPoliciesClient(admin);

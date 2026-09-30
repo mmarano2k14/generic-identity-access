@@ -366,3 +366,18 @@ const events = await client.administration.securityAudit.list(
 ```
 
 The client only validates/encodes the bounded query and decodes the secret-safe API response. It does not evaluate authorization, infer permissions from events, retain audit state globally, or expose raw PostgreSQL access.
+
+## OrganisationProfile administration
+
+Version `0.26.0` adds focused clients for the OrganisationProfile HTTP contract:
+
+```text
+administration.organisationProfiles
+administration.organisationProfileDomainOverrides
+administration.organisationProfileEffectiveVersions
+administration.organisationProfileTemplates
+administration.organisationProfileTemplateVersions
+```
+
+Mutable tenant profiles remain tenant-scoped. Reusable template catalog operations are identity-scope/application administration operations. All domain and template references remain explicitly version-pinned.
+

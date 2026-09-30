@@ -9,6 +9,10 @@ export declare class IdentityAccessPathBuilder {
     static tenantApplicationPath(context: IdentityTenantAdministrationContext): string;
     static tenantMembershipsPath(context: IdentityTenantAdministrationContext): string;
     static tenantUsersPath(context: IdentityTenantAdministrationContext): string;
+    /** Builds the tenant-local OrganisationProfile base path hosted by IdentityAccess.Api. */
+    static organisationProfilesPath(context: IdentityTenantAdministrationContext): string;
+    /** Builds the reusable OrganisationProfile template-catalog path. */
+    static organisationProfileTemplatesPath(context: IdentityAdministrationContext): string;
     /** Builds the tenant-local Organization Directory base path hosted by IdentityAccess.Api. */
     static organizationDirectoryPath(context: IdentityTenantAdministrationContext): string;
     /** Builds the member-centric OrganizationMembership read path. */

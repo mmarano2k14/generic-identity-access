@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "applicationKey": "admin-web",
-  "modelVersion": 3,
+  "modelVersion": 4,
   "rbac": {
     "project": "identity-access",
     "namespaces": [
@@ -74,6 +74,58 @@
             {
               "name": "write",
               "displayName": "Identity Access mfa-policy write"
+            }
+          ]
+        },
+        {
+          "name": "organisation-profile",
+          "actions": [
+            {
+              "name": "read",
+              "displayName": "OrganisationProfile profile read"
+            },
+            {
+              "name": "write",
+              "displayName": "OrganisationProfile profile write"
+            }
+          ]
+        },
+        {
+          "name": "organisation-profile-domain-override",
+          "actions": [
+            {
+              "name": "read",
+              "displayName": "OrganisationProfile domain override read"
+            },
+            {
+              "name": "write",
+              "displayName": "OrganisationProfile domain override write"
+            }
+          ]
+        },
+        {
+          "name": "organisation-profile-effective-version",
+          "actions": [
+            {
+              "name": "read",
+              "displayName": "OrganisationProfile effective version read"
+            },
+            {
+              "name": "write",
+              "displayName": "OrganisationProfile effective version resolve"
+            }
+          ]
+        },
+        {
+          "name": "organisation-profile-template",
+          "actions": [
+            {
+              "name": "read",
+              "displayName": "OrganisationProfile template read"
+            },
+            {
+              "name": "write",
+              "displayName": "OrganisationProfile template write"
             }
           ]
         },

@@ -42,6 +42,10 @@ $requiredFiles = @(
     "scripts/authentication/bootstrap-dev-admin.ps1",
     "src/IdentityAccess.Api/Controllers/ApplicationSecurityModelsController.cs",
     "src/IdentityAccess.Api/Controllers/RegisterApplicationSecurityManifestRequest.cs",
+    "src/IdentityAccess.Api/OrganisationProfileRegistration.cs",
+    "src/IdentityAccess.Api/Security/OrganisationProfileAdministrationCapabilities.cs",
+    "src/IdentityAccess.Api/Security/IOrganisationProfileSecurityAuditWriter.cs",
+    "src/IdentityAccess.Api/Security/OrganisationProfileSecurityAuditWriter.cs",
     "src/IdentityAccess.Rbac/RbacTrnCompiler.cs",
     "tests/IdentityAccess.Tests/ApplicationSecurityManifestTests.cs",
     "tests/IdentityAccess.Tests/PostgreSql/ApplicationSecurityManifestCatalogSchemaTests.cs",
@@ -109,8 +113,8 @@ if ($catalogService -match 'IsAllowed\s*\(' -or $catalogService -match 'authoriz
 $adminManifestPath = Require-File "config/identity-access-admin-security-manifest.json"
 $adminManifest = Get-Content $adminManifestPath -Raw | ConvertFrom-Json
 
-if ([int]$adminManifest.modelVersion -ne 3) {
-    throw "Identity Access administration security manifest must use modelVersion 3 after Organization Directory security capabilities were added."
+if ([int]$adminManifest.modelVersion -ne 4) {
+    throw "Identity Access administration security manifest must use modelVersion 4 after OrganisationProfile administration capabilities were added."
 }
 
 $identityResource = @($adminManifest.resources | Where-Object { $_.name -eq "identity-access" })
@@ -124,6 +128,56 @@ foreach ($requiredFeature in @("organization", "organization-membership", "organ
         throw "Identity Access administration security manifest is missing required Organization Directory feature '$requiredFeature'."
     }
 }
+
+
+$profileFeatures =
+    @(
+        "organisation-profile",
+        "organisation-profile-template",
+        "organisation-profile-domain-override",
+        "organisation-profile-effective-version"
+    )
+
+foreach ($requiredFeature in $profileFeatures) {
+    if ($adminFeatures -notcontains $requiredFeature) {
+        throw "Identity Access administration security manifest is missing required OrganisationProfile feature '$requiredFeature'."
+    }
+
+    $definition =
+        @(
+            $identityResource[0].features |
+            Where-Object {
+                $_.name -eq $requiredFeature
+            }
+        )
+
+    $actions =
+        @(
+            $definition[0].actions |
+            ForEach-Object {
+                [string]$_.name
+            }
+        )
+
+    foreach ($requiredAction in @("read", "write")) {
+        if ($actions -notcontains $requiredAction) {
+            throw "OrganisationProfile security feature '$requiredFeature' is missing '$requiredAction'."
+        }
+    }
+}
+
+Require-Text "src/IdentityAccess.Api/Program.cs" "builder.AddOrganisationProfile();"
+Require-Text "src/IdentityAccess.Api/OrganisationProfileRegistration.cs" "UnavailableDomainRegistryReader"
+Require-Text "src/IdentityAccess.Api/OrganisationProfileRegistration.cs" "IOrganisationProfileSecurityAuditWriter"
+Require-Text "src/IdentityAccess.Api/Security/OrganisationProfileAdministrationCapabilities.cs" "IdentityAccessAdministrationCapabilities.Resource"
+Require-Text "src/IdentityAccess.Api/Security/OrganisationProfileSecurityAuditWriter.cs" "IDatabaseRouteResolver"
+Require-Text "src/IdentityAccess.Api/Security/OrganisationProfileSecurityAuditWriter.cs" "ISecurityAuditWriter"
+Reject-Text "src/IdentityAccess.Api/Security/OrganisationProfileSecurityAuditWriter.cs" "IsAllowed("
+Reject-Text "src/IdentityAccess.Api/Security/OrganisationProfileSecurityAuditWriter.cs" "authorization.evaluate"
+
+Require-Text "src/IdentityAccess.Application/Security/SecurityAuditEventType.cs" "OrganisationProfileCreated = 79"
+Require-Text "src/IdentityAccess.Application/Security/SecurityAuditEventType.cs" "OrganisationProfileEffectiveVersionResolved = 84"
+Require-Text "src/IdentityAccess.Application/Security/SecurityAuditEventType.cs" "OrganisationProfileTemplateVersionRetired = 91"
 
 Require-Text "src/IdentityAccess.Api/Controllers/OrganizationsController.cs" "IdentityAccessAdministrationCapabilities.Organizations"
 Require-Text "src/IdentityAccess.Api/Controllers/OrganizationMembershipsController.cs" "IdentityAccessAdministrationCapabilities.OrganizationMemberships"

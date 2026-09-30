@@ -241,3 +241,13 @@ Organization -> ResourceScope mapping
 
 Organization membership remains belonging only. Permission continues to flow through groups, Managed Policies, ResourceScopes, and server-side RBAC evaluation.
 
+
+## OrganisationProfile reference workspace
+
+Pack 7 adds a consuming-application reference route outside the Identity Access navigation:
+
+```text
+/organisations/{organizationId}/profile?tenantId={tenantId}
+```
+
+The route reads the existing Organization as a foreign identity and manages only OrganisationProfile semantic configuration. It deliberately does not add an OrganisationProfile entry to the `/identity` navigation and does not expose Organization identity mutations from the profile workspace.

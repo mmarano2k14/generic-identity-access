@@ -1902,3 +1902,116 @@ test("Organization ResourceScope link client stays application-aware", async () 
   assert.equal(seen[2][0], expected);
   assert.equal(seen[3][0], `${expected}?expectedRowVersion=1`);
 });
+
+test("OrganisationProfile clients expose focused API routes and deterministic contracts", async () => {
+  const organizationId = "43111111-1111-1111-1111-111111111111";
+  const profileId = "43222222-2222-2222-2222-222222222222";
+  const seen = [];
+  const profile = {
+    organisationProfileId: profileId,
+    identityScopeId: scopeId,
+    tenantId,
+    organizationId,
+    templatePin: { templateKey: "ecommerce-standard", templateVersion: 1 },
+    status: 1,
+    rowVersion: 1,
+    createdAt: "2026-09-30T00:00:00Z",
+    updatedAt: "2026-09-30T00:00:00Z",
+  };
+  const effective = {
+    organisationProfileId: profileId,
+    identityScopeId: scopeId,
+    tenantId,
+    organizationId,
+    version: 1,
+    templatePin: { templateKey: "ecommerce-standard", templateVersion: 1 },
+    domains: [{ domainKey: "commerce", domainVersion: 4 }],
+    contentHash: "a".repeat(64),
+    resolvedAt: "2026-09-30T00:00:00Z",
+  };
+  const template = {
+    templateKey: "ecommerce-standard",
+    displayName: "Ecommerce Standard",
+    status: 1,
+    rowVersion: 1,
+    createdAt: "2026-09-30T00:00:00Z",
+    updatedAt: "2026-09-30T00:00:00Z",
+  };
+  const version = {
+    templateKey: "ecommerce-standard",
+    templateVersion: 1,
+    status: 1,
+    domains: [{ domainKey: "commerce", domainVersion: 4 }],
+    contentHash: null,
+    rowVersion: 1,
+    createdAt: "2026-09-30T00:00:00Z",
+    updatedAt: "2026-09-30T00:00:00Z",
+    publishedAt: null,
+    retiredAt: null,
+  };
+
+  const api = client(async (url, init) => {
+    seen.push([url, init.method, init.body]);
+    if (url.includes("/effective-versions/resolve")) return json(effective);
+    if (url.includes("/effective-versions")) return json([effective]);
+    if (url.includes("/domain-overrides")) return init.method === "GET"
+      ? json([{ domainKey: "inventory", domainVersion: null, operation: 2 }])
+      : json({ ...profile, rowVersion: 2 });
+    if (url.includes("/organisation-profile-templates/ecommerce-standard/versions")) {
+      if (init.method === "POST") return json(version, 201);
+      return json([version]);
+    }
+    if (url.includes("/organisation-profile-templates")) {
+      if (init.method === "POST") return json(template, 201);
+      return json([template]);
+    }
+    if (init.method === "POST") return json(profile, 201);
+    return json([profile]);
+  });
+
+  const tenantContext = { identityScopeId: scopeId, applicationKey: "app-a", tenantId, credential: bearer };
+  const adminContext = { identityScopeId: scopeId, applicationKey: "app-a", credential: bearer };
+
+  assert.equal(typeof api.administration.organisationProfiles.create, "function");
+  assert.equal(typeof api.administration.organisationProfileDomainOverrides.replace, "function");
+  assert.equal(typeof api.administration.organisationProfileEffectiveVersions.resolve, "function");
+  assert.equal(typeof api.administration.organisationProfileTemplates.create, "function");
+  assert.equal(typeof api.administration.organisationProfileTemplateVersions.createDraft, "function");
+
+  await api.administration.organisationProfiles.create(tenantContext, {
+    organizationId,
+    templateKey: "ecommerce-standard",
+    templateVersion: 1,
+  });
+  await api.administration.organisationProfileDomainOverrides.list(tenantContext, profileId);
+  await api.administration.organisationProfileEffectiveVersions.resolve(tenantContext, profileId, {
+    expectedRowVersion: 1,
+  });
+  await api.administration.organisationProfileTemplates.create(adminContext, {
+    templateKey: "ecommerce-standard",
+    displayName: "Ecommerce Standard",
+  });
+  await api.administration.organisationProfileTemplateVersions.createDraft(
+    adminContext,
+    "ecommerce-standard",
+    { templateVersion: 1, domains: [{ domainKey: "commerce", domainVersion: 4 }] },
+  );
+
+  assert.equal(
+    seen[0][0],
+    `https://identity.example.test/api/v1/identity-scopes/${scopeId}/applications/app-a/tenants/${tenantId}/organisation-profiles`,
+  );
+  assert.equal(
+    seen[1][0],
+    `https://identity.example.test/api/v1/identity-scopes/${scopeId}/applications/app-a/tenants/${tenantId}/organisation-profiles/${profileId}/domain-overrides`,
+  );
+  assert.equal(
+    seen[2][0],
+    `https://identity.example.test/api/v1/identity-scopes/${scopeId}/applications/app-a/tenants/${tenantId}/organisation-profiles/${profileId}/effective-versions/resolve`,
+  );
+  assert.equal(
+    seen[3][0],
+    `https://identity.example.test/api/v1/identity-scopes/${scopeId}/applications/app-a/organisation-profile-templates`,
+  );
+});
+

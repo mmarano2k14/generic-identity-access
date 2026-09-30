@@ -18,7 +18,7 @@ namespace IdentityAccess.Tests.Architecture
             var rootElement = document.RootElement;
 
             Assert.Equal(
-                3,
+                4,
                 rootElement.GetProperty("modelVersion").GetInt32());
 
             var identityResource = rootElement

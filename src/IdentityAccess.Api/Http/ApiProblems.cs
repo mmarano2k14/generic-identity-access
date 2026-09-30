@@ -106,6 +106,13 @@ namespace IdentityAccess.Api.Http
                 "Organization ResourceScope linkage unavailable",
                 "Shared PostgreSQL ResourceScope linkage services must be configured before Organization ResourceScope administration can execute.");
 
+        /// <summary>Creates the OrganisationProfile administration unavailable response.</summary>
+        public static ObjectResult OrganisationProfileAdministrationUnavailable() =>
+            Result(
+                StatusCodes.Status503ServiceUnavailable,
+                "OrganisationProfile administration unavailable",
+                "Shared PostgreSQL OrganisationProfile persistence must be configured before profile administration can execute.");
+
         /// <summary>Creates the identity-scope authority administration unavailable response.</summary>
         public static ObjectResult IdentityScopeAuthorityAdministrationUnavailable() =>
             Result(

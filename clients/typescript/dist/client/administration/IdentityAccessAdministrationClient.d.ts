@@ -9,6 +9,11 @@ import { IdentityAccessManagedPoliciesClient } from "./IdentityAccessManagedPoli
 import { IdentityAccessManagedPolicyBindingsClient } from "./IdentityAccessManagedPolicyBindingsClient.js";
 import { IdentityAccessMfaClient } from "./IdentityAccessMfaClient.js";
 import { IdentityAccessOrganizationsClient } from "./IdentityAccessOrganizationsClient.js";
+import { IdentityAccessOrganisationProfilesClient } from "./IdentityAccessOrganisationProfilesClient.js";
+import { IdentityAccessOrganisationProfileDomainOverridesClient } from "./IdentityAccessOrganisationProfileDomainOverridesClient.js";
+import { IdentityAccessOrganisationProfileEffectiveVersionsClient } from "./IdentityAccessOrganisationProfileEffectiveVersionsClient.js";
+import { IdentityAccessOrganisationProfileTemplatesClient } from "./IdentityAccessOrganisationProfileTemplatesClient.js";
+import { IdentityAccessOrganisationProfileTemplateVersionsClient } from "./IdentityAccessOrganisationProfileTemplateVersionsClient.js";
 import { IdentityAccessOrganizationMembershipsClient } from "./IdentityAccessOrganizationMembershipsClient.js";
 import { IdentityAccessOrganizationResourceScopeLinksClient } from "./IdentityAccessOrganizationResourceScopeLinksClient.js";
 import { IdentityAccessResourceScopesClient } from "./IdentityAccessResourceScopesClient.js";
@@ -31,6 +36,11 @@ export declare class IdentityAccessAdministrationClient {
     readonly tenantUsers: IdentityAccessTenantUsersClient;
     readonly mfa: IdentityAccessMfaClient;
     readonly organizations: IdentityAccessOrganizationsClient;
+    readonly organisationProfiles: IdentityAccessOrganisationProfilesClient;
+    readonly organisationProfileDomainOverrides: IdentityAccessOrganisationProfileDomainOverridesClient;
+    readonly organisationProfileEffectiveVersions: IdentityAccessOrganisationProfileEffectiveVersionsClient;
+    readonly organisationProfileTemplates: IdentityAccessOrganisationProfileTemplatesClient;
+    readonly organisationProfileTemplateVersions: IdentityAccessOrganisationProfileTemplateVersionsClient;
     readonly organizationMemberships: IdentityAccessOrganizationMembershipsClient;
     readonly organizationResourceScopeLinks: IdentityAccessOrganizationResourceScopeLinksClient;
     readonly managedPolicies: IdentityAccessManagedPoliciesClient;

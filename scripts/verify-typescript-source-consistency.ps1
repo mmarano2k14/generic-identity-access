@@ -1,4 +1,4 @@
-[CmdletBinding()]
+﻿[CmdletBinding()]
 param()
 $ErrorActionPreference = "Stop"
 Set-StrictMode -Version Latest
@@ -77,7 +77,11 @@ $context = Get-Content (Join-Path $src "authorization-context.ts") -Raw
 $builder = Get-Content (Join-Path $src "admin-ui-builder.ts") -Raw
 $decorator = Get-Content (Join-Path $src "require-capability.ts") -Raw
 $index = Get-Content (Join-Path $src "index.ts") -Raw
-$allSource = (Get-ChildItem $src -Filter *.ts -Recurse | ForEach-Object { Get-Content $_.FullName -Raw }) -join "`n"
+$allSourceFiles = @(Get-ChildItem $src -Filter *.ts -Recurse -File)
+$allSourceParts = foreach ($sourceFile in $allSourceFiles) {
+    [System.IO.File]::ReadAllText($sourceFile.FullName)
+}
+$allSource = $allSourceParts -join "`n"
 
 if ($client -notmatch 'export\s+class\s+IdentityAccessClient\b') { throw "IdentityAccessClient must be a class." }
 if ($compatClient -match 'export\s+class\s+IdentityAccessClient\b') { throw "client.ts must remain a compatibility re-export; implementation belongs under src/client/." }
@@ -327,7 +331,11 @@ function Get-NextAdminOwnedFiles {
     }
 }
 
-$nextTypeScriptSource = (Get-NextAdminOwnedFiles -Extensions @(".ts", ".tsx") | ForEach-Object { Get-Content $_.FullName -Raw }) -join "`n"
+$nextTypeScriptFiles = @(Get-NextAdminOwnedFiles -Extensions @(".ts", ".tsx"))
+$nextTypeScriptSourceParts = foreach ($sourceFile in $nextTypeScriptFiles) {
+    [System.IO.File]::ReadAllText($sourceFile.FullName)
+}
+$nextTypeScriptSource = $nextTypeScriptSourceParts -join "`n"
 $legacyHostClientMethods = 'client\.(?:info|liveness|readiness|passwordLogin|validateSession|logout|authorizeOidc|exchangeAuthorizationCode|refreshOidcTokens|listUsers|createUser|listTenants|createTenant|listGroups|createGroup|listPolicies|createPolicy|listResourceScopes|revokeUserSessions|revokeClientSessions)\s*\('
 if ($nextTypeScriptSource -match $legacyHostClientMethods) { throw "Next.js administration must consume focused IdentityAccessClient responsibility classes instead of legacy root methods." }
 if ($mutationService -notmatch 'export\s+class\s+IdentityAccessAdminMutationService\b') { throw "Next.js administration mutation orchestration must remain class-based." }
@@ -548,7 +556,11 @@ if ($adminCss -notmatch '@media\s*\(forced-colors:\s*active\)' -or $adminCss -no
 $cssFiles = @(Get-NextAdminOwnedFiles -Extensions @(".css"))
 if ($cssFiles.Count -ne 1) { throw "Next.js administration must own exactly one CSS file; found $($cssFiles.Count)." }
 if ($cssFiles[0].Name -ne 'identity-access-admin.css') { throw "The single administration CSS file must be identity-access-admin.css." }
-$tsxSource = (Get-NextAdminOwnedFiles -Extensions @(".tsx") | ForEach-Object { Get-Content $_.FullName -Raw }) -join "`n"
+$tsxSourceFiles = @(Get-NextAdminOwnedFiles -Extensions @(".tsx"))
+$tsxSourceParts = foreach ($sourceFile in $tsxSourceFiles) {
+    [System.IO.File]::ReadAllText($sourceFile.FullName)
+}
+$tsxSource = $tsxSourceParts -join "`n"
 if ($tsxSource -match 'JSON\.stringify\s*\(') { throw "Premium administration pages must render structured record details instead of raw JSON dumps." }
 if ($tsxSource -match 'style\s*=\s*\{') { throw "Inline React style objects are not allowed in the administration module; use the single shared CSS file." }
 if ($tsxSource -match '<style[ >]') { throw "Component-local style blocks are not allowed in the administration module." }

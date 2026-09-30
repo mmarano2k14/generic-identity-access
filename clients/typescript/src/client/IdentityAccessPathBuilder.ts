@@ -85,6 +85,23 @@ export class IdentityAccessPathBuilder {
     return `api/v1/identity-scopes/${scope}/tenants/${tenant}/applications/${application}/users`;
   }
 
+  /** Builds the tenant-local OrganisationProfile base path hosted by IdentityAccess.Api. */
+  public static organisationProfilesPath(context: IdentityTenantAdministrationContext): string {
+    const scope = IdentityAccessValueCodec.uuid(context.identityScopeId);
+    const tenant = IdentityAccessValueCodec.uuid(context.tenantId);
+    const application = IdentityAccessValueCodec.slug(context.applicationKey);
+    IdentityAccessPathBuilder.credentialHeaders(context.credential);
+    return `api/v1/identity-scopes/${scope}/applications/${application}/tenants/${tenant}/organisation-profiles`;
+  }
+
+  /** Builds the reusable OrganisationProfile template-catalog path. */
+  public static organisationProfileTemplatesPath(context: IdentityAdministrationContext): string {
+    const scope = IdentityAccessValueCodec.uuid(context.identityScopeId);
+    const application = IdentityAccessValueCodec.slug(context.applicationKey);
+    IdentityAccessPathBuilder.credentialHeaders(context.credential);
+    return `api/v1/identity-scopes/${scope}/applications/${application}/organisation-profile-templates`;
+  }
+
   /** Builds the tenant-local Organization Directory base path hosted by IdentityAccess.Api. */
   public static organizationDirectoryPath(context: IdentityTenantAdministrationContext): string {
     const scope = IdentityAccessValueCodec.uuid(context.identityScopeId);

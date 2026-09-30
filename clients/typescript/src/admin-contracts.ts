@@ -593,3 +593,125 @@ export interface IdentityUserAuthenticatorRecord {
   readonly revokedAt?: string;
   readonly version: number;
 }
+
+export type IdentityOrganisationProfileStatus = 1 | 2;
+export type IdentityOrganisationProfileTemplateStatus = 1 | 2;
+export type IdentityOrganisationProfileTemplateVersionStatus = 1 | 2 | 3;
+export type IdentityOrganisationProfileDomainOverrideOperation = 1 | 2;
+
+export interface IdentityOrganisationProfileTemplatePinRecord {
+  readonly templateKey: string;
+  readonly templateVersion: number;
+}
+
+export interface IdentityOrganisationProfileRecord {
+  readonly organisationProfileId: string;
+  readonly identityScopeId: string;
+  readonly tenantId: string;
+  readonly organizationId: string;
+  readonly templatePin?: IdentityOrganisationProfileTemplatePinRecord;
+  readonly status: IdentityOrganisationProfileStatus;
+  readonly rowVersion: number;
+  readonly createdAt: string;
+  readonly updatedAt: string;
+}
+
+export interface IdentityOrganisationProfileDomainSelectionRecord {
+  readonly domainKey: string;
+  readonly domainVersion: number;
+}
+
+export interface IdentityOrganisationProfileDomainOverrideRecord {
+  readonly domainKey: string;
+  readonly domainVersion?: number;
+  readonly operation: IdentityOrganisationProfileDomainOverrideOperation;
+}
+
+export interface IdentityEffectiveOrganisationProfileRecord {
+  readonly organisationProfileId: string;
+  readonly identityScopeId: string;
+  readonly tenantId: string;
+  readonly organizationId: string;
+  readonly version: number;
+  readonly templatePin?: IdentityOrganisationProfileTemplatePinRecord;
+  readonly domains: readonly IdentityOrganisationProfileDomainSelectionRecord[];
+  readonly contentHash: string;
+  readonly resolvedAt: string;
+}
+
+export interface IdentityOrganisationProfileTemplateRecord {
+  readonly templateKey: string;
+  readonly displayName: string;
+  readonly status: IdentityOrganisationProfileTemplateStatus;
+  readonly rowVersion: number;
+  readonly createdAt: string;
+  readonly updatedAt: string;
+}
+
+export interface IdentityOrganisationProfileTemplateVersionRecord {
+  readonly templateKey: string;
+  readonly templateVersion: number;
+  readonly status: IdentityOrganisationProfileTemplateVersionStatus;
+  readonly domains: readonly IdentityOrganisationProfileDomainSelectionRecord[];
+  readonly contentHash?: string;
+  readonly rowVersion: number;
+  readonly createdAt: string;
+  readonly updatedAt: string;
+  readonly publishedAt?: string;
+  readonly retiredAt?: string;
+}
+
+export interface IdentityCreateOrganisationProfileRequest {
+  readonly organisationProfileId?: string;
+  readonly organizationId: string;
+  readonly templateKey?: string;
+  readonly templateVersion?: number;
+}
+
+export interface IdentitySetOrganisationProfileTemplateRequest {
+  readonly templateKey?: string;
+  readonly templateVersion?: number;
+  readonly expectedRowVersion: number;
+}
+
+export interface IdentityOrganisationProfileLifecycleRequest {
+  readonly expectedRowVersion: number;
+}
+
+export interface IdentityReplaceOrganisationProfileDomainOverridesRequest {
+  readonly expectedRowVersion: number;
+  readonly overrides: readonly IdentityOrganisationProfileDomainOverrideRecord[];
+}
+
+export interface IdentityResolveOrganisationProfileRequest {
+  readonly expectedRowVersion: number;
+}
+
+export interface IdentityCreateOrganisationProfileTemplateRequest {
+  readonly templateKey: string;
+  readonly displayName: string;
+}
+
+export interface IdentityUpdateOrganisationProfileTemplateRequest {
+  readonly displayName: string;
+  readonly expectedRowVersion: number;
+}
+
+export interface IdentityOrganisationProfileTemplateLifecycleRequest {
+  readonly expectedRowVersion: number;
+}
+
+export interface IdentityCreateOrganisationProfileTemplateVersionRequest {
+  readonly templateVersion: number;
+  readonly domains: readonly IdentityOrganisationProfileDomainSelectionRecord[];
+}
+
+export interface IdentityReplaceOrganisationProfileTemplateDomainsRequest {
+  readonly expectedRowVersion: number;
+  readonly domains: readonly IdentityOrganisationProfileDomainSelectionRecord[];
+}
+
+export interface IdentityOrganisationProfileTemplateVersionLifecycleRequest {
+  readonly expectedRowVersion: number;
+}
+

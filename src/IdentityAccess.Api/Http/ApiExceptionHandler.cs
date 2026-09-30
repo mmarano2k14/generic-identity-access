@@ -3,6 +3,8 @@ using IdentityAccess.Application.Storage;
 using IdentityAccess.Infrastructure.PostgreSql;
 using Microsoft.AspNetCore.Diagnostics;
 using OrganizationDirectory.Application.Storage;
+using OrganisationProfile.Application.Registry;
+using OrganisationProfile.Application.Storage;
 
 namespace IdentityAccess.Api.Http
 {
@@ -77,83 +79,101 @@ namespace IdentityAccess.Api.Http
                         "Tenant not found",
                         "The requested Identity Access tenant does not exist."),
 
-                OrganizationMembershipAlreadyExistsException =>
+                OrganisationProfileConcurrencyException =>
                     ApiProblems.Details(
                         StatusCodes.Status409Conflict,
-                        "Organization membership already exists",
-                        "The tenant member already belongs to this organization."),
+                        "OrganisationProfile concurrency conflict",
+                        "The OrganisationProfile was modified by another operation."),
 
-                OrganizationMembershipConcurrencyException =>
+                OrganisationProfileAlreadyExistsException =>
                     ApiProblems.Details(
                         StatusCodes.Status409Conflict,
-                        "Organization membership concurrency conflict",
-                        "The organization membership was modified by another operation."),
+                        "OrganisationProfile already exists",
+                        "The Organization already has an OrganisationProfile."),
 
-                OrganizationMembershipReferenceNotFoundException =>
+                OrganisationProfileIdentityConflictException =>
+                    ApiProblems.Details(
+                        StatusCodes.Status409Conflict,
+                        "OrganisationProfile identity conflict",
+                        "The OrganisationProfile identity conflicts with durable state."),
+
+                OrganisationProfileOrganizationNotFoundException =>
                     ApiProblems.Details(
                         StatusCodes.Status404NotFound,
                         "Organization not found",
-                        "The requested organization does not exist in this tenant."),
+                        "The referenced Organization does not exist."),
 
-                TenantMembershipReferenceNotFoundException =>
+                OrganisationProfileOrganizationInactiveException =>
+                    ApiProblems.Details(
+                        StatusCodes.Status409Conflict,
+                        "Organization disabled",
+                        "The referenced Organization is disabled."),
+
+                OrganisationProfileInactiveException =>
+                    ApiProblems.Details(
+                        StatusCodes.Status409Conflict,
+                        "OrganisationProfile disabled",
+                        "The requested profile mutation requires an active OrganisationProfile."),
+
+                OrganisationProfileTemplateAlreadyExistsException =>
+                    ApiProblems.Details(
+                        StatusCodes.Status409Conflict,
+                        "OrganisationProfile template conflict",
+                        "The template key already exists."),
+
+                OrganisationProfileTemplateNotFoundException =>
                     ApiProblems.Details(
                         StatusCodes.Status404NotFound,
-                        "Tenant membership not found",
-                        "The requested Identity Access tenant membership does not exist in this tenant."),
+                        "OrganisationProfile template not found",
+                        "The requested template does not exist."),
 
-                TenantMembershipInactiveException =>
+                OrganisationProfileTemplateInactiveException =>
                     ApiProblems.Details(
                         StatusCodes.Status409Conflict,
-                        "Tenant membership inactive",
-                        "An inactive tenant membership cannot be added to or reactivated in an organization."),
+                        "OrganisationProfile template disabled",
+                        "The requested operation requires an active template definition."),
 
-                OrganizationMembershipOrganizationInactiveException =>
+                OrganisationProfileTemplateConcurrencyException =>
                     ApiProblems.Details(
                         StatusCodes.Status409Conflict,
-                        "Organization inactive",
-                        "Organization membership cannot be added or activated while the organization is inactive."),
+                        "OrganisationProfile template concurrency conflict",
+                        "The template definition was modified by another operation."),
 
-                OrganizationResourceScopeLinkAlreadyExistsException =>
+                OrganisationProfileTemplateVersionAlreadyExistsException =>
                     ApiProblems.Details(
                         StatusCodes.Status409Conflict,
-                        "Organization ResourceScope link already exists",
-                        "The Organization already has a ResourceScope link for this application."),
+                        "OrganisationProfile template version conflict",
+                        "The requested template version already exists."),
 
-                OrganizationResourceScopeAlreadyLinkedException =>
-                    ApiProblems.Details(
-                        StatusCodes.Status409Conflict,
-                        "ResourceScope already linked",
-                        "The ResourceScope is already linked to another Organization in this application."),
-
-                OrganizationResourceScopeLinkConcurrencyException =>
-                    ApiProblems.Details(
-                        StatusCodes.Status409Conflict,
-                        "Organization ResourceScope-link concurrency conflict",
-                        "The ResourceScope link was modified by another operation."),
-
-                OrganizationResourceScopeReferenceNotFoundException =>
+                OrganisationProfileTemplateVersionNotFoundException =>
                     ApiProblems.Details(
                         StatusCodes.Status404NotFound,
-                        "ResourceScope not found",
-                        "The requested ResourceScope does not exist in the expected tenant and application boundary."),
+                        "OrganisationProfile template version not found",
+                        "The requested template version does not exist."),
 
-                OrganizationResourceScopeInactiveException =>
+                OrganisationProfileTemplateVersionConcurrencyException =>
                     ApiProblems.Details(
                         StatusCodes.Status409Conflict,
-                        "ResourceScope inactive",
-                        "An inactive ResourceScope cannot be newly linked or used to replace the current Organization link."),
+                        "OrganisationProfile template version concurrency conflict",
+                        "The template version was modified by another operation."),
 
-                OrganizationResourceScopeOrganizationNotFoundException =>
-                    ApiProblems.Details(
-                        StatusCodes.Status404NotFound,
-                        "Organization not found",
-                        "The requested Organization does not exist in this tenant."),
-
-                OrganizationResourceScopeOrganizationInactiveException =>
+                OrganisationProfileTemplateVersionImmutableException =>
                     ApiProblems.Details(
                         StatusCodes.Status409Conflict,
-                        "Organization inactive",
-                        "ResourceScope linkage cannot be changed while the Organization is inactive."),
+                        "OrganisationProfile template version immutable",
+                        "Published or retired template content cannot be changed."),
+
+                OrganisationProfileTemplateVersionNotPublishedException =>
+                    ApiProblems.Details(
+                        StatusCodes.Status409Conflict,
+                        "OrganisationProfile template version unavailable",
+                        "New profile composition requires a Published template version."),
+
+                DomainRegistryVersionUnavailableException =>
+                    ApiProblems.Details(
+                        StatusCodes.Status409Conflict,
+                        "Domain version unavailable",
+                        "One or more exact domain versions are unavailable for the requested operation."),
 
                 DatabaseRouteException =>
                     ApiProblems.Details(

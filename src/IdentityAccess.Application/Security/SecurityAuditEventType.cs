@@ -158,6 +158,32 @@ namespace IdentityAccess.Application.Security
         /// <summary>An Organization ResourceScope link was replaced.</summary>
         OrganizationResourceScopeRelinked = 77,
         /// <summary>An Organization ResourceScope link was removed.</summary>
-        OrganizationResourceScopeUnlinked = 78
+        OrganizationResourceScopeUnlinked = 78,
+        /// <summary>An OrganisationProfile was created.</summary>
+        OrganisationProfileCreated = 79,
+        /// <summary>Mutable OrganisationProfile definition state was updated.</summary>
+        OrganisationProfileUpdated = 80,
+        /// <summary>An OrganisationProfile lifecycle status was changed.</summary>
+        OrganisationProfileStatusChanged = 81,
+        /// <summary>An OrganisationProfile template pin was changed.</summary>
+        OrganisationProfileTemplatePinChanged = 82,
+        /// <summary>The complete Organization-specific OrganisationProfile domain override set was replaced.</summary>
+        OrganisationProfileDomainOverridesReplaced = 83,
+        /// <summary>An effective OrganisationProfile semantic version was resolved.</summary>
+        OrganisationProfileEffectiveVersionResolved = 84,
+        /// <summary>An OrganisationProfile template definition was created.</summary>
+        OrganisationProfileTemplateCreated = 85,
+        /// <summary>OrganisationProfile template definition metadata was updated.</summary>
+        OrganisationProfileTemplateUpdated = 86,
+        /// <summary>An OrganisationProfile template lifecycle status was changed.</summary>
+        OrganisationProfileTemplateStatusChanged = 87,
+        /// <summary>An OrganisationProfile template Draft version was created.</summary>
+        OrganisationProfileTemplateDraftCreated = 88,
+        /// <summary>An OrganisationProfile template Draft domain composition was replaced.</summary>
+        OrganisationProfileTemplateDraftCompositionReplaced = 89,
+        /// <summary>An OrganisationProfile template version was published and frozen.</summary>
+        OrganisationProfileTemplateVersionPublished = 90,
+        /// <summary>An OrganisationProfile template version was retired without changing its content.</summary>
+        OrganisationProfileTemplateVersionRetired = 91
     }
 }
