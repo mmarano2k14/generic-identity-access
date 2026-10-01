@@ -1,0 +1,49 @@
+{
+  "name": "@generic-identity/contracts",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Passive public TypeScript contracts for the shared Generic Identity boundary.",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts"
+    },
+    "./administration": {
+      "types": "./src/administration.ts"
+    },
+    "./authorization": {
+      "types": "./src/authorization.ts"
+    },
+    "./errors": {
+      "types": "./src/errors.ts"
+    },
+    "./identity": {
+      "types": "./src/identity.ts"
+    },
+    "./mfa": {
+      "types": "./src/mfa.ts"
+    },
+    "./policies": {
+      "types": "./src/policies.ts"
+    },
+    "./security-manifest": {
+      "types": "./src/security-manifest.ts"
+    },
+    "./session": {
+      "types": "./src/session.ts"
+    }
+  },
+  "files": [
+    "src",
+    "README.md"
+  ],
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "devDependencies": {
+    "typescript": "5.8.3"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

@@ -1,4 +1,4 @@
-[CmdletBinding()]
+﻿[CmdletBinding()]
 param([ValidateSet("Debug", "Release")][string]$Configuration = "Release")
 $ErrorActionPreference = "Stop"
 Set-StrictMode -Version Latest
@@ -80,6 +80,9 @@ try {
     & (Join-Path $root "scripts/verify-typescript-source-consistency.ps1")
     if (-not $?) { throw "TypeScript source consistency validation failed." }
 
+    & (Join-Path $root "scripts/shared-identity/verify.ps1")
+    if (-not $?) { throw "Shared Identity integration validation failed." }
+
     if (-not (Get-Command npm -ErrorAction SilentlyContinue)) {
         throw "Node.js/npm is required for the TypeScript connector validation."
     }
@@ -106,6 +109,93 @@ try {
     } finally {
         Pop-Location
     }
+
+    $contractsTypeScriptCompiler = if (Test-Path $localTypeScriptCompiler -PathType Leaf) {
+        $localTypeScriptCompiler
+    } else {
+        $localTypeScriptCompilerUnix
+    }
+    & $contractsTypeScriptCompiler -p (Join-Path $root "packages/contracts/tsconfig.json") --noEmit
+    if ($LASTEXITCODE -ne 0) { throw "Shared Identity public contracts typecheck failed." }
+    Write-Host "Shared Identity Pack 2 public contracts typecheck: GREEN"
+
+    # The auth package is consumed through a local file link by external Next.js
+    # applications during Packs 8-9. TypeScript and Turbopack resolve imports from
+    # the real linked source path, so the auth package must have its declared local
+    # dependencies installed beside that source. Its tsconfig path aliases alone are
+    # not sufficient for an external consumer. The legacy client was built above,
+    # so its dist export is ready before this dependency restore runs.
+    $authPackageRoot = Join-Path $root "packages/auth"
+    $authLegacyBridgePackage = Join-Path $authPackageRoot "node_modules/@identity-access/client/package.json"
+    $authContractsPackage = Join-Path $authPackageRoot "node_modules/@generic-identity/contracts/package.json"
+    if (-not ((Test-Path $authLegacyBridgePackage -PathType Leaf) -and (Test-Path $authContractsPackage -PathType Leaf))) {
+        Write-Host "Installing Shared Identity auth linked-development dependencies..."
+        Push-Location $authPackageRoot
+        try {
+            & npm install --ignore-scripts --no-audit --no-fund --package-lock=false
+            if ($LASTEXITCODE -ne 0) { throw "Shared Identity auth dependency restore failed." }
+        } finally {
+            Pop-Location
+        }
+    }
+    if (-not (Test-Path $authLegacyBridgePackage -PathType Leaf)) {
+        throw "Shared Identity auth local @identity-access/client dependency is unavailable after restore."
+    }
+    if (-not (Test-Path $authContractsPackage -PathType Leaf)) {
+        throw "Shared Identity auth local @generic-identity/contracts dependency is unavailable after restore."
+    }
+
+    & $contractsTypeScriptCompiler -p (Join-Path $root "packages/auth/tsconfig.json") --noEmit
+    if ($LASTEXITCODE -ne 0) { throw "Shared Identity auth SDK typecheck failed." }
+    Write-Host "Shared Identity Pack 3 auth SDK typecheck: GREEN"
+
+    $reactPackageRoot = Join-Path $root "packages/react"
+    $reactTypeScriptCompiler = Join-Path $reactPackageRoot "node_modules/.bin/tsc.cmd"
+    $reactTypeScriptCompilerUnix = Join-Path $reactPackageRoot "node_modules/.bin/tsc"
+    if (-not ((Test-Path $reactTypeScriptCompiler -PathType Leaf) -or (Test-Path $reactTypeScriptCompilerUnix -PathType Leaf))) {
+        Write-Host "Installing pinned Shared Identity React development dependencies..."
+        Push-Location $reactPackageRoot
+        try {
+            & npm install --ignore-scripts --no-audit --no-fund --package-lock=false
+            if ($LASTEXITCODE -ne 0) { throw "Shared Identity React dependency restore failed." }
+        } finally {
+            Pop-Location
+        }
+    }
+
+    Push-Location $reactPackageRoot
+    try {
+        & npm run typecheck
+        if ($LASTEXITCODE -ne 0) { throw "Shared Identity React foundation typecheck failed." }
+    } finally {
+        Pop-Location
+    }
+    Write-Host "Shared Identity Pack 4 React foundation typecheck: GREEN"
+    Write-Host "Shared Identity Pack 5 shared pages typecheck: GREEN"
+    Write-Host "Shared Identity Pack 6 theme/component override typecheck: GREEN"
+
+    $sharedNextRoot = Join-Path $root "packages/next"
+    $sharedNextTypeScriptCompiler = Join-Path $sharedNextRoot "node_modules/.bin/tsc.cmd"
+    $sharedNextTypeScriptCompilerUnix = Join-Path $sharedNextRoot "node_modules/.bin/tsc"
+    if (-not ((Test-Path $sharedNextTypeScriptCompiler -PathType Leaf) -or (Test-Path $sharedNextTypeScriptCompilerUnix -PathType Leaf))) {
+        Write-Host "Installing pinned Shared Identity Next.js development dependencies..."
+        Push-Location $sharedNextRoot
+        try {
+            & npm install --ignore-scripts --no-audit --no-fund --package-lock=false
+            if ($LASTEXITCODE -ne 0) { throw "Shared Identity Next.js dependency restore failed." }
+        } finally {
+            Pop-Location
+        }
+    }
+
+    Push-Location $sharedNextRoot
+    try {
+        & npm run typecheck
+        if ($LASTEXITCODE -ne 0) { throw "Shared Identity Next.js integration typecheck failed." }
+    } finally {
+        Pop-Location
+    }
+    Write-Host "Shared Identity Pack 7 Next.js integration typecheck: GREEN"
 
     $nextAdminRoot = Join-Path $root "examples/nextjs/admin"
     $nextBinary = Join-Path $nextAdminRoot "node_modules/.bin/next.cmd"

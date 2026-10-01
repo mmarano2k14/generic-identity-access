@@ -1,0 +1,56 @@
+{
+  "name": "@generic-identity/auth",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Framework-neutral Generic Identity authentication and authorization facade over the proven TypeScript client.",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "import": "./src/index.ts",
+      "default": "./src/index.ts"
+    },
+    "./authentication": {
+      "types": "./src/authentication.ts",
+      "import": "./src/authentication.ts",
+      "default": "./src/authentication.ts"
+    },
+    "./authorization": {
+      "types": "./src/authorization.ts",
+      "import": "./src/authorization.ts",
+      "default": "./src/authorization.ts"
+    },
+    "./client": {
+      "types": "./src/client.ts",
+      "import": "./src/client.ts",
+      "default": "./src/client.ts"
+    },
+    "./errors": {
+      "types": "./src/errors.ts",
+      "import": "./src/errors.ts",
+      "default": "./src/errors.ts"
+    },
+    "./administration": {
+      "types": "./src/administration.ts",
+      "import": "./src/administration.ts",
+      "default": "./src/administration.ts"
+    }
+  },
+  "files": [
+    "src",
+    "README.md"
+  ],
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@generic-identity/contracts": "file:../contracts",
+    "@identity-access/client": "file:../../clients/typescript"
+  },
+  "devDependencies": {
+    "typescript": "5.8.3"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

@@ -19,12 +19,26 @@
       "destinationKey": "identity-admin-local",
       "version": 1,
       "state": "active"
+    },
+    {
+      "applicationKey": "magellan",
+      "identityScopeId": "00000000-0000-0000-0000-000000000001",
+      "dataSet": "identity-directory",
+      "destinationKey": "identity-admin-local",
+      "version": 1,
+      "state": "active"
     }
   ],
   "authenticationContexts": [
     {
       "key": "admin-web-primary",
       "applicationKey": "admin-web",
+      "identityScopeId": "00000000-0000-0000-0000-000000000001",
+      "state": "active"
+    },
+    {
+      "key": "magellan-primary",
+      "applicationKey": "magellan",
       "identityScopeId": "00000000-0000-0000-0000-000000000001",
       "state": "active"
     }
