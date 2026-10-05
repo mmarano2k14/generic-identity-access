@@ -1,0 +1,94 @@
+{
+  "name": "@generic-identity/next",
+  "version": "1.5.0",
+  "private": true,
+  "type": "module",
+  "description": "Reusable Next.js integration boundary for Generic Identity server sessions, protected authorization and shared Identity pages.",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "import": "./src/index.ts",
+      "default": "./src/index.ts"
+    },
+    "./client": {
+      "types": "./src/client/index.ts",
+      "import": "./src/client/index.ts",
+      "default": "./src/client/index.ts"
+    },
+    "./pages": {
+      "types": "./src/pages/index.ts",
+      "import": "./src/pages/index.ts",
+      "default": "./src/pages/index.ts"
+    },
+    "./routing": {
+      "types": "./src/routing/index.ts",
+      "import": "./src/routing/index.ts",
+      "default": "./src/routing/index.ts"
+    },
+    "./server": {
+      "types": "./src/server/index.ts",
+      "import": "./src/server/index.ts",
+      "default": "./src/server/index.ts"
+    },
+    "./account": {
+      "types": "./src/account/index.ts",
+      "import": "./src/account/index.ts",
+      "default": "./src/account/index.ts"
+    },
+    "./directory": {
+      "types": "./src/directory/index.ts",
+      "import": "./src/directory/index.ts",
+      "default": "./src/directory/index.ts"
+    },
+    "./organizations": {
+      "types": "./src/organizations/index.ts",
+      "import": "./src/organizations/index.ts",
+      "default": "./src/organizations/index.ts"
+    },
+    "./access-control": {
+      "types": "./src/access-control/index.ts",
+      "import": "./src/access-control/index.ts",
+      "default": "./src/access-control/index.ts"
+    },
+    "./application-security": {
+      "types": "./src/application-security/index.ts",
+      "import": "./src/application-security/index.ts",
+      "default": "./src/application-security/index.ts"
+    },
+    "./security-operations": {
+      "types": "./src/security-operations/index.ts",
+      "import": "./src/security-operations/index.ts",
+      "default": "./src/security-operations/index.ts"
+    }
+  },
+  "files": [
+    "src",
+    "README.md"
+  ],
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@generic-identity/auth": "file:../auth",
+    "@generic-identity/contracts": "file:../contracts",
+    "@generic-identity/react": "file:../react",
+    "server-only": "0.0.1"
+  },
+  "peerDependencies": {
+    "next": ">=16 <17",
+    "react": ">=19 <20",
+    "react-dom": ">=19 <20"
+  },
+  "devDependencies": {
+    "@types/node": "22.20.3",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "next": "16.3.6",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "typescript": "5.8.3"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

@@ -1,0 +1,521 @@
+{
+  "schemaVersion": "1",
+  "scope": "generic-identity",
+  "principles": [
+    "consumer-neutral",
+    "backend-grounded",
+    "no-fake-endpoints",
+    "additive-public-sdk",
+    "server-authoritative"
+  ],
+  "categories": [
+    {
+      "key": "account-authentication",
+      "label": "Account & Authentication",
+      "features": [
+        {
+          "key": "password-login",
+          "label": "Password login",
+          "backend": "AuthenticationController.PasswordLogin",
+          "legacyClient": "IdentityAccessAuthenticationClient.passwordLogin",
+          "publicSdk": "GenericIdentityAuthenticationClient.passwordLogin / signIn",
+          "sharedUi": "SignInPage",
+          "status": "COMPLETE"
+        },
+        {
+          "key": "logout",
+          "label": "Logout",
+          "backend": "AuthenticationController.Logout",
+          "legacyClient": "IdentityAccessAuthenticationClient.logout",
+          "publicSdk": "GenericIdentityAuthenticationClient.logout / signOut",
+          "sharedUi": "consumer route action + shared SignIn flow",
+          "status": "COMPLETE"
+        },
+        {
+          "key": "session-validation",
+          "label": "Current session validation",
+          "backend": "AuthenticationController.ValidateSession",
+          "legacyClient": "IdentityAccessAuthenticationClient.validateSession",
+          "publicSdk": "GenericIdentityAuthenticationClient.validateSession",
+          "sharedUi": "AccountPage can display supplied session metadata",
+          "status": "COMPLETE"
+        },
+        {
+          "key": "self-password-change",
+          "label": "Self-service password change",
+          "backend": "SelfServiceCredentialsController.ChangePassword",
+          "legacyClient": "IdentityAccessAuthenticationClient.changePassword",
+          "publicSdk": "GenericIdentityAccountClient.changePassword",
+          "sharedUi": "PasswordPage",
+          "status": "COMPLETE"
+        },
+        {
+          "key": "recovery-password-reset",
+          "label": "Recovery-code password reset",
+          "backend": "RecoveryPasswordResetController.ResetPassword",
+          "legacyClient": "IdentityAccessAuthenticationClient.recoverPasswordWithCode",
+          "publicSdk": "GenericIdentityAccountClient.recoverPasswordWithCode",
+          "sharedUi": "RecoveryPage",
+          "status": "COMPLETE"
+        },
+        {
+          "key": "totp-step-up",
+          "label": "TOTP session step-up",
+          "backend": "MfaSessionController.VerifyTotp",
+          "legacyClient": "IdentityAccessAuthenticationClient.verifyTotp",
+          "publicSdk": "GenericIdentityAccountClient categorized step-up surface",
+          "sharedUi": "AuthenticationStepUpPage shell",
+          "status": "SDK_PARTIAL"
+        },
+        {
+          "key": "recovery-step-up",
+          "label": "Recovery-code session step-up",
+          "backend": "MfaSessionController.VerifyRecovery",
+          "legacyClient": "IdentityAccessAuthenticationClient.verifyRecoveryCode",
+          "publicSdk": "GenericIdentityAccountClient categorized step-up surface",
+          "sharedUi": "AuthenticationStepUpPage shell",
+          "status": "SDK_PARTIAL"
+        },
+        {
+          "key": "webauthn-step-up",
+          "label": "WebAuthn session step-up",
+          "backend": "MfaSessionController Begin/Complete WebAuthn",
+          "legacyClient": "IdentityAccessAuthenticationClient begin/complete WebAuthn step-up",
+          "publicSdk": "GenericIdentityAccountClient categorized step-up surface",
+          "sharedUi": "AuthenticationStepUpPage shell",
+          "status": "SDK_PARTIAL"
+        },
+        {
+          "key": "admin-password-credential",
+          "label": "Administrative password credential lifecycle",
+          "backend": "CredentialsController Get/Create/ChangePassword",
+          "legacyClient": "IdentityAccessCredentialsClient get/create/changePassword",
+          "publicSdk": "GenericIdentityAccountClient.passwordCredentials",
+          "sharedUi": "PasswordCredentialForm",
+          "status": "COMPLETE"
+        },
+        {
+          "key": "account-profile-self-service",
+          "label": "Self-service profile update",
+          "backend": "No dedicated self-service profile controller discovered; UsersController is administrative",
+          "legacyClient": "No dedicated self-service client",
+          "publicSdk": "No dedicated self-service SDK",
+          "sharedUi": "ProfilePage is read-only",
+          "status": "BACKEND_CONTRACT_MISSING"
+        }
+      ],
+      "targetMilestone": "Account & Authentication"
+    },
+    {
+      "key": "directory",
+      "label": "Directory",
+      "features": [
+        {
+          "key": "users",
+          "label": "Users CRUD",
+          "backend": "UsersController List/Get/Create/Update",
+          "legacyClient": "IdentityAccessUsersClient full CRUD",
+          "publicSdk": "GenericIdentityDirectoryClient.users full CRUD",
+          "sharedUi": "UsersPage + UserDetailsPage + UserForm",
+          "status": "COMPLETE"
+        },
+        {
+          "key": "tenants",
+          "label": "Tenants CRUD",
+          "backend": "TenantsController List/Get/Create/Update",
+          "legacyClient": "IdentityAccessTenantsClient full CRUD",
+          "publicSdk": "GenericIdentityDirectoryClient.tenants full CRUD",
+          "sharedUi": "TenantsPage + TenantDetailsPage + TenantForm",
+          "status": "COMPLETE"
+        },
+        {
+          "key": "tenant-users",
+          "label": "Tenant user projection",
+          "backend": "TenantUsersController.List",
+          "legacyClient": "IdentityAccessTenantUsersClient.list",
+          "publicSdk": "GenericIdentityTenantUsersClient.list",
+          "sharedUi": "Used by consumer Users route",
+          "status": "COMPLETE_READ"
+        },
+        {
+          "key": "tenant-memberships",
+          "label": "Tenant memberships CRUD",
+          "backend": "TenantMembershipsController List/Get/FindByUser/Create/Update",
+          "legacyClient": "IdentityAccessMembershipsClient full CRUD",
+          "publicSdk": "GenericIdentityDirectoryClient.memberships full CRUD",
+          "sharedUi": "MembershipsPage + TenantDetailsPage/UserDetailsPage + MembershipForm",
+          "status": "COMPLETE"
+        },
+        {
+          "key": "membership-candidates",
+          "label": "Membership candidate lookup / add by login",
+          "backend": "TenantMembershipCandidatesController FindByLogin/CreateMembershipByLogin",
+          "legacyClient": "IdentityAccessMembershipCandidatesClient",
+          "publicSdk": "GenericIdentityDirectoryClient.membershipCandidates",
+          "sharedUi": "MembershipCandidateForm + MembershipCandidatePanel",
+          "status": "COMPLETE"
+        },
+        {
+          "key": "tenant-group-assignments",
+          "label": "Tenant group assignments read model",
+          "backend": "TenantGroupAssignmentsController.List",
+          "legacyClient": "IdentityAccessTenantGroupAssignmentsClient.list",
+          "publicSdk": "GenericIdentityDirectoryClient.tenantGroupAssignments",
+          "sharedUi": "Available for directory composition",
+          "status": "COMPLETE_READ"
+        },
+        {
+          "key": "invitations",
+          "label": "Invitations",
+          "backend": "No controller/client implementation discovered",
+          "legacyClient": "No legacy client implementation discovered",
+          "publicSdk": "Missing",
+          "sharedUi": "Missing",
+          "status": "BACKEND_MISSING"
+        },
+        {
+          "key": "account-lifecycle",
+          "label": "User status / lifecycle administration",
+          "backend": "UsersController.Update",
+          "legacyClient": "IdentityAccessUsersClient.update",
+          "publicSdk": "GenericIdentityDirectoryClient.users.update",
+          "sharedUi": "UserForm",
+          "status": "COMPLETE"
+        }
+      ],
+      "targetMilestone": "Directory"
+    },
+    {
+      "key": "organizations",
+      "label": "Organizations",
+      "features": [
+        {
+          "key": "organizations",
+          "label": "Organizations CRUD + tree + enable/disable",
+          "backend": "OrganizationsController",
+          "legacyClient": "IdentityAccessOrganizationsClient",
+          "publicSdk": "GenericIdentityOrganizationsClient.organizations full CRUD + tree + lifecycle",
+          "sharedUi": "OrganizationsPage + OrganizationDetailsPage + OrganizationTreePage + OrganizationForm",
+          "status": "COMPLETE"
+        },
+        {
+          "key": "organization-memberships",
+          "label": "Organization memberships lifecycle",
+          "backend": "OrganizationMembershipsController",
+          "legacyClient": "IdentityAccessOrganizationMembershipsClient",
+          "publicSdk": "GenericIdentityOrganizationsClient.memberships full lifecycle",
+          "sharedUi": "OrganizationMembershipsPage + OrganizationMembershipForm + OrganizationDetailsPage",
+          "status": "COMPLETE"
+        },
+        {
+          "key": "membership-organizations",
+          "label": "Organizations for tenant membership",
+          "backend": "TenantMembershipOrganizationsController.List",
+          "legacyClient": "IdentityAccessOrganizationMembershipsClient.listForTenantMembership",
+          "publicSdk": "GenericIdentityOrganizationsClient.memberships.listForTenantMembership",
+          "sharedUi": "OrganizationMembershipsPage supports tenant-membership view",
+          "status": "COMPLETE"
+        },
+        {
+          "key": "organization-resource-scope-link",
+          "label": "Organization \u2194 resource-scope link",
+          "backend": "OrganizationResourceScopeLinksController",
+          "legacyClient": "IdentityAccessOrganizationResourceScopeLinksClient",
+          "publicSdk": "GenericIdentityOrganizationsClient.resourceScopeLinks full lifecycle",
+          "sharedUi": "OrganizationDetailsPage + OrganizationResourceScopeLinkForm",
+          "status": "COMPLETE"
+        }
+      ],
+      "targetMilestone": "Organizations"
+    },
+    {
+      "key": "access-control",
+      "label": "Access Control",
+      "features": [
+        {
+          "key": "groups",
+          "label": "Tenant groups + templates CRUD",
+          "backend": "GroupsController",
+          "legacyClient": "IdentityAccessGroupsClient full surface",
+          "publicSdk": "GenericIdentityAccessControlClient.groups full surface",
+          "sharedUi": "GroupsPage + GroupDetailsPage + GroupAccessPage + GroupForm",
+          "status": "COMPLETE"
+        },
+        {
+          "key": "group-members",
+          "label": "Group membership add/remove/list",
+          "backend": "GroupMembersController",
+          "legacyClient": "IdentityAccessGroupsClient listMembers/addMember/removeMember",
+          "publicSdk": "GenericIdentityAccessControlClient.groups membership lifecycle",
+          "sharedUi": "GroupAccessPage + GroupMemberForm",
+          "status": "COMPLETE"
+        },
+        {
+          "key": "tenant-policies",
+          "label": "Tenant policies + statements + bindings",
+          "backend": "Retired legacy PoliciesController + PolicyBindingsController ([NonController])",
+          "legacyClient": "IdentityAccessPoliciesClient retained as non-composed compatibility source",
+          "publicSdk": "Not exposed; use managedPolicies + managedPolicyBindings",
+          "sharedUi": "No active shared UI; compatibility tombstones only",
+          "status": "RETIRED_COMPATIBILITY"
+        },
+        {
+          "key": "managed-policies",
+          "label": "Versioned managed policies + publication",
+          "backend": "ManagedPoliciesController",
+          "legacyClient": "IdentityAccessManagedPoliciesClient full lifecycle",
+          "publicSdk": "GenericIdentityAccessControlClient.managedPolicies full lifecycle",
+          "sharedUi": "PoliciesPage + PolicyDetailsPage + managed-policy forms",
+          "status": "COMPLETE"
+        },
+        {
+          "key": "managed-policy-bindings",
+          "label": "Managed policy bindings",
+          "backend": "ManagedPolicyBindingsController",
+          "legacyClient": "IdentityAccessManagedPolicyBindingsClient",
+          "publicSdk": "GenericIdentityAccessControlClient.managedPolicyBindings full lifecycle",
+          "sharedUi": "ManagedPolicyBindingsPage + ManagedPolicyBindingForm",
+          "status": "COMPLETE"
+        },
+        {
+          "key": "resource-scopes",
+          "label": "Resource scopes CRUD",
+          "backend": "ResourceScopesController",
+          "legacyClient": "IdentityAccessResourceScopesClient",
+          "publicSdk": "GenericIdentityAccessControlClient.resourceScopes full CRUD",
+          "sharedUi": "ResourceScopesPage + ResourceScopeForm",
+          "status": "COMPLETE"
+        },
+        {
+          "key": "scope-authority",
+          "label": "Identity-scope delegated authority groups/policies/bindings",
+          "backend": "IdentityScopeAdministration* controllers",
+          "legacyClient": "IdentityAccessScopeAuthorityClient full lifecycle",
+          "publicSdk": "GenericIdentityAccessControlClient.delegatedAuthority full lifecycle",
+          "sharedUi": "DelegatedAuthorityPage + authority forms",
+          "status": "COMPLETE"
+        },
+        {
+          "key": "authorization-evaluate",
+          "label": "Authorization evaluation",
+          "backend": "AuthorizationEvaluationController",
+          "legacyClient": "IdentityAccessAuthorizationClient.evaluate",
+          "publicSdk": "GenericIdentityAuthorizationClient / authorization context",
+          "sharedUi": "RequireCapability + server helpers",
+          "status": "COMPLETE"
+        },
+        {
+          "key": "effective-permissions",
+          "label": "Effective permission listing",
+          "backend": "No dedicated public endpoint discovered",
+          "legacyClient": "No dedicated legacy method",
+          "publicSdk": "Missing",
+          "sharedUi": "Missing",
+          "status": "BACKEND_MISSING"
+        },
+        {
+          "key": "permission-explanation",
+          "label": "Permission explanation / grant provenance",
+          "backend": "No dedicated public endpoint discovered",
+          "legacyClient": "No dedicated legacy method",
+          "publicSdk": "Missing",
+          "sharedUi": "Missing",
+          "status": "BACKEND_MISSING"
+        }
+      ],
+      "targetMilestone": "Access Control"
+    },
+    {
+      "key": "application-security",
+      "label": "Application Security",
+      "features": [
+        {
+          "key": "security-models",
+          "label": "Application security model list/get/register",
+          "backend": "ApplicationSecurityModelsController",
+          "legacyClient": "IdentityAccessSecurityModelsClient list/get/registerManifest",
+          "publicSdk": "GenericIdentityApplicationSecurityClient.models list/get",
+          "sharedUi": "ApplicationSecurityModelsPage + ApplicationSecurityModelDetailsPage",
+          "status": "COMPLETE"
+        },
+        {
+          "key": "scope-types",
+          "label": "Security-model scope types list/add",
+          "backend": "ScopeTypesController",
+          "legacyClient": "IdentityAccessSecurityModelsClient listScopeTypes/addScopeType",
+          "publicSdk": "GenericIdentityApplicationSecurityClient.scopeTypes list/add",
+          "sharedUi": "ApplicationScopeTypesPage + ApplicationScopeTypeForm",
+          "status": "COMPLETE"
+        },
+        {
+          "key": "administration-context",
+          "label": "Effective administration context",
+          "backend": "AdministrationContextController",
+          "legacyClient": "IdentityAccessAdministrationContextClient.get",
+          "publicSdk": "GenericIdentityApplicationSecurityClient.context.get; compatibility administration.context remains available",
+          "sharedUi": "ApplicationSecurityContextPage",
+          "status": "COMPLETE"
+        },
+        {
+          "key": "capability-catalog",
+          "label": "Capabilities declared through security model manifest",
+          "backend": "ApplicationSecurityModelsController registration payload",
+          "legacyClient": "IdentityAccessSecurityModelsClient.registerManifest",
+          "publicSdk": "GenericIdentityApplicationSecurityClient.capabilities.listForModel + manifests.register",
+          "sharedUi": "ApplicationCapabilitiesPage + ApplicationSecurityManifestForm",
+          "status": "COMPLETE"
+        },
+        {
+          "key": "trn-safe-representation",
+          "label": "TRN-safe permission representation",
+          "backend": "Policy/security-model contracts + server RBAC mapping",
+          "legacyClient": "Legacy contracts/helpers",
+          "publicSdk": "IdentityApplicationSecurityPermissionReference + createApplicationSecurityPermissionReference; no public TRN string construction",
+          "sharedUi": "No direct TRN editing UI by design",
+          "status": "COMPLETE"
+        }
+      ],
+      "targetMilestone": "Application Security"
+    },
+    {
+      "key": "security-operations",
+      "label": "Security Operations",
+      "features": [
+        {
+          "key": "mfa-providers",
+          "label": "MFA provider discovery",
+          "backend": "MfaAdministrationController.ListProviders",
+          "legacyClient": "IdentityAccessMfaClient.listProviders",
+          "publicSdk": "GenericIdentitySecurityOperationsClient.mfa.listProviders",
+          "sharedUi": "MfaPage provider inventory",
+          "status": "COMPLETE"
+        },
+        {
+          "key": "mfa-policy",
+          "label": "MFA policy get/create/update",
+          "backend": "MfaAdministrationController",
+          "legacyClient": "IdentityAccessMfaClient full policy lifecycle",
+          "publicSdk": "GenericIdentitySecurityOperationsClient.mfa full policy lifecycle",
+          "sharedUi": "MfaPage + MfaPolicyForm",
+          "status": "COMPLETE"
+        },
+        {
+          "key": "authenticator-admin",
+          "label": "Authenticator list/state/revoke/recovery-revoke",
+          "backend": "MfaAdministrationController",
+          "legacyClient": "IdentityAccessMfaClient full surface",
+          "publicSdk": "GenericIdentitySecurityOperationsClient.mfa full authenticator administration surface",
+          "sharedUi": "MfaPage + AuthenticatorRevocationForm",
+          "status": "COMPLETE"
+        },
+        {
+          "key": "totp-enrollment",
+          "label": "TOTP enrollment/confirmation",
+          "backend": "Provider service exists internally, but no public controller endpoint discovered",
+          "legacyClient": "No legacy public client enrollment method",
+          "publicSdk": "Missing",
+          "sharedUi": "Missing",
+          "status": "BACKEND_API_MISSING"
+        },
+        {
+          "key": "webauthn-registration",
+          "label": "WebAuthn registration/enrollment",
+          "backend": "Registration service exists internally, but no public controller endpoint discovered",
+          "legacyClient": "No legacy public client registration method",
+          "publicSdk": "Missing",
+          "sharedUi": "Missing",
+          "status": "BACKEND_API_MISSING"
+        },
+        {
+          "key": "recovery-code-enrollment",
+          "label": "Recovery code generation/enrollment",
+          "backend": "Provider service exists internally, but no public controller endpoint discovered",
+          "legacyClient": "No legacy public enrollment method",
+          "publicSdk": "Missing",
+          "sharedUi": "Missing",
+          "status": "BACKEND_API_MISSING"
+        },
+        {
+          "key": "session-revocation",
+          "label": "Administrative session revocation by user/client",
+          "backend": "SessionsController",
+          "legacyClient": "IdentityAccessSessionsClient revokeUser/revokeClient",
+          "publicSdk": "GenericIdentitySecurityOperationsClient.sessions revokeUser/revokeClient",
+          "sharedUi": "SessionRevocationForm + SessionsPage composition",
+          "status": "COMPLETE"
+        },
+        {
+          "key": "session-listing",
+          "label": "Administrative active session listing",
+          "backend": "No list endpoint discovered; current session validation exists separately",
+          "legacyClient": "No list client",
+          "publicSdk": "Missing",
+          "sharedUi": "SessionsPage accepts supplied list but source is missing",
+          "status": "BACKEND_MISSING"
+        },
+        {
+          "key": "security-audit",
+          "label": "Security audit listing",
+          "backend": "SecurityAuditEventsController.List",
+          "legacyClient": "IdentityAccessSecurityAuditClient.list",
+          "publicSdk": "GenericIdentitySecurityOperationsClient.audit.list",
+          "sharedUi": "SecurityAuditPage",
+          "status": "COMPLETE"
+        }
+      ],
+      "targetMilestone": "Security Operations"
+    },
+    {
+      "key": "protocol-diagnostics",
+      "label": "Protocol & Diagnostics",
+      "features": [
+        {
+          "key": "oidc-authorize",
+          "label": "OIDC authorization flow",
+          "backend": "OidcAuthorizationController",
+          "legacyClient": "IdentityAccessOidcClient.authorize",
+          "publicSdk": "Not exposed by GenericIdentityClient",
+          "sharedUi": "No administration UI required for flow",
+          "status": "SDK_MISSING"
+        },
+        {
+          "key": "oidc-token",
+          "label": "OIDC code exchange / refresh",
+          "backend": "OidcTokenController",
+          "legacyClient": "IdentityAccessOidcClient exchangeAuthorizationCode/refreshTokens",
+          "publicSdk": "Not exposed by GenericIdentityClient",
+          "sharedUi": "No shared UI required for token endpoint",
+          "status": "SDK_MISSING"
+        },
+        {
+          "key": "oidc-discovery",
+          "label": "OIDC discovery",
+          "backend": "OidcDiscoveryController",
+          "legacyClient": "Transport/consumer HTTP surface",
+          "publicSdk": "Not exposed by GenericIdentityClient",
+          "sharedUi": "N/A",
+          "status": "SDK_OPTIONAL"
+        },
+        {
+          "key": "health",
+          "label": "Liveness/readiness",
+          "backend": "HealthController",
+          "legacyClient": "IdentityAccessSystemClient liveness/readiness",
+          "publicSdk": "Not exposed by GenericIdentityClient",
+          "sharedUi": "N/A",
+          "status": "SDK_OPTIONAL"
+        },
+        {
+          "key": "service-info",
+          "label": "Service info",
+          "backend": "SystemController.Info",
+          "legacyClient": "IdentityAccessSystemClient.info",
+          "publicSdk": "Not exposed by GenericIdentityClient",
+          "sharedUi": "N/A",
+          "status": "SDK_OPTIONAL"
+        }
+      ],
+      "targetMilestone": "Protocol & Diagnostics"
+    }
+  ]
+}

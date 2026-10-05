@@ -77,14 +77,14 @@ if (-not $?) {
     throw "OrganisationProfile administration UI validation failed."
 }
 
-Write-Host "Running OrganisationProfile Pack 8 source hardening validation..."
+Write-Host "Running OrganisationProfile Qualification and Hardening source hardening validation..."
 & (Join-Path $PSScriptRoot "verify-qualification-source.ps1")
 if (-not $?) {
-    throw "OrganisationProfile Pack 8 source hardening validation failed."
+    throw "OrganisationProfile Qualification and Hardening source hardening validation failed."
 }
 
 if ($SkipPostgreSql) {
-    Write-Warning "PostgreSQL checks skipped. OrganisationProfile Pack 8 verification is PARTIAL."
+    Write-Warning "PostgreSQL checks skipped. OrganisationProfile Qualification and Hardening verification is PARTIAL."
     return
 }
 
@@ -145,4 +145,4 @@ if (-not $?) {
     throw "OrganisationProfile adversarial qualification probe failed."
 }
 
-Write-Host "OrganisationProfile Pack 8 automated verification: GREEN"
+Write-Host "OrganisationProfile Qualification and Hardening automated verification: GREEN"

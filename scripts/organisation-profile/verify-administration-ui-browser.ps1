@@ -30,7 +30,7 @@ $checks = @(
 
 $results = [ordered]@{}
 Write-Host ""
-Write-Host "OrganisationProfile Pack 7 browser qualification"
+Write-Host "OrganisationProfile Administration UI browser qualification"
 Write-Host "Use the real browser at $AdminBaseUrl and answer each gate after exercising it."
 Write-Host ""
 
@@ -63,7 +63,7 @@ $evidence | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $EvidencePath -En
 Write-Host "Browser qualification evidence written: $EvidencePath"
 
 if ($failed.Count -gt 0) {
-    throw "OrganisationProfile Pack 7 browser qualification failed: $($failed -join ', ')"
+    throw "OrganisationProfile Administration UI browser qualification failed: $($failed -join ', ')"
 }
 
-Write-Host "OrganisationProfile Pack 7 browser qualification passed."
+Write-Host "OrganisationProfile Administration UI browser qualification passed."

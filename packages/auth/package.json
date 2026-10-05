@@ -1,0 +1,86 @@
+{
+  "name": "@generic-identity/auth",
+  "version": "1.5.0",
+  "private": true,
+  "type": "module",
+  "description": "Framework-neutral Generic Identity authentication and authorization facade over the proven TypeScript client.",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "import": "./src/index.ts",
+      "default": "./src/index.ts"
+    },
+    "./authentication": {
+      "types": "./src/authentication.ts",
+      "import": "./src/authentication.ts",
+      "default": "./src/authentication.ts"
+    },
+    "./authorization": {
+      "types": "./src/authorization.ts",
+      "import": "./src/authorization.ts",
+      "default": "./src/authorization.ts"
+    },
+    "./client": {
+      "types": "./src/client.ts",
+      "import": "./src/client.ts",
+      "default": "./src/client.ts"
+    },
+    "./errors": {
+      "types": "./src/errors.ts",
+      "import": "./src/errors.ts",
+      "default": "./src/errors.ts"
+    },
+    "./administration": {
+      "types": "./src/administration.ts",
+      "import": "./src/administration.ts",
+      "default": "./src/administration.ts"
+    },
+    "./account": {
+      "types": "./src/account.ts",
+      "import": "./src/account.ts",
+      "default": "./src/account.ts"
+    },
+    "./directory": {
+      "types": "./src/directory.ts",
+      "import": "./src/directory.ts",
+      "default": "./src/directory.ts"
+    },
+    "./organizations": {
+      "types": "./src/organizations.ts",
+      "import": "./src/organizations.ts",
+      "default": "./src/organizations.ts"
+    },
+    "./access-control": {
+      "types": "./src/access-control.ts",
+      "import": "./src/access-control.ts",
+      "default": "./src/access-control.ts"
+    },
+    "./application-security": {
+      "types": "./src/application-security.ts",
+      "import": "./src/application-security.ts",
+      "default": "./src/application-security.ts"
+    },
+    "./security-operations": {
+      "types": "./src/security-operations.ts",
+      "import": "./src/security-operations.ts",
+      "default": "./src/security-operations.ts"
+    }
+  },
+  "files": [
+    "src",
+    "README.md"
+  ],
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@generic-identity/contracts": "file:../contracts",
+    "@identity-access/client": "file:../../clients/typescript"
+  },
+  "devDependencies": {
+    "typescript": "5.8.3"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

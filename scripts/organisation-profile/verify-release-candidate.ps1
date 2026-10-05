@@ -35,4 +35,4 @@ if (-not $?) {
     throw "OrganisationProfile backup/restore qualification failed."
 }
 
-Write-Host "OrganisationProfile Pack 8 release-candidate qualification: GREEN"
+Write-Host "OrganisationProfile Qualification and Hardening release-candidate qualification: GREEN"

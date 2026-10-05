@@ -4,7 +4,7 @@
 
 OrganisationProfile does not own the Domain Registry.
 
-The only Pack 4 integration contract is:
+The only Domain Composition integration contract is:
 
 ```text
 IDomainRegistryReader
@@ -24,7 +24,7 @@ No Domain Registry persistence, package loading, domain business rules, or domai
 
 ## Registry states
 
-Pack 4 distinguishes:
+Domain Composition distinguishes:
 
 ```text
 Published

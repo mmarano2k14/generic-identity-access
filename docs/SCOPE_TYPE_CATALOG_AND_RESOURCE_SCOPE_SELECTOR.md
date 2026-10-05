@@ -33,9 +33,9 @@ Resource Scope mutation
 
 The browser calls only the local protected Next.js route. Identity Access credentials and authorization decisions remain server-side.
 
-## MAGELLAN Boundary
+## Consumer Application Boundary
 
-MAGELLAN may register values such as `ecommerce` or `restaurant` for validation, but the generic Identity & Access core does not know their business meaning or Domain composition.
+A consumer application may register values such as `ecommerce` or `restaurant` for validation, but the generic Identity & Access core does not know their business meaning or Domain composition.
 
 ```text
 Identity & Access
@@ -43,12 +43,12 @@ Tenant: Urban Group
 ├── ecommerce  -> Urban Flowers
 └── restaurant -> Urban Cafe
 
-MAGELLAN
+consumer application
 ├── ecommerce  -> Domain composition
 └── restaurant -> Domain composition
 ```
 
-This example does not, by itself, finalize MAGELLAN's complete Resource Scope architecture.
+This example does not, by itself, finalize consumer application's complete Resource Scope architecture.
 
 ## No RBAC Change
 

@@ -106,7 +106,7 @@
 - Organization Directory never creates authorization grants from Organization membership or Organization hierarchy.
 - Link creation and replacement require an existing active Identity Access ResourceScope in the same Identity Scope, Tenant and application.
 - `scope_type` and security-model version are read from Identity Access rather than trusted from caller input.
-- ResourceScope linkage reuses existing `organization` administration authorization; delegated fine-grained security policy remains a later security pack.
+- ResourceScope linkage reuses existing `organization` administration authorization; delegated fine-grained security policy remains a later security milestone.
 
 ## 0.4.0 — Explicit organization membership
 
@@ -134,7 +134,7 @@
 
 - Replaced the invalid nullable-`Guid` pattern in organization creation with explicit safe pattern matching.
 - Restored the shared `ApiProblems.UnprocessableEntity(...)` helper required by resource-scope-aware group-template cloning.
-- Preserved the Pack 3 `OrganizationAdministrationUnavailable()` problem response in the same HTTP problem catalog.
+- Preserved the Organization API and Hierarchy `OrganizationAdministrationUnavailable()` problem response in the same HTTP problem catalog.
 - Prevented downstream `IdentityAccess.Api.dll` metadata-file errors caused by API compilation failures.
 
 ## 0.3.2 — Parent identifier nullable conversion
@@ -168,10 +168,10 @@
 
 ### Changed
 
-- Pack 3 does not introduce a second web host; Organization Directory remains integrated into `IdentityAccess.Api`.
+- Organization API and Hierarchy does not introduce a second web host; Organization Directory remains integrated into `IdentityAccess.Api`.
 - Organization keys remain immutable through the public update contract.
 - Organization deletion is intentionally not exposed; lifecycle uses enable/disable operations.
-- Delegated tenant assignment for the new organization capability remains a later security-administration concern; scope-wide wildcard administration can exercise the API during this pack.
+- Delegated tenant assignment for the new organization capability remains a later security-administration concern; scope-wide wildcard administration can exercise the API during this milestone.
 
 ## 0.2.1 — PostgreSQL hierarchy-delete error translation
 
@@ -191,7 +191,7 @@
 - Added independent Organization Directory migration checksums.
 - Added live Npgsql store qualification using an existing active Identity Access tenant.
 - Moved module scripts under `scripts/organization-directory` to avoid collisions.
-- Removed the separate Organization Directory API host from the integrated plan; Pack 3 will use `IdentityAccess.Api`.
+- Removed the separate Organization Directory API host from the integrated plan; Organization API and Hierarchy will use `IdentityAccess.Api`.
 
 ## 0.1.0 — Foundation and contracts
 

@@ -104,7 +104,7 @@ Tenant: URBAN GROUP
         └── organization_type = business
 ```
 
-A consumer such as MAGELLAN may later attach application semantics:
+A consumer application may later attach application semantics:
 
 ```text
 Urban Flower
@@ -411,7 +411,7 @@ Organization: Urban Flower
 admin-web
     -> ResourceScope A
 
-magellan
+consumer-app
     -> ResourceScope B
 ```
 
@@ -484,7 +484,7 @@ Organization:
 Urban Flower
 
 OrganizationResourceScopeLink:
-application_key = magellan
+application_key = consumer-app
 scope_type      = organization
 resource_scope  = Urban Flower
 ```
@@ -662,7 +662,7 @@ Example:
 ```text
 Application     Scope Type      Resource Scope
 ------------------------------------------------
-magellan        organization    Urban Flower
+consumer-app        organization    Urban Flower
 ```
 
 Policies and groups continue to be managed by Identity Access.
@@ -777,12 +777,12 @@ block-scoped namespace
 ## Implementation status
 
 ```text
-Pack 1 — Foundation and contracts       GREEN
-Pack 2 — PostgreSQL persistence         DELIVERED FOR QUALIFICATION
-Pack 3 — Organization API and hierarchy NOT STARTED
+Foundation — Foundation and contracts       GREEN
+PostgreSQL Persistence — PostgreSQL persistence         DELIVERED FOR QUALIFICATION
+Organization API and Hierarchy — Organization API and hierarchy NOT STARTED
 ```
 
-Pack 2 introduces durable `organizations` persistence only. `OrganizationMembership` and resource-scope-link persistence remain scheduled for their dedicated increments.
+PostgreSQL Persistence introduces durable `organizations` persistence only. `OrganizationMembership` and resource-scope-link persistence remain scheduled for their dedicated increments.
 
 ---
 
@@ -820,9 +820,9 @@ Do not introduce distributed transactions between Organization Directory and Ide
 
 # 15. Implementation Plan
 
-The work is split into bounded implementation packs. Estimates represent focused engineering effort and are not delivery guarantees.
+The work is split into bounded implementation milestones. Estimates represent focused engineering effort and are not delivery guarantees.
 
-| Pack | Scope | Estimate | Exit criterion |
+| Milestone | Scope | Estimate | Exit criterion |
 |---|---|---:|---|
 | **1 — Foundation and contracts** | Repository, solution, core IDs, Organization domain, status, contracts, source-layout gates | **6–8 h** | Build/tests GREEN; core model frozen |
 | **2 — PostgreSQL persistence** | Schema metadata, `organizations`, migrations, store, optimistic concurrency, hierarchy constraints | **8–12 h** | CRUD persistence + migration integrity GREEN |
@@ -842,10 +842,10 @@ Estimated total focused engineering effort:
 Expected size:
 
 ```text
-8 implementation packs
+8 implementation stages
 ```
 
-The project should remain useful after Pack 4 even without Identity Access integration:
+The project should remain useful after Organization Membership even without Identity Access integration:
 
 ```text
 Organization hierarchy
@@ -853,11 +853,11 @@ Organization hierarchy
 OrganizationMembership
 ```
 
-Pack 5 adds governed linkage to Generic Identity & Access.
+Identity Access Resource Scope Integration adds governed linkage to Generic Identity & Access.
 
 ---
 
-# 16. Pack 1 — Start Here
+# 16. Foundation — Start Here
 
 ## Objective
 
@@ -896,7 +896,7 @@ OrganizationResourceScopeLink
 7. OrganizationMembership cannot cross Tenant identity.
 8. Organization membership grants no authorization semantics.
 9. Resource-scope linkage is application-aware.
-10. Domain model contains no MAGELLAN, ecommerce, restaurant, Finance or provider-specific types.
+10. Domain model contains no consumer application, ecommerce, restaurant, Finance or provider-specific types.
 
 ### Source-layout gate
 
@@ -908,7 +908,7 @@ file name == declared type name
 block-scoped namespace
 ```
 
-### Pack 1 exit gate
+### Foundation exit gate
 
 ```text
 dotnet restore

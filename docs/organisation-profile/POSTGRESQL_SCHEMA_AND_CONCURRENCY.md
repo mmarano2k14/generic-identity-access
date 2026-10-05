@@ -21,7 +21,7 @@ organisation_profile.schema_migrations
 
 Migration files are immutable after application and are protected by SHA-256 checksum verification.
 
-## Pack 2 table
+## PostgreSQL Persistence table
 
 ```text
 organisation_profile.organisation_profiles
@@ -78,7 +78,7 @@ The application layer still exposes a narrow `IOrganizationReferenceReader`; the
 
 ## Template pin
 
-Pack 2 persists only the already-frozen pin:
+PostgreSQL Persistence persists only the already-frozen pin:
 
 ```text
 template_key?
@@ -94,7 +94,7 @@ template_key      stable lowercase slug
 template_version  > 0
 ```
 
-No template table is created yet. Template catalog persistence belongs to Pack 3.
+No template table is created yet. Template catalog persistence belongs to Template Catalog.
 
 ## Optimistic concurrency
 
@@ -127,7 +127,7 @@ OrganisationProfileConcurrencyException
 
 ## Lifecycle
 
-Pack 2 supports durable:
+PostgreSQL Persistence supports durable:
 
 ```text
 Active

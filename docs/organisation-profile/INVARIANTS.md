@@ -1,6 +1,6 @@
 # OrganisationProfile Invariants
 
-Pack 1 freezes the following invariants.
+Foundation freezes the following invariants.
 
 1. `OrganisationProfile` is module-owned.
 2. `Organization` remains owned by Generic Organization Directory.

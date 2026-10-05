@@ -14,12 +14,12 @@ function Require-Text {
 
     $path = Join-Path $root $RelativePath
     if (-not (Test-Path -LiteralPath $path -PathType Leaf)) {
-        throw "Required Pack 8 source '$RelativePath' is missing."
+        throw "Required Qualification and Hardening source '$RelativePath' is missing."
     }
 
     $source = [System.IO.File]::ReadAllText($path)
     if (-not $source.Contains($Text)) {
-        throw "'$RelativePath' is missing required Pack 8 marker '$Text'."
+        throw "'$RelativePath' is missing required Qualification and Hardening marker '$Text'."
     }
 }
 
@@ -37,7 +37,7 @@ Require-Text "src\OrganisationProfile.Infrastructure.PostgreSql\Migrations\0003_
 Require-Text "src\OrganisationProfile.Application\Composition\OrganisationProfileEffectiveContentHasher.cs" "organisation-profile-effective-content/v1"
 Require-Text "src\OrganisationProfile.Application\Templates\OrganisationProfileTemplateContentHasher.cs" "organisation-profile-template-content/v1"
 Require-Text "scripts\organisation-profile\postgresql\verify-backup-restore.ps1" "organisation_profile"
-Require-Text "docs\organisation-profile\PACK_08_QUALIFICATION_AND_HARDENING.md" "release-candidate"
+Require-Text "docs\organisation-profile\QUALIFICATION_AND_HARDENING.md" "release-candidate"
 
 $migrationRoot = Join-Path $root "src\OrganisationProfile.Infrastructure.PostgreSql\Migrations"
 $migrations = @(Get-ChildItem -LiteralPath $migrationRoot -Filter "*.sql" | Sort-Object Name)
@@ -48,7 +48,7 @@ $expected = @(
 )
 
 if ($migrations.Count -ne $expected.Count) {
-    throw "Pack 8 must not introduce a PostgreSQL migration. Expected $($expected.Count), found $($migrations.Count)."
+    throw "Qualification and Hardening must not introduce a PostgreSQL migration. Expected $($expected.Count), found $($migrations.Count)."
 }
 
 for ($index = 0; $index -lt $expected.Count; $index++) {
@@ -57,4 +57,4 @@ for ($index = 0; $index -lt $expected.Count; $index++) {
     }
 }
 
-Write-Host "OrganisationProfile Pack 8 source hardening validation: GREEN"
+Write-Host "OrganisationProfile Qualification and Hardening source hardening validation: GREEN"

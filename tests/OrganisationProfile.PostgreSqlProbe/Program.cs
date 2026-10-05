@@ -7,7 +7,7 @@ using OrganisationProfileAggregate = global::OrganisationProfile.Domain.Organisa
 
 namespace OrganisationProfile.PostgreSqlProbe
 {
-    /// <summary>Live shared-database probe for OrganisationProfile Pack 2 persistence.</summary>
+    /// <summary>Live shared-database probe for OrganisationProfile PostgreSQL persistence.</summary>
     internal static class Program
     {
         private static async Task<int> Main()

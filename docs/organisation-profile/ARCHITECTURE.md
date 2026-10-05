@@ -36,7 +36,7 @@ Organization
 
 ## Initial cardinality
 
-Pack 1 freezes the initial cardinality:
+Foundation freezes the initial cardinality:
 
 ```text
 Organization 1 ── 0..1 OrganisationProfile
@@ -46,7 +46,7 @@ An Organization may exist without a profile.
 
 An OrganisationProfile always references exactly one Organization.
 
-The durable uniqueness constraint is implemented in Pack 2:
+The durable uniqueness constraint is implemented in PostgreSQL Persistence:
 
 ```text
 IdentityScopeId + TenantId + OrganizationId
@@ -95,7 +95,7 @@ Disable(domainKey)
 
 `Disable` carries no version.
 
-Pack 4 will implement the deterministic resolver. Pack 1 freezes the contract only.
+Domain Composition will implement the deterministic resolver. Foundation freezes the contract only.
 
 ## Version identities
 
@@ -113,7 +113,7 @@ These concepts must not be merged.
 
 ## Integration boundary
 
-Pack 1 does not reference Generic Organization Directory assemblies.
+Foundation does not reference Generic Organization Directory assemblies.
 
 Instead it defines:
 
@@ -179,11 +179,11 @@ A concrete profile pin therefore identifies one exact published semantic templat
 
 Definition lifecycle, draft editing, publication, and content hashing remain separate responsibilities.
 
-Domain Registry validation remains external to this catalog and is introduced in Pack 4.
+Domain Registry validation remains external to this catalog and is introduced in Domain Composition.
 
 ## Effective domain composition
 
-Pack 4 introduces a deterministic effective-composition layer without moving Domain Registry ownership into this module.
+Domain Composition introduces a deterministic effective-composition layer without moving Domain Registry ownership into this module.
 
 ```text
 Template version
@@ -266,11 +266,11 @@ modelVersion 4
 
 The host provides a fail-closed `IDomainRegistryReader` fallback so missing Domain Registry integration cannot silently make a domain version selectable.
 
-HTTP endpoints remain outside Pack 5. Pack 6 consumes these frozen authorization and audit boundaries.
+HTTP endpoints remain outside Security Integration. HTTP API and TypeScript SDK consumes these frozen authorization and audit boundaries.
 
 ## HTTP administration boundary
 
-Pack 6 exposes OrganisationProfile through focused controllers in the existing Identity Access host.
+HTTP API and TypeScript SDK exposes OrganisationProfile through focused controllers in the existing Identity Access host.
 
 Tenant profile routes validate the durable profile's `IdentityScopeId` and `TenantId` before any profile-id based read or mutation proceeds.
 
@@ -284,11 +284,11 @@ template definitions
 template-version lifecycle
 ```
 
-The HTTP layer does not implement a second authorization engine. Every endpoint uses the existing administration authorization filter and the capability coordinates frozen in Pack 5.
+The HTTP layer does not implement a second authorization engine. Every endpoint uses the existing administration authorization filter and the capability coordinates frozen in Security Integration.
 
 The TypeScript SDK mirrors the same separation with five focused clients rather than one large OrganisationProfile client.
 
-## Pack 7 UI boundary
+## Administration UI UI boundary
 
 The reference OrganisationProfile workspace is mounted outside the Identity Access administration navigation.
 
@@ -316,9 +316,9 @@ OrganisationProfilePanel
 
 New template and domain foreign references are selected only from protected catalog reads and are revalidated server-side before mutation.
 
-## Pack 8 qualification boundary
+## Qualification and Hardening qualification boundary
 
-Pack 8 does not add a new runtime responsibility or persistence model. It qualifies the existing architecture under adversarial execution and recovery conditions.
+Qualification and Hardening does not add a new runtime responsibility or persistence model. It qualifies the existing architecture under adversarial execution and recovery conditions.
 
 The additional qualification path is:
 
@@ -338,7 +338,7 @@ disposable backup/restore proof
 release-candidate qualification
 ```
 
-Concurrency remains governed by the existing optimistic `RowVersion` contract plus focused PostgreSQL row locking. Pack 8 does not introduce a distributed lock service or a second version authority.
+Concurrency remains governed by the existing optimistic `RowVersion` contract plus focused PostgreSQL row locking. Qualification and Hardening does not introduce a distributed lock service or a second version authority.
 
 Semantic version history remains append-only. Returning to an earlier effective composition produces a new semantic version while reproducing the same deterministic content hash.
 

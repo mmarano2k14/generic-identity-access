@@ -244,7 +244,7 @@ Organization membership remains belonging only. Permission continues to flow thr
 
 ## OrganisationProfile reference workspace
 
-Pack 7 adds a consuming-application reference route outside the Identity Access navigation:
+Next.js Integration adds a consuming-application reference route outside the Identity Access navigation:
 
 ```text
 /organisations/{organizationId}/profile?tenantId={tenantId}

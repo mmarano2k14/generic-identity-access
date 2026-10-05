@@ -14,12 +14,12 @@ function Require-Text {
 
     $path = Join-Path $root $RelativePath
     if (-not (Test-Path -LiteralPath $path -PathType Leaf)) {
-        throw "Required Pack 7 source '$RelativePath' is missing."
+        throw "Required Administration UI source '$RelativePath' is missing."
     }
 
     $source = [System.IO.File]::ReadAllText($path)
     if (-not $source.Contains($Text)) {
-        throw "'$RelativePath' is missing required Pack 7 marker '$Text'."
+        throw "'$RelativePath' is missing required Administration UI marker '$Text'."
     }
 }
 

@@ -34,7 +34,7 @@ OrganisationProfile stores explicit domain keys and versions, but does not own D
 
 A historical effective profile can identify its pinned domain versions after restore, but deterministic replay also requires those historical Domain Registry versions to remain available from the external Domain Registry authority.
 
-Once that subsystem is implemented, its owner must define and qualify its own backup/restore policy. Pack 8 does not fabricate a Domain Registry backup format.
+Once that subsystem is implemented, its owner must define and qualify its own backup/restore policy. Qualification and Hardening does not fabricate a Domain Registry backup format.
 
 ## Qualification script
 

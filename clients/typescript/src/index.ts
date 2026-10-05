@@ -23,6 +23,8 @@ export type {
   IdentityOidcAuthorizationOptions,
   IdentityOidcTokenSet,
   IdentityPasswordLoginRequest,
+  IdentityRecoveryPasswordResetRequest,
+  IdentitySelfServicePasswordChangeRequest,
   IdentitySessionCredential,
   IdentitySessionValidationResult,
   IdentityWebAuthnAuthenticationOptions,

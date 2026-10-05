@@ -1,0 +1,20 @@
+/** Directory contracts for users, tenants and tenant membership administration. */
+export type {
+  IdentityAdministrationListOptions,
+  IdentityCreateTenantMembershipRequest,
+  IdentityCreateTenantRequest,
+  IdentityCreateUserRequest,
+  IdentityMembershipStatus,
+  IdentityTenantGroupAssignmentRecord,
+  IdentityTenantMembershipCandidateRecord,
+  IdentityTenantMembershipRecord,
+  IdentityTenantRecord,
+  IdentityTenantStatus,
+  IdentityTenantUserListOptions,
+  IdentityTenantUserRecord,
+  IdentityUpdateTenantMembershipRequest,
+  IdentityUpdateTenantRequest,
+  IdentityUpdateUserRequest,
+  IdentityUserRecord,
+  IdentityUserStatus,
+} from "@identity-access/client";

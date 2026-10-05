@@ -16,13 +16,13 @@ function Require-Text {
     $path = Join-Path $root $RelativePath
 
     if (-not (Test-Path $path -PathType Leaf)) {
-        throw "Required Pack 6 source '$RelativePath' is missing."
+        throw "Required HTTP API and TypeScript SDK source '$RelativePath' is missing."
     }
 
     $source = [System.IO.File]::ReadAllText($path)
 
     if (-not $source.Contains($Text)) {
-        throw "'$RelativePath' is missing required Pack 6 marker '$Text'."
+        throw "'$RelativePath' is missing required HTTP API and TypeScript SDK marker '$Text'."
     }
 }
 

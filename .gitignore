@@ -1,14 +1,32 @@
-
+# .NET
 **/bin/
 **/obj/
 .vs/
 .vscode/
+
+# Node / TypeScript / Next.js
+**/node_modules/
+**/.next/
+**/dist/
+**/coverage/
+**/.turbo/
+*.tsbuildinfo
+*.tgz
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Build / test artifacts
 artifacts/
 TestResults/
-*.user
-*.suo
 *.nupkg
 *.snupkg
+
+# IDE / user files
+*.user
+*.suo
+
+# Environment / secrets
 .env
 .env.*
 !.env.example

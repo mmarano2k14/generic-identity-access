@@ -10,7 +10,7 @@ generic_identity_access_default
 
 Every persisted Organization must reference an existing Identity Access Tenant. This is enforced by a cross-schema foreign key. Parent/child organization relationships are tenant-local.
 
-Authorization remains owned by Identity Access. Pack 3 will use the existing `IdentityAccess.Api` host rather than introduce a second API.
+Authorization remains owned by Identity Access. Organization API and Hierarchy will use the existing `IdentityAccess.Api` host rather than introduce a second API.
 
 ## Organization lifecycle API
 
@@ -42,7 +42,7 @@ feature  = organization
 actions  = read | write
 ```
 
-This pack introduces the protected API metadata. Broader delegated-administration policy design remains a later security concern.
+This delivery introduces the protected API metadata. Broader delegated-administration policy design remains a later security concern.
 
 ## Organization membership boundary
 

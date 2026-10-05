@@ -9,7 +9,7 @@ namespace OrganizationDirectory.Tests.Architecture
             var domainRoot = Path.Combine(root, "src", "OrganizationDirectory.Domain");
             var prohibited = new[]
             {
-                "magellan",
+                "consumer-app",
                 "ecommerce",
                 "restaurant",
                 "shopify",

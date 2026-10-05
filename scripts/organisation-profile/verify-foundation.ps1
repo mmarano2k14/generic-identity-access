@@ -108,4 +108,4 @@ Write-Host "Running OrganisationProfile foundation contract probe..."
 dotnet run --project $probeProject -c $Configuration --no-build
 if (-not $?) { throw "OrganisationProfile foundation contract probe failed." }
 
-Write-Host "OrganisationProfile Pack 1 verification: GREEN"
+Write-Host "OrganisationProfile Foundation verification: GREEN"
