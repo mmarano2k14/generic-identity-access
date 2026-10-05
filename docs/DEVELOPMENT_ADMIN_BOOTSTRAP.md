@@ -1,5 +1,7 @@
 # Local Development Administrator Bootstrap
 
+> For the complete new-consumer workflow — application identifiers, trusted authentication client, initial administrator authority, public SDK integration and validation — see [`CONSUMER_APPLICATION_ONBOARDING.md`](CONSUMER_APPLICATION_ONBOARDING.md).
+
 **Source version: 0.62.6. Date: September 27, 2026.**
 
 This workflow exists only to establish the first local development administrator so the runnable Next.js administration host can be exercised against the real authentication, OIDC, Bearer, and RBAC paths.

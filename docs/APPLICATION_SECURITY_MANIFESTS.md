@@ -1,5 +1,7 @@
 # Application Security Manifests
 
+> For an end-to-end consumer onboarding tutorial, including initial local administrator authority and SDK integration, see [`CONSUMER_APPLICATION_ONBOARDING.md`](CONSUMER_APPLICATION_ONBOARDING.md).
+
 ## Purpose
 
 An application security manifest is the project-owned declaration of the security vocabulary that an application supports. It removes the need to hardcode capability catalogs in C# constants or to let administrators invent arbitrary capability coordinates in the administration UI.
