@@ -82,7 +82,7 @@ No existing capability identifier is renamed or removed. Existing `identity-acce
 
 Security audit event identifiers are append-only.
 
-Pack 5 reserves:
+Security Integration reserves:
 
 ```text
 79  OrganisationProfileCreated
@@ -138,11 +138,11 @@ TryAddSingleton<NpgsqlDataSource>
 
 so it reuses the existing shared data source when Organization Directory already registered it.
 
-No new database schema or migration is introduced by Pack 5.
+No new database schema or migration is introduced by Security Integration.
 
 ## HTTP boundary
 
-Pack 5 intentionally does not add OrganisationProfile HTTP controllers.
+Security Integration intentionally does not add OrganisationProfile HTTP controllers.
 
 It freezes:
 
@@ -154,4 +154,4 @@ audit event vocabulary
 audit bridge
 ```
 
-Pack 6 can then expose API routes using these already-versioned boundaries rather than inventing authorization and audit semantics inside controllers.
+HTTP API and TypeScript SDK can then expose API routes using these already-versioned boundaries rather than inventing authorization and audit semantics inside controllers.

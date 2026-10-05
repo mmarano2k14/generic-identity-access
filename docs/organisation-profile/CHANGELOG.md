@@ -10,15 +10,15 @@
 - Semantic `A -> B -> A` replay qualification proving append-only history plus deterministic content-hash reproducibility.
 - Explicit stale-resolution, cross-tenant Organization reference, disabled-profile, and lifecycle-only semantic-stability checks.
 - Full integrated `.NET` test execution in the OrganisationProfile verification gate.
-- Pack 8 source-hardening gate protecting lock/hash/immutability markers and the unchanged three-migration baseline.
-- Browser-evidence validator for the ten Pack 7 browser scenarios.
+- Qualification and Hardening source-hardening gate protecting lock/hash/immutability markers and the unchanged three-migration baseline.
+- Browser-evidence validator for the ten Administration UI browser scenarios.
 - Disposable PostgreSQL backup/restore qualification across `identity_access`, `organization_directory`, and `organisation_profile`.
 - Release-candidate gate combining automated verification, browser evidence, and backup/restore proof.
 - Backup/restore recovery-boundary documentation, including the external historical Domain Registry dependency.
 
 ### Database
 
-- No migration is introduced in Pack 8.
+- No migration is introduced in Qualification and Hardening.
 - Existing migration checksum enforcement and immutable effective-version constraints remain authoritative.
 
 ### Deferred
@@ -35,10 +35,10 @@
 - Profile creation without duplicating Organization identity.
 - Protected template selection from active definitions and published immutable versions.
 - Protected domain override selection derived from published immutable template-version references.
-- Server-side revalidation of submitted template/domain foreign references before calling Pack 6 mutation endpoints.
+- Server-side revalidation of submitted template/domain foreign references before calling HTTP API and TypeScript SDK mutation endpoints.
 - Historical override protection that prevents the complete-set editor from silently dropping an Enable reference that is no longer selectable.
 - Immutable effective-version history display and deterministic resolution action.
-- Pack 7 UI architecture tests and verification gate.
+- Administration UI UI architecture tests and verification gate.
 
 ### Architecture
 
@@ -48,14 +48,14 @@
 
 ### Database
 
-- No migration is introduced in Pack 7.
+- No migration is introduced in Administration UI.
 
 ### Deferred
 
-- Full qualification and hardening remain Pack 8.
+- Full qualification and hardening remain Qualification and Hardening.
 - Provider Registry integration remains outside the OrganisationProfile core.
 
-## 0.6.1 — Pack 6 integration closure
+## 0.6.1 — HTTP API and TypeScript SDK integration closure
 
 ### Fixed
 
@@ -63,22 +63,22 @@
 - Retained `UnprocessableEntity(...)`.
 - Retained `OrganizationMembershipAdministrationUnavailable()`.
 - Retained `OrganizationResourceScopeLinkAdministrationUnavailable()`.
-- Prevented the Pack 6 API integration from regressing pre-existing Organization Directory controllers.
+- Prevented the HTTP API and TypeScript SDK API integration from regressing pre-existing Organization Directory controllers.
 
 ### Validation
 
 - Integrated solution build and test suite are GREEN on the validated development baseline.
 - TypeScript client typecheck and tests are GREEN.
-- Pack 6 source-contract markers remain present after the merge.
+- HTTP API and TypeScript SDK source-contract markers remain present after the merge.
 
 ## 0.6.0 — HTTP API and TypeScript SDK
 
 ### Added
 
 - Focused ASP.NET Core controllers for mutable profiles, domain overrides, immutable effective versions, template definitions, and template-version publication.
-- Controller-level `RequireAdministrationCapability` enforcement using the Pack 5 security catalog.
+- Controller-level `RequireAdministrationCapability` enforcement using the Security Integration security catalog.
 - Tenant-boundary validation for every profile-id based tenant route.
-- Semantic mutation audit emission using Pack 5 event identifiers.
+- Semantic mutation audit emission using Security Integration event identifiers.
 - Stable HTTP problem mapping for OrganisationProfile concurrency, lifecycle, catalog, immutability, and Domain Registry failures.
 - `OrganisationProfileDefinitionService` for active Organization validation, template-pin selection validation, profile lifecycle, and optimistic concurrency.
 - Optional API feature handles so OrganisationProfile routes fail with 503 rather than controller activation failure when persistence is not configured.
@@ -90,15 +90,15 @@
 ### Changed
 
 - Template Draft creation and publication now raise a stable template-inactive application exception instead of raw `InvalidOperationException`.
-- Pack verification now runs TypeScript typecheck and client tests.
+- Milestone verification now runs TypeScript typecheck and client tests.
 
 ### Database
 
-- No migration is introduced in Pack 6.
+- No migration is introduced in HTTP API and TypeScript SDK.
 
 ### Deferred
 
-- Administration UI remains Pack 7.
+- Administration UI remains Administration UI.
 - Provider Registry integration remains outside the OrganisationProfile core.
 
 ## 0.5.1 — API host regression recovery
@@ -109,7 +109,7 @@
 - Restored `UnprocessableEntity(...)`.
 - Restored `OrganizationMembershipAdministrationUnavailable()`.
 - Restored `OrganizationResourceScopeLinkAdministrationUnavailable()`.
-- Added a Pack 5 security-integration gate and architecture regression test protecting these pre-existing host helpers from future integration regressions.
+- Added a Security Integration security-integration gate and architecture regression test protecting these pre-existing host helpers from future integration regressions.
 - The `CS0006` test-project metadata error disappears once `IdentityAccess.Api` compiles successfully; it is a downstream symptom, not a separate defect.
 
 ## 0.5.0 — Identity Access host security integration
@@ -134,13 +134,13 @@
 - Identity Access remains the external authentication/authorization/audit host.
 - OrganisationProfile capabilities extend the established `identity-access` administration resource with distinct feature segments, matching Organization Directory integration.
 - Missing Domain Registry integration fails closed.
-- Pack 5 adds no HTTP controllers and no database migration.
+- Security Integration adds no HTTP controllers and no database migration.
 
 ### Deferred
 
-- HTTP API routes and controller-level capability enforcement/audit emission remain Pack 6.
-- TypeScript SDK follows the HTTP contract in Pack 6.
-- Administration UI remains Pack 7.
+- HTTP API routes and controller-level capability enforcement/audit emission remain HTTP API and TypeScript SDK.
+- TypeScript SDK follows the HTTP contract in HTTP API and TypeScript SDK.
+- Administration UI remains Administration UI.
 
 ## 0.4.2 — Source scan excludes generated build artifacts
 
@@ -160,7 +160,7 @@
 - Moved effective-version writer lock state to `OrganisationProfileLockState.cs`.
 - Moved latest semantic-version identity to `OrganisationProfileLatestVersionIdentity.cs`.
 - Updated reader/writer references without changing persistence or runtime behavior.
-- Strengthened the Pack 4 source-separation gate to require exactly one declared type per C# source file, filename/type matching, and block-scoped namespaces.
+- Strengthened the Domain Composition source-separation gate to require exactly one declared type per C# source file, filename/type matching, and block-scoped namespaces.
 
 ## 0.4.0 — Domain composition and immutable effective profile versions
 
@@ -180,7 +180,7 @@
 - New semantic profile version when effective content changes or later reverts.
 - Database immutability triggers for effective version rows and effective version-domain rows.
 - Live composition probe covering override replacement, stale-write rejection, Published-vs-Retired Domain Registry rules, deterministic resolution, snapshot idempotency, version history, and historical resolution.
-- Pack 3 template publication now validates exact domain versions through the external Domain Registry boundary before publishing.
+- Template Catalog template publication now validates exact domain versions through the external Domain Registry boundary before publishing.
 
 ### Architecture
 
@@ -193,8 +193,8 @@
 
 ### Deferred
 
-- HTTP API and external administration authorization remain later packs.
-- TypeScript SDK and administration UI remain later packs.
+- HTTP API and external administration authorization remain later milestones.
+- TypeScript SDK and administration UI remain later milestones.
 - Provider Registry integration remains explicitly outside the OrganisationProfile core.
 
 ## 0.3.0 — Template catalog and immutable publication
@@ -217,8 +217,8 @@
 
 ### Deferred
 
-- Domain Registry compatibility validation and effective profile resolution remain Pack 4.
-- API, authorization integration, TypeScript, and UI remain later packs.
+- Domain Registry compatibility validation and effective profile resolution remain Domain Composition.
+- API, authorization integration, TypeScript, and UI remain later milestones.
 
 ## 0.2.1 — Namespace/type collision qualification fix
 
@@ -226,7 +226,7 @@
 
 - Added an explicit `OrganisationProfileAggregate` alias for the `OrganisationProfile.Domain.OrganisationProfile` aggregate in executable probe projects.
 - Prevented the root `OrganisationProfile` namespace from being resolved instead of the aggregate type inside `OrganisationProfile.*` probe namespaces.
-- Applied the same alias rule to both the foundation probe and PostgreSQL probe to prevent the collision from recurring during Pack 2 qualification.
+- Applied the same alias rule to both the foundation probe and PostgreSQL probe to prevent the collision from recurring during PostgreSQL Persistence qualification.
 
 ## 0.2.0 — PostgreSQL lifecycle persistence
 
@@ -241,13 +241,13 @@
 - PostgreSQL implementation of the narrow `IOrganizationReferenceReader`.
 - Live PostgreSQL probe covering create/read/list/update/disable, template pin persistence, duplicate-Organization rejection, stale-write rejection, and cleanup.
 - Integrated `.NET` solution entries for Domain, Application, PostgreSQL infrastructure, foundation probe, and PostgreSQL probe.
-- PowerShell schema-apply, migration-integrity, schema-validation, store-probe, and Pack 2 verification gates.
+- PowerShell schema-apply, migration-integrity, schema-validation, store-probe, and PostgreSQL Persistence verification gates.
 
 ### Deferred
 
-- Profile-template catalog tables and publication lifecycle remain Pack 3.
-- Domain composition persistence and deterministic resolver remain Pack 4.
-- API, security integration, TypeScript, and UI remain later packs.
+- Profile-template catalog tables and publication lifecycle remain Template Catalog.
+- Domain composition persistence and deterministic resolver remain Domain Composition.
+- API, security integration, TypeScript, and UI remain later milestones.
 
 ## 0.1.0 — Foundation and contract freeze
 

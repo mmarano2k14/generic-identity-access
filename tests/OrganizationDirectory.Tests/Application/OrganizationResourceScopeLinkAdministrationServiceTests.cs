@@ -15,7 +15,7 @@ namespace OrganizationDirectory.Tests.Application
             new(Guid.Parse("92000000-0000-0000-0000-000000000001"));
 
         private static readonly ApplicationKey Application =
-            new("magellan");
+            new("consumer-app");
 
         [Fact]
         public async Task Active_organization_can_link_relink_and_remove_active_resource_scope()

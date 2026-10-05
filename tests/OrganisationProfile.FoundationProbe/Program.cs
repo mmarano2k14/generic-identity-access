@@ -3,7 +3,7 @@ using OrganisationProfileAggregate = global::OrganisationProfile.Domain.Organisa
 
 namespace OrganisationProfile.FoundationProbe
 {
-    /// <summary>Executable Pack 1 contract probe with no external test-framework dependency.</summary>
+    /// <summary>Executable Foundation contract probe with no external test-framework dependency.</summary>
     internal static class Program
     {
         private static int Main()
@@ -17,7 +17,7 @@ namespace OrganisationProfile.FoundationProbe
                 VerifyEffectiveProfileDeterminism();
 
                 Console.WriteLine(
-                    "OrganisationProfile Pack 1 foundation probe: GREEN");
+                    "OrganisationProfile foundation probe: GREEN");
                 return 0;
             }
             catch (Exception exception)

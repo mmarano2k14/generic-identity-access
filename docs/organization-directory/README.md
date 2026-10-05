@@ -11,7 +11,7 @@ Organization schema:   organization_directory
 
 The schemas share one database but keep independent ownership and migration metadata.
 
-## Pack 2 commands
+## PostgreSQL Persistence commands
 
 ```powershell
 .\scripts\postgresql\apply-default-schema.ps1
@@ -33,9 +33,9 @@ Repository module gate:
 .\scripts\organization-directory\verify.ps1 -Configuration Release
 ```
 
-Pack 3 will expose Organization endpoints through the existing `IdentityAccess.Api`; there is no second web host.
+Organization API and Hierarchy will expose Organization endpoints through the existing `IdentityAccess.Api`; there is no second web host.
 
-## Pack 3 — Organization API and hierarchy
+## Organization API and Hierarchy — Organization API and hierarchy
 
 Organization lifecycle is exposed through the existing Identity Access API host:
 
@@ -70,9 +70,9 @@ identity-access / organization / read
 identity-access / organization / write
 ```
 
-The development scope administrator's wildcard authority can exercise these routes. Delegated tenant policy administration for this dedicated capability is completed in the later security pack.
+The development scope administrator's wildcard authority can exercise these routes. Delegated tenant policy administration for this dedicated capability is completed in the later security milestone.
 
-## Pack 4 — OrganizationMembership
+## Organization Membership — OrganizationMembership
 
 Organization belonging is explicit:
 
@@ -132,7 +132,7 @@ Apply and verify:
 .\scripts\organization-directory\postgresql\verify-store.ps1
 ```
 
-## Pack 5 — Identity Access ResourceScope integration
+## Identity Access Resource Scope Integration — Identity Access ResourceScope integration
 
 An Organization may now be linked to one existing Identity Access ResourceScope per application:
 
@@ -149,7 +149,7 @@ Example:
 
 ```text
 Organization = Urban Flower
-Application  = magellan
+Application  = consumer-app
 ResourceScope = Urban Flower
 Scope type   = organization
 Model version = 2
@@ -184,7 +184,7 @@ Apply and verify:
 
 This link expresses the authorization boundary corresponding to an Organization. It does not itself grant any capability.
 
-## Pack 6 — Administration security and audit
+## Administration Security and Audit — Administration security and audit
 
 Organization Directory administration now has three explicit capability families:
 
@@ -202,14 +202,14 @@ modelVersion = 3
 
 This is intentional. Application security manifests are immutable once registered, so the Organization Directory capability additions must not rewrite model version 2.
 
-After applying this pack in a development environment, re-run the supported administrator bootstrap so model version 3 and the corresponding local administration policy version are registered:
+After applying this milestone in a development environment, re-run the supported administrator bootstrap so model version 3 and the corresponding local administration policy version are registered:
 
 ```powershell
 $env:PGPASSWORD = "<postgres-password>"
 .\scripts\authentication\bootstrap-dev-admin.ps1
 ```
 
-No Organization Directory PostgreSQL schema migration is introduced by Pack 6.
+No Organization Directory PostgreSQL schema migration is introduced by Administration Security and Audit.
 
 Semantic security events are emitted for:
 
@@ -221,7 +221,7 @@ Organization ResourceScope link/relink/unlink
 
 They are written through the existing routed Identity Access security-audit sink. Audit sink failure is best-effort and does not replace the result of a successful primary mutation.
 
-## Pack 7 — TypeScript connector and Identity Membership UI
+## TypeScript Connector and Identity Membership UI — TypeScript connector and Identity Membership UI
 
 Organization Directory is integrated into the existing Identity Access administration host.
 There is no second Next.js application and no project selector.

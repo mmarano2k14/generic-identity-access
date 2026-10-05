@@ -4,60 +4,96 @@ param()
 $ErrorActionPreference = "Stop"
 Set-StrictMode -Version Latest
 
-& (Join-Path $PSScriptRoot "verify-pack-01-structure.ps1")
+& (Join-Path $PSScriptRoot "verify-professional-nomenclature.ps1")
 if (-not $?) {
-    throw "Shared Identity Pack 1 structure validation failed."
+    throw "Generic Identity professional nomenclature validation failed."
 }
 
-& (Join-Path $PSScriptRoot "verify-pack-02-contracts.ps1")
+& (Join-Path $PSScriptRoot "verify-structure.ps1")
 if (-not $?) {
-    throw "Shared Identity Pack 2 public contracts source validation failed."
+    throw "Shared Identity baseline and structure validation failed."
 }
 
-& (Join-Path $PSScriptRoot "verify-pack-03-auth.ps1")
+& (Join-Path $PSScriptRoot "verify-public-contracts.ps1")
 if (-not $?) {
-    throw "Shared Identity Pack 3 auth SDK source validation failed."
+    throw "Shared Identity public contracts source validation failed."
 }
 
-& (Join-Path $PSScriptRoot "verify-pack-04-react.ps1")
+& (Join-Path $PSScriptRoot "verify-authentication-sdk.ps1")
 if (-not $?) {
-    throw "Shared Identity Pack 4 React foundation source validation failed."
+    throw "Shared Identity authentication and authorization SDK validation failed."
 }
 
-& (Join-Path $PSScriptRoot "verify-pack-05-pages.ps1")
+& (Join-Path $PSScriptRoot "verify-react-foundation.ps1")
 if (-not $?) {
-    throw "Shared Identity Pack 5 shared pages source validation failed."
+    throw "Shared Identity React foundation validation failed."
 }
 
-& (Join-Path $PSScriptRoot "verify-pack-06-theme.ps1")
+& (Join-Path $PSScriptRoot "verify-shared-pages.ps1")
 if (-not $?) {
-    throw "Shared Identity Pack 6 theme/component override source validation failed."
+    throw "Shared Identity shared React pages validation failed."
 }
 
-& (Join-Path $PSScriptRoot "verify-pack-07-next.ps1")
+& (Join-Path $PSScriptRoot "verify-theme-and-components.ps1")
 if (-not $?) {
-    throw "Shared Identity Pack 7 Next.js integration source validation failed."
+    throw "Shared Identity theme and component override validation failed."
 }
 
-& (Join-Path $PSScriptRoot "verify-pack-07-closure.ps1")
+& (Join-Path $PSScriptRoot "verify-nextjs-integration.ps1")
 if (-not $?) {
-    throw "Shared Identity Pack 7 closure consumer bridge validation failed."
+    throw "Shared Identity Next.js integration validation failed."
 }
 
-& (Join-Path $PSScriptRoot "verify-pack-09-local-package-artifacts.ps1")
+& (Join-Path $PSScriptRoot "verify-consumer-bridge.ps1")
 if (-not $?) {
-    throw "Shared Identity Pack 9 local package artifact source validation failed."
+    throw "Shared Identity consumer bridge validation failed."
 }
 
-& (Join-Path $PSScriptRoot "verify-pack-09-magellan-dev-admin-authority.ps1")
+& (Join-Path $PSScriptRoot "verify-local-package-artifacts.ps1")
 if (-not $?) {
-    throw "Shared Identity Pack 9 MAGELLAN development administrator authority source validation failed."
+    throw "Shared Identity local package artifact validation failed."
+}
+
+& (Join-Path $PSScriptRoot "verify-consumer-dev-admin-authority.ps1")
+if (-not $?) {
+    throw "Shared Identity consumer development administrator authority validation failed."
 }
 
 
-& (Join-Path $PSScriptRoot "verify-pack-10-release.ps1")
+& (Join-Path $PSScriptRoot "verify-release-packaging.ps1")
 if (-not $?) {
-    throw "Shared Identity Pack 10 release packaging validation failed."
+    throw "Shared Identity release packaging validation failed."
+}
+
+& (Join-Path $PSScriptRoot "verify-sdk-inventory.ps1")
+if (-not $?) {
+    throw "Shared Identity SDK inventory/category validation failed."
+}
+
+& (Join-Path $PSScriptRoot "verify-account-directory.ps1")
+if (-not $?) {
+    throw "Shared Identity Account and Directory validation failed."
+}
+
+& (Join-Path $PSScriptRoot "verify-organizations.ps1")
+if (-not $?) {
+    throw "Shared Identity Organizations validation failed."
+}
+
+
+& (Join-Path $PSScriptRoot "verify-access-control.ps1")
+if (-not $?) {
+    throw "Shared Identity Access Control validation failed."
+}
+
+& (Join-Path $PSScriptRoot "verify-application-security.ps1")
+if (-not $?) {
+    throw "Generic Identity Application Security source validation failed."
+}
+
+& (Join-Path $PSScriptRoot "verify-security-operations.ps1")
+if (-not $?) {
+    throw "Generic Identity Security Operations source validation failed."
 }
 
 Write-Host "Shared Identity integration validation: GREEN"

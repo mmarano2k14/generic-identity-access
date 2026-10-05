@@ -1,4 +1,4 @@
-﻿[CmdletBinding()]
+[CmdletBinding()]
 param([ValidateSet("Debug", "Release")][string]$Configuration = "Release")
 $ErrorActionPreference = "Stop"
 Set-StrictMode -Version Latest
@@ -117,10 +117,10 @@ try {
     }
     & $contractsTypeScriptCompiler -p (Join-Path $root "packages/contracts/tsconfig.json") --noEmit
     if ($LASTEXITCODE -ne 0) { throw "Shared Identity public contracts typecheck failed." }
-    Write-Host "Shared Identity Pack 2 public contracts typecheck: GREEN"
+    Write-Host "Shared Identity public contracts typecheck: GREEN"
 
     # The auth package is consumed through a local file link by external Next.js
-    # applications during Packs 8-9. TypeScript and Turbopack resolve imports from
+    # applications during consumer integration and runtime qualification. TypeScript and Turbopack resolve imports from
     # the real linked source path, so the auth package must have its declared local
     # dependencies installed beside that source. Its tsconfig path aliases alone are
     # not sufficient for an external consumer. The legacy client was built above,
@@ -147,7 +147,7 @@ try {
 
     & $contractsTypeScriptCompiler -p (Join-Path $root "packages/auth/tsconfig.json") --noEmit
     if ($LASTEXITCODE -ne 0) { throw "Shared Identity auth SDK typecheck failed." }
-    Write-Host "Shared Identity Pack 3 auth SDK typecheck: GREEN"
+    Write-Host "Shared Identity authentication and authorization SDK typecheck: GREEN"
 
     $reactPackageRoot = Join-Path $root "packages/react"
     $reactTypeScriptCompiler = Join-Path $reactPackageRoot "node_modules/.bin/tsc.cmd"
@@ -170,9 +170,9 @@ try {
     } finally {
         Pop-Location
     }
-    Write-Host "Shared Identity Pack 4 React foundation typecheck: GREEN"
-    Write-Host "Shared Identity Pack 5 shared pages typecheck: GREEN"
-    Write-Host "Shared Identity Pack 6 theme/component override typecheck: GREEN"
+    Write-Host "Shared Identity React foundation typecheck: GREEN"
+    Write-Host "Shared Identity shared React pages typecheck: GREEN"
+    Write-Host "Shared Identity theme/component override typecheck: GREEN"
 
     $sharedNextRoot = Join-Path $root "packages/next"
     $sharedNextTypeScriptCompiler = Join-Path $sharedNextRoot "node_modules/.bin/tsc.cmd"
@@ -195,7 +195,7 @@ try {
     } finally {
         Pop-Location
     }
-    Write-Host "Shared Identity Pack 7 Next.js integration typecheck: GREEN"
+    Write-Host "Shared Identity Next.js integration typecheck: GREEN"
 
     $nextAdminRoot = Join-Path $root "examples/nextjs/admin"
     $nextBinary = Join-Path $nextAdminRoot "node_modules/.bin/next.cmd"

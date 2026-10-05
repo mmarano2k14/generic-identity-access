@@ -2,11 +2,11 @@
 
 ## Status
 
-Pack 1 establishes a non-functional-change baseline for extracting reusable Identity client and UI surfaces from the current repository.
+Baseline and Structure establishes a non-functional-change baseline for extracting reusable Identity client and UI surfaces from the current repository.
 
-No runtime implementation is moved in this pack.
-No existing public API is replaced in this pack.
-No database migration is introduced in this pack.
+No runtime implementation is moved in this delivery.
+No existing public API is replaced in this delivery.
+No database migration is introduced in this delivery.
 
 ## Current repository inventory
 
@@ -73,7 +73,7 @@ The package already contains focused class-based responsibilities for:
 - `RequireCapability` metadata;
 - public contracts and stable client errors.
 
-Pack 1 does not split this package. Later packs will expose new public package boundaries around proven behavior before any legacy source is removed.
+Baseline and Structure does not split this package. Later milestones will expose new public package boundaries around proven behavior before any legacy source is removed.
 
 ## Existing Next.js administration host
 
@@ -126,7 +126,7 @@ They remain independently owned boundaries while the shared Identity packages ar
 
 ## Target public package structure
 
-Pack 1 reserves the following package boundaries without adding runtime implementation:
+Baseline and Structure reserves the following package boundaries without adding runtime implementation:
 
 ```text
 packages/
@@ -178,9 +178,9 @@ Every later extraction follows this order:
 6. Build and test again.
 ```
 
-A ZIP overlay is never treated as a deletion mechanism. Any pack requiring deletion must provide an explicit deletion list and cleanup command/script.
+A ZIP overlay is never treated as a deletion mechanism. Any change requiring deletion must provide an explicit deletion list and cleanup command/script.
 
-## Pack sequence
+## Implementation sequence
 
 The planned sequence is:
 
@@ -197,9 +197,9 @@ The planned sequence is:
 10. Packaging, versioning and release qualification
 ```
 
-## Pack 1 exit criteria
+## Baseline and Structure exit criteria
 
-Pack 1 is complete when:
+Baseline and Structure is complete when:
 
 - all current source locations still exist;
 - the existing TypeScript client is unchanged and still authoritative;

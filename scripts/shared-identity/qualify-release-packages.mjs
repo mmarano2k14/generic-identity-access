@@ -8,7 +8,8 @@ const scriptDir = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(scriptDir, "../..");
 const outputDirectory = path.join(root, "artifacts", "shared-identity-release");
 const builder = path.join(root, "scripts", "shared-identity", "build-local-consumer-packages.mjs");
-const releaseVersion = "1.0.0";
+const sourceContractsManifest = JSON.parse(readFileSync(path.join(root, "packages", "contracts", "package.json"), "utf8"));
+const releaseVersion = sourceContractsManifest.version;
 
 function sha256(file) {
   return createHash("sha256").update(readFileSync(file)).digest("hex");

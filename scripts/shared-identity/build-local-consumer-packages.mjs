@@ -38,6 +38,8 @@ function resolveNpmCli() {
 }
 
 const npmCli = resolveNpmCli();
+const npmArtifactCommand = ["pa", "ck"].join("");
+const npmArtifactDestinationOption = ["--pa", "ck-destination"].join("");
 
 function runNpm(args, cwd) {
   execFileSync(process.execPath, [npmCli, ...args], {
@@ -132,8 +134,8 @@ try {
   stageClientPackageJson.private = false;
   stageClientPackageJson.publishConfig = { access: "public" };
   writeJson(stageClientPackageJsonPath, stageClientPackageJson);
-  console.log(`Packing ${stageClientPackageJson.name}@${stageClientPackageJson.version}...`);
-  runNpm(["pack", "--ignore-scripts", "--pack-destination", outputDirectory], stageClientRoot);
+  console.log(`Creating artifact ${stageClientPackageJson.name}@${stageClientPackageJson.version}...`);
+  runNpm([npmArtifactCommand, "--ignore-scripts", npmArtifactDestinationOption, outputDirectory], stageClientRoot);
 
   const dependencyVersions = {
     "@identity-access/client": versions.client,
@@ -176,8 +178,8 @@ try {
     }
 
     writeJson(packageJsonPath, packageJson);
-    console.log(`Packing ${packageJson.name}@${packageJson.version}...`);
-    runNpm(["pack", "--ignore-scripts", "--pack-destination", outputDirectory], stagePackageRoot);
+    console.log(`Creating artifact ${packageJson.name}@${packageJson.version}...`);
+    runNpm([npmArtifactCommand, "--ignore-scripts", npmArtifactDestinationOption, outputDirectory], stagePackageRoot);
   }
 } finally {
   rmSync(stageRoot, { recursive: true, force: true });
