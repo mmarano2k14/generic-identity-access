@@ -1,63 +1,45 @@
-# `@generic-identity/auth`
+# @generic-identity/auth
 
-Framework-neutral authentication and authorization SDK boundary for Generic Identity.
+Framework-neutral authentication, authorization and administration SDK for Generic Identity.
 
-## Pack 3 status
-
-Pack 3 activates this package as an **additive facade over the proven existing TypeScript client**.
+## Architecture
 
 ```text
 @generic-identity/auth
         |
         +--> @generic-identity/contracts
         |
-        +--> @identity-access/client   (temporary extraction bridge)
+        +--> @identity-access/client   (compatibility transport)
 ```
 
-The legacy client remains the runtime implementation in this pack. No source file is moved or deleted.
+The compatibility client remains the proven transport implementation. The public categorized SDK composes it rather than creating duplicate authentication, administration or authorization behavior.
 
-## Public responsibilities
+## Public categories
 
-```text
-createIdentityClient
-signIn
-signOut
-validateSession
-isAllowed
-createAuthorizationContext
-RequireCapability
-shared client error class/code
-session credentials
-bearer credentials
-password-login/session/MFA authentication contracts
+The root client exposes:
+
+```ts
+identity.authentication
+identity.authorization
+identity.administration
+identity.account
+identity.directory
+identity.organizations
+identity.accessControl
+identity.applicationSecurity
+identity.security
 ```
 
-The package is framework-neutral and must not depend on React or Next.js.
+Application Security provides categorized access to registered security models, manifest registration, scope types, capability catalogs and the effective administration context.
 
-## Authorization invariant
+Security Operations provides categorized access to server-backed session revocation, MFA administration, authenticator lifecycle metadata and security audit.
 
-`isAllowed` and authorization contexts always delegate to the existing server-side .NET/RBAC boundary. This package does not parse TRNs and does not calculate permissions locally.
+## Security invariants
 
-## Authentication invariant
+Authorization decisions remain server-side through the existing .NET/RBAC boundary. The SDK does not calculate permissions locally, does not treat UI visibility as authority and does not manufacture public TRN grant strings.
 
-Login, logout, session validation, password changes/recovery and MFA step-up delegate to the existing proven authentication client.
-
-## Deliberately not invented in Pack 3
-
-The roadmap mentions future convenience surfaces such as `getCurrentUser()` and `getEffectivePermissions()`. The current proven TypeScript client does not expose those operations, so Pack 3 does **not** fabricate new server semantics for them. They can be added only after a real backing contract/API exists.
+The structured Application Security permission reference validates registered model coordinates only. It is not a credential, access context or authorization result.
 
 ## Ownership exclusions
 
-This package does not own:
-
-- React components or hooks;
-- Next.js integration;
-- administration pages;
-- Generic Organization Directory;
-- OrganisationProfile;
-- PostgreSQL/Redis implementation details;
-- a second RBAC, permission engine or TRN parser.
-
-## Migration rule
-
-The temporary dependency on `@identity-access/client` must be removed only by a later explicit source migration with `MOVED` / `DELETED` manifests and a full GREEN verification before cleanup.
+This package does not own React components, Next.js integration, database routing internals, PostgreSQL/Redis implementation details, a second RBAC engine or consumer-specific business semantics.

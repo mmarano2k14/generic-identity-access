@@ -329,7 +329,7 @@ CSS Modules, component-local style files, `<style>` blocks, and React inline sty
 ```sh
 npm test
 npm run typecheck
-npm pack
+npm run build
 ```
 
 The repository-level `scripts/verify.ps1` also verifies the class-composed source layout, the runnable Next.js host, the single-CSS invariant, and the .NET suite.

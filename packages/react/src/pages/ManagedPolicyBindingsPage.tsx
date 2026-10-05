@@ -1,0 +1,7 @@
+import type { ReactNode } from "react";
+import type { IdentityManagedGroupPolicyBindingRecord } from "@generic-identity/contracts/access-control";
+import { IdentityEmptyState, IdentityPageFrame, IdentityTable } from "../components/index";
+export interface ManagedPolicyBindingsPageProps { readonly bindings: readonly IdentityManagedGroupPolicyBindingRecord[]; readonly title?: string; readonly actions?: ReactNode; }
+export function ManagedPolicyBindingsPage({ bindings, title = "Managed policy bindings", actions }: ManagedPolicyBindingsPageProps) {
+  return <IdentityPageFrame title={title} description="Published managed-policy versions attached to groups and optional resource scopes." actions={actions}>{bindings.length === 0 ? <IdentityEmptyState title="No managed policy bindings" /> : <IdentityTable caption="Managed policy bindings"><thead><tr><th scope="col">Group ID</th><th scope="col">Policy ID</th><th scope="col">Version</th><th scope="col">Resource scope</th><th scope="col">Descendants</th></tr></thead><tbody>{bindings.map((binding) => <tr key={`${binding.groupId}:${binding.policyId}:${binding.policyVersion}:${binding.resourceScopeId ?? ""}`}><td><code>{binding.groupId}</code></td><td><code>{binding.policyId}</code></td><td>{binding.policyVersion}</td><td>{binding.resourceScopeId ? <code>{binding.resourceScopeId}</code> : "Unscoped"}</td><td>{binding.includeDescendants ? "Yes" : "No"}</td></tr>)}</tbody></IdentityTable>}</IdentityPageFrame>;
+}

@@ -1,6 +1,6 @@
 {
   "name": "@generic-identity/auth",
-  "version": "1.0.0",
+  "version": "1.5.0",
   "private": true,
   "type": "module",
   "description": "Framework-neutral Generic Identity authentication and authorization facade over the proven TypeScript client.",
@@ -34,6 +34,36 @@
       "types": "./src/administration.ts",
       "import": "./src/administration.ts",
       "default": "./src/administration.ts"
+    },
+    "./account": {
+      "types": "./src/account.ts",
+      "import": "./src/account.ts",
+      "default": "./src/account.ts"
+    },
+    "./directory": {
+      "types": "./src/directory.ts",
+      "import": "./src/directory.ts",
+      "default": "./src/directory.ts"
+    },
+    "./organizations": {
+      "types": "./src/organizations.ts",
+      "import": "./src/organizations.ts",
+      "default": "./src/organizations.ts"
+    },
+    "./access-control": {
+      "types": "./src/access-control.ts",
+      "import": "./src/access-control.ts",
+      "default": "./src/access-control.ts"
+    },
+    "./application-security": {
+      "types": "./src/application-security.ts",
+      "import": "./src/application-security.ts",
+      "default": "./src/application-security.ts"
+    },
+    "./security-operations": {
+      "types": "./src/security-operations.ts",
+      "import": "./src/security-operations.ts",
+      "default": "./src/security-operations.ts"
     }
   },
   "files": [

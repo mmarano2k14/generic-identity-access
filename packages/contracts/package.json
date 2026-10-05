@@ -1,6 +1,6 @@
 {
   "name": "@generic-identity/contracts",
-  "version": "1.0.0",
+  "version": "1.5.0",
   "private": true,
   "type": "module",
   "description": "Passive public TypeScript contracts for the shared Generic Identity boundary.",
@@ -31,6 +31,24 @@
     },
     "./session": {
       "types": "./src/session.ts"
+    },
+    "./account": {
+      "types": "./src/account/index.ts"
+    },
+    "./directory": {
+      "types": "./src/directory/index.ts"
+    },
+    "./organizations": {
+      "types": "./src/organizations/index.ts"
+    },
+    "./access-control": {
+      "types": "./src/access-control/index.ts"
+    },
+    "./application-security": {
+      "types": "./src/application-security/index.ts"
+    },
+    "./security-operations": {
+      "types": "./src/security-operations/index.ts"
     }
   },
   "files": [

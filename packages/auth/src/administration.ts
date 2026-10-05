@@ -107,7 +107,7 @@ export interface GenericIdentityMfaAdministrationClient {
 /**
  * Read-focused administration facade required by reusable Identity pages.
  * Mutating administration operations remain on the proven legacy client until
- * a later public-contract pack explicitly promotes them.
+ * a later public-contract milestone explicitly promotes them.
  */
 export interface GenericIdentityAdministrationClient {
   readonly context: GenericIdentityAdministrationContextClient;

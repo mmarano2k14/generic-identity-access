@@ -1,6 +1,6 @@
 {
   "name": "@generic-identity/react",
-  "version": "1.0.0",
+  "version": "1.5.0",
   "private": true,
   "type": "module",
   "description": "Reusable React providers, authorization gates, shared Identity pages, theming and visual override contracts.",
@@ -45,7 +45,37 @@
       "import": "./src/visual/index.ts",
       "default": "./src/visual/index.ts"
     },
-    "./theme.css": "./src/theme/default.css"
+    "./theme.css": "./src/theme/default.css",
+    "./account": {
+      "types": "./src/account/index.ts",
+      "import": "./src/account/index.ts",
+      "default": "./src/account/index.ts"
+    },
+    "./directory": {
+      "types": "./src/directory/index.ts",
+      "import": "./src/directory/index.ts",
+      "default": "./src/directory/index.ts"
+    },
+    "./organizations": {
+      "types": "./src/organizations/index.ts",
+      "import": "./src/organizations/index.ts",
+      "default": "./src/organizations/index.ts"
+    },
+    "./access-control": {
+      "types": "./src/access-control/index.ts",
+      "import": "./src/access-control/index.ts",
+      "default": "./src/access-control/index.ts"
+    },
+    "./application-security": {
+      "types": "./src/application-security/index.ts",
+      "import": "./src/application-security/index.ts",
+      "default": "./src/application-security/index.ts"
+    },
+    "./security-operations": {
+      "types": "./src/security-operations/index.ts",
+      "import": "./src/security-operations/index.ts",
+      "default": "./src/security-operations/index.ts"
+    }
   },
   "files": [
     "src",

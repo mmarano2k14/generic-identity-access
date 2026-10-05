@@ -11,3 +11,18 @@ export * from "./SessionsPage";
 export * from "./SignInPage";
 export * from "./UserDetailsPage";
 export * from "./UsersPage";
+export * from "./AuthenticationStepUpPage";
+export * from "./MembershipCandidatePanel";
+export * from "./MembershipsPage";
+export * from "./PasswordPage";
+export * from "./TenantDetailsPage";
+export * from "./TenantsPage";
+export * from "./OrganizationDetailsPage";
+export * from "./OrganizationMembershipsPage";
+export * from "./OrganizationsPage";
+export * from "./OrganizationTreePage";
+
+export * from "./DelegatedAuthorityPage";
+export * from "./GroupAccessPage";
+export * from "./ManagedPolicyBindingsPage";
+export * from "./ResourceScopesPage";

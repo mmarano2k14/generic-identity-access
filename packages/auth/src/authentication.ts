@@ -15,7 +15,7 @@ import type {
 
 /**
  * Secret-bearing authentication contracts belong to the auth boundary rather
- * than the passive contracts package. During Pack 3 their proven source remains
+ * than the passive contracts package. During the Authentication and Authorization SDK milestone, their proven source remains
  * the existing TypeScript client.
  */
 export type {
