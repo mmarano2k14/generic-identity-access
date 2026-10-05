@@ -31,6 +31,63 @@
       ],
       "@identity-access/client": [
         "../../clients/typescript/src/index.ts"
+      ],
+      "@generic-identity/contracts/account": [
+        "../contracts/src/account/index.ts"
+      ],
+      "@generic-identity/contracts/directory": [
+        "../contracts/src/directory/index.ts"
+      ],
+      "@generic-identity/react/account": [
+        "../react/src/account/index.ts"
+      ],
+      "@generic-identity/react/directory": [
+        "../react/src/directory/index.ts"
+      ],
+      "@generic-identity/contracts/organizations": [
+        "../contracts/src/organizations/index.ts"
+      ],
+      "@generic-identity/react/organizations": [
+        "../react/src/organizations/index.ts"
+      ],
+      "@generic-identity/next/organizations": [
+        "./src/organizations/index.ts"
+      ],
+      "@generic-identity/contracts/access-control": [
+        "../contracts/src/access-control/index.ts"
+      ],
+      "@generic-identity/auth/access-control": [
+        "../auth/src/access-control.ts"
+      ],
+      "@generic-identity/react/access-control": [
+        "../react/src/access-control/index.ts"
+      ],
+      "@generic-identity/next/access-control": [
+        "./src/access-control/index.ts"
+      ],
+      "@generic-identity/contracts/application-security": [
+        "../contracts/src/application-security/index.ts"
+      ],
+      "@generic-identity/auth/application-security": [
+        "../auth/src/application-security.ts"
+      ],
+      "@generic-identity/react/application-security": [
+        "../react/src/application-security/index.ts"
+      ],
+      "@generic-identity/next/application-security": [
+        "./src/application-security/index.ts"
+      ],
+      "@generic-identity/contracts/security-operations": [
+        "../contracts/src/security-operations/index.ts"
+      ],
+      "@generic-identity/auth/security-operations": [
+        "../auth/src/security-operations.ts"
+      ],
+      "@generic-identity/react/security-operations": [
+        "../react/src/security-operations/index.ts"
+      ],
+      "@generic-identity/next/security-operations": [
+        "./src/security-operations/index.ts"
       ]
     },
     "skipLibCheck": true
