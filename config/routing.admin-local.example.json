@@ -21,7 +21,7 @@
       "state": "active"
     },
     {
-      "applicationKey": "magellan",
+      "applicationKey": "consumer-app",
       "identityScopeId": "00000000-0000-0000-0000-000000000001",
       "dataSet": "identity-directory",
       "destinationKey": "identity-admin-local",
@@ -37,8 +37,8 @@
       "state": "active"
     },
     {
-      "key": "magellan-primary",
-      "applicationKey": "magellan",
+      "key": "consumer-primary",
+      "applicationKey": "consumer-app",
       "identityScopeId": "00000000-0000-0000-0000-000000000001",
       "state": "active"
     }

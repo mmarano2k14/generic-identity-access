@@ -5,14 +5,14 @@ $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
 
 $root = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
-$scriptPath = Join-Path $root 'scripts\authentication\grant-magellan-dev-admin.ps1'
+$scriptPath = Join-Path $root 'scripts\authentication\grant-consumer-dev-admin.ps1'
 if (-not (Test-Path $scriptPath -PathType Leaf)) {
-    throw 'MAGELLAN development administrator authority bootstrap script is missing.'
+    throw 'consumer development administrator authority bootstrap script is missing.'
 }
 
 $content = Get-Content $scriptPath -Raw
 $required = @(
-    "[string]`$ApplicationKey = 'magellan'",
+    "[string]`$ApplicationKey = 'consumer-app'",
     "'identity-access', '*', '*'",
     'application_security_models',
     'application_security_model_registrations',
@@ -23,16 +23,16 @@ $required = @(
     'identity_scope_administration_group_memberships',
     'identity_scope_administration_group_policy_bindings',
     'ON CONFLICT DO NOTHING',
-    'MAGELLAN local Generic Identity administration authority: GREEN'
+    'Consumer application local Generic Identity administration authority: GREEN'
 )
 foreach ($marker in $required) {
     if (-not $content.Contains($marker)) {
-        throw "MAGELLAN development administrator authority bootstrap is missing required marker '$marker'."
+        throw "consumer development administrator authority bootstrap is missing required marker '$marker'."
     }
 }
 
 if ($content.Contains('DELETE FROM')) {
-    throw 'MAGELLAN development administrator authority bootstrap must remain additive and may not delete authority state.'
+    throw 'consumer development administrator authority bootstrap must remain additive and may not delete authority state.'
 }
 
-Write-Host 'Shared Identity Pack 9 MAGELLAN development administrator authority source validation: GREEN'
+Write-Host 'Shared Identity Runtime and Security Qualification consumer development administrator authority source validation: GREEN'

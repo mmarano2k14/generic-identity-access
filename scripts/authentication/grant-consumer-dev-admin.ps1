@@ -2,7 +2,7 @@
 param(
     [Guid]$IdentityScopeId = [Guid]'00000000-0000-0000-0000-000000000001',
     [Guid]$UserId = [Guid]'00000000-0000-0000-0000-000000000003',
-    [string]$ApplicationKey = 'magellan',
+    [string]$ApplicationKey = 'consumer-app',
     [int]$ModelVersion = 1,
     [string]$SecurityManifestPath
 )
@@ -131,7 +131,7 @@ BEGIN
           AND user_id = '$UserId'
           AND status = 1
     ) THEN
-        RAISE EXCEPTION 'MAGELLAN development administrator subject is not an active user';
+        RAISE EXCEPTION 'Consumer application development administrator subject is not an active user';
     END IF;
 END
 `$`$;
@@ -144,7 +144,7 @@ VALUES ('$IdentityScopeId', '$app', $ModelVersion)
 ON CONFLICT DO NOTHING;
 
 -- The namespace catalog is registration-backed. Register the derived local
--- MAGELLAN administration security model before inserting namespaces.
+-- consumer application administration security model before inserting namespaces.
 INSERT INTO identity_access.application_security_model_registrations AS existing_registration
 (identity_scope_id, application_key, model_version, manifest_schema_version, rbac_project, manifest_sha256)
 VALUES ('$IdentityScopeId', '$app', $ModelVersion, $([int]$manifest.schemaVersion), '$rbacProjectSql', '$manifestSha256')
@@ -172,7 +172,7 @@ ON CONFLICT (identity_scope_id, application_key, model_version,
 
 INSERT INTO identity_access.identity_scope_administration_groups
 (identity_scope_id, application_key, group_id, display_name, status)
-VALUES ('$IdentityScopeId', '$app', '$groupId', 'MAGELLAN Local Identity Administrators', 1)
+VALUES ('$IdentityScopeId', '$app', '$groupId', 'consumer application Local Identity Administrators', 1)
 ON CONFLICT (identity_scope_id, application_key, group_id) DO UPDATE SET
     display_name = EXCLUDED.display_name,
     status = 1,
@@ -186,7 +186,7 @@ ON CONFLICT DO NOTHING;
 
 INSERT INTO identity_access.identity_scope_administration_policies
 (identity_scope_id, application_key, policy_id, display_name, status)
-VALUES ('$IdentityScopeId', '$app', '$policyId', 'MAGELLAN Local Identity Administration', 1)
+VALUES ('$IdentityScopeId', '$app', '$policyId', 'consumer application Local Identity Administration', 1)
 ON CONFLICT (identity_scope_id, application_key, policy_id) DO UPDATE SET
     display_name = EXCLUDED.display_name,
     status = 1,
@@ -213,7 +213,7 @@ ON CONFLICT DO NOTHING;
 Write-Host "Granting local Generic Identity administration authority to '$ApplicationKey' admin context..."
 $sql | & psql -U $postgresUser -v ON_ERROR_STOP=1 -d $databaseName --single-transaction
 if ($LASTEXITCODE -ne 0) {
-    throw 'MAGELLAN development administrator authority bootstrap failed.'
+    throw 'consumer development administrator authority bootstrap failed.'
 }
 
 $verifySql = @"
@@ -242,14 +242,14 @@ WHERE gm.identity_scope_id = '$IdentityScopeId'
 
 $count = ($verifySql | & psql -U $postgresUser -d $databaseName -t -A).Trim()
 if ($LASTEXITCODE -ne 0) {
-    throw 'MAGELLAN development administrator authority verification query failed.'
+    throw 'consumer development administrator authority verification query failed.'
 }
 [int]$grantCount = 0
 if (-not [int]::TryParse($count, [ref]$grantCount) -or $grantCount -lt 1) {
-    throw 'MAGELLAN development administrator authority verification failed.'
+    throw 'consumer development administrator authority verification failed.'
 }
 
-Write-Host 'MAGELLAN local Generic Identity administration authority: GREEN'
+Write-Host 'Consumer application local Generic Identity administration authority: GREEN'
 Write-Host "IdentityScopeId: $IdentityScopeId"
 Write-Host "UserId:          $UserId"
 Write-Host "ApplicationKey:  $ApplicationKey"
