@@ -1,6 +1,6 @@
 # Generic Identity — Full SDK Feature Matrix
 
-**Status:** Application Security public SDK/UI complete  
+**Status:** backend-supported categorized administration SDK/UI complete; MFA live functional acceptance pending  
 **Source:** current controllers, TypeScript legacy client, public Generic Identity packages and shared React pages
 
 Legend:
@@ -104,9 +104,9 @@ SDK_OPTIONAL             protocol/diagnostic surface is optional for the main ad
 | TOTP enrollment/confirmation | Provider service exists internally, but no public controller endpoint discovered | No legacy public client enrollment method | Missing | Missing | `BACKEND_API_MISSING` |
 | WebAuthn registration/enrollment | Registration service exists internally, but no public controller endpoint discovered | No legacy public client registration method | Missing | Missing | `BACKEND_API_MISSING` |
 | Recovery code generation/enrollment | Provider service exists internally, but no public controller endpoint discovered | No legacy public enrollment method | Missing | Missing | `BACKEND_API_MISSING` |
-| Administrative session revocation by user/client | SessionsController | IdentityAccessSessionsClient revokeUser/revokeClient | GenericIdentitySecurityOperationsClient.sessions revokeUser/revokeClient | SessionRevocationForm + SessionsPage composition | `COMPLETE` |
-| Administrative active session listing | No list endpoint discovered; current session validation exists separately | No list client | Missing | SessionsPage accepts supplied list but source is missing | `BACKEND_MISSING` |
-| Security audit listing | SecurityAuditEventsController.List | IdentityAccessSecurityAuditClient.list | GenericIdentitySecurityOperationsClient.audit.list | SecurityAuditPage | `COMPLETE` |
+| Administrative session revocation by user/client | SessionsController | IdentityAccessSessionsClient revokeUser/revokeClient | GenericIdentitySecurityOperationsClient.sessions revokeUser/revokeClient + reusable Next.js containment workflow | SessionSecurityPage + SessionSecurityFilterForm + SessionRevocationForm | `COMPLETE` |
+| Administrative active session listing | No list endpoint discovered; current session validation exists separately | No list client | Missing | No administrative inventory is presented; SessionSecurityPage uses bounded evidence instead | `BACKEND_MISSING` |
+| Security audit listing | SecurityAuditEventsController.List | IdentityAccessSecurityAuditClient.list | GenericIdentitySecurityOperationsClient.audit.list + reusable bounded query workspace | SecurityAuditPage + SecurityAuditFilterForm | `COMPLETE` |
 
 ## Protocol & Diagnostics
 
@@ -119,6 +119,12 @@ SDK_OPTIONAL             protocol/diagnostic surface is optional for the main ad
 | OIDC discovery | OidcDiscoveryController | Transport/consumer HTTP surface | Not exposed by GenericIdentityClient | N/A | `SDK_OPTIONAL` |
 | Liveness/readiness | HealthController | IdentityAccessSystemClient liveness/readiness | Not exposed by GenericIdentityClient | N/A | `SDK_OPTIONAL` |
 | Service info | SystemController.Info | IdentityAccessSystemClient.info | Not exposed by GenericIdentityClient | N/A | `SDK_OPTIONAL` |
+
+## Administration integration qualification
+
+The reusable consumer integration has been functionally qualified for Tenants, Application Security, Users, Memberships, Organizations, Groups, Managed Policies, Resource Scopes, Delegated Authority, Security Audit, and Sessions. Authentication/authorization and the server-backed entity-reference selector are also qualified.
+
+MFA administration is implemented and source-qualified, but its dedicated live functional acceptance is intentionally pending. This qualification state is separate from feature availability: backend-supported MFA administration rows remain `COMPLETE`, while operational acceptance of the reusable consumer workflow is tracked in `ADMINISTRATION_INTEGRATION.md`.
 
 ## Out of categorized Generic Identity SDK scope
 

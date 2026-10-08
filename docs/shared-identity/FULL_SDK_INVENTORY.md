@@ -1,20 +1,13 @@
-# Shared Identity SDK Inventory and Category Contract — Full SDK Inventory & Category Contract Freeze
+# Generic Identity — Full SDK Inventory
 
-## Goal
+**Current package family:** `1.5.0`  
+**Scope:** categorized Generic Identity SDK and reusable administration integration
 
-Freeze the complete consumer-neutral Generic Identity SDK taxonomy against the code that actually exists before expanding public contracts, mutations or UI.
+## Purpose
 
-SDK Inventory and Category Contract is intentionally non-functional. It does not add endpoints, database migrations, authorization rules or new UI behavior.
+This inventory records the backend-grounded public SDK surface. It distinguishes implemented backend capabilities from genuine backend gaps so the SDK does not manufacture unsupported semantics.
 
-## Deliverables
-
-- `FULL_SDK_CATEGORY_MODEL.md` — category boundaries and dependency rules.
-- `FULL_SDK_FEATURE_MATRIX.md` — human-readable feature-by-feature inventory.
-- `full-sdk-feature-matrix.json` — machine-readable source for later validation gates.
-- SDK Inventory and Category Contract source validation that anchors the inventory to representative current controllers, legacy SDK clients, public packages and shared pages.
-- Consumer-neutral naming gate for public/runtime Identity source.
-
-## Frozen categories
+## Public categories
 
 ```text
 Account & Authentication
@@ -26,27 +19,24 @@ Security Operations
 Protocol & Diagnostics
 ```
 
-## Key findings
+## Current findings
 
-1. The legacy TypeScript client already covers substantially more administration behavior than the current categorized public `@generic-identity/auth` facade.
-2. The current public administration facade is intentionally read-focused and must be expanded category by category rather than replaced wholesale.
-3. Shared React pages exist for several core areas, but many are read-focused composition surfaces rather than complete CRUD experiences.
-4. Organization Directory already has a rich backend and legacy TypeScript client but is not yet promoted into the public categorized SDK/UI.
-5. Application security models, resource scopes, security audit, delegated scope authority and policy versioning are backend-real but not yet fully surfaced through the public SDK.
-6. TOTP/WebAuthn/recovery providers contain internal enrollment services, but no public enrollment controller endpoint was discovered in the SDK Inventory and Category Contract baseline. These are backend API gaps, not SDK-only gaps.
-7. No dedicated effective-permission listing or permission-explanation endpoint was discovered; authorization evaluation itself is implemented.
-8. Invitations were not found as a backend/controller/client feature in the current baseline.
-9. `OrganisationProfile` is intentionally excluded from the Generic Identity categorized SDK boundary.
+1. Backend-supported administration capabilities across Directory, Organizations, Access Control, Application Security, and Security Operations are exposed through categorized Generic Identity clients.
+2. Reusable React and Next.js administration workflows now cover the main backend-supported administration lifecycle, including bounded relation lookup and server-authorized mutations.
+3. Tenant authorization and identity-scope Delegated Authority remain separate authorization catalogs.
+4. Security Audit is exposed as bounded, read-only evidence.
+5. Session administration exposes containment by user/client plus bounded evidence; no administrative active-session list exists and none is inferred.
+6. MFA provider discovery, policy administration, effective user state, and authenticator lifecycle are exposed; dedicated live functional acceptance of the reusable MFA workflow remains pending.
+7. TOTP enrollment, WebAuthn registration, and recovery-code generation have internal services but no discovered public administration endpoint; they remain `BACKEND_API_MISSING`.
+8. Invitations, effective-permission listing, and permission-explanation/grant-provenance remain backend gaps.
+9. OIDC protocol and service diagnostics remain optional categorized public-SDK expansion areas rather than core administration UI requirements.
+10. `OrganisationProfile` remains outside the Generic Identity categorized SDK boundary.
 
-## No behavior change
+## Cross-cutting administration contract
 
-```text
-Authentication behavior     unchanged
-Authorization behavior      unchanged
-RBAC                         unchanged
-Database schema              unchanged
-Package versions             unchanged
-Runtime routes               unchanged
-```
+Relational administration uses bounded server-backed entity references. Consumer applications own routes and branding but do not duplicate security semantics.
 
-Account and Directory may begin only from this matrix and must not silently add a feature whose backend status is `BACKEND_MISSING` or `BACKEND_API_MISSING`.
+The detailed feature-by-feature status is maintained in:
+
+- [`FULL_SDK_FEATURE_MATRIX.md`](FULL_SDK_FEATURE_MATRIX.md)
+- [`full-sdk-feature-matrix.json`](full-sdk-feature-matrix.json)

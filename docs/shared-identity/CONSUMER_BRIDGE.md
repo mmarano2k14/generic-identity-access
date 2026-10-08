@@ -1,15 +1,35 @@
-# Shared Identity Consumer Bridge — Consumer administration bridge
+# Generic Identity — Consumer Integration Boundary
 
-This closure is additive and exists solely to make the already-qualified shared
-Identity pages consumable by a real Next.js application without copying legacy
-administration endpoint logic into the consumer.
+The consumer integration boundary exists so applications can adopt Generic Identity without copying endpoint logic or security semantics into product code.
 
-It adds a read-focused administration facade to `@generic-identity/auth`, server
-helpers to construct trusted administration contexts in `@generic-identity/next`,
-and runtime source export conditions required for local `file:` package
-consumption during pre-publication integration.
+## Architecture
 
-No authentication, authorization, RBAC, TRN, MFA or persistence semantics are
-reimplemented. The proven legacy TypeScript client remains the runtime bridge.
+```text
+consumer route / Server Action
+        │
+        v
+@generic-identity/next/server
+        │
+        v
+@generic-identity/auth categorized clients
+        │
+        v
+proven TypeScript transport
+        │
+        v
+Identity API
+```
 
-No files are moved or deleted.
+The integration is no longer read-only. Reusable server workflows cover the supported administration lifecycle for Directory, Organizations, Access Control, Application Security, Security Audit, Sessions, and MFA administration.
+
+## Invariants
+
+- authentication, authorization, RBAC and tenant routing remain server-authoritative;
+- the consumer never imports the compatibility transport directly for application behavior;
+- browser identifiers are requested context, not authorization context;
+- mutations execute through server-only integration code;
+- relation selection uses bounded server-backed lookup rather than unrestricted catalogs;
+- failures remain distinguishable from authorization denial;
+- consumer branding and route ownership stay outside the reusable SDK.
+
+No second authentication, authorization, RBAC, MFA, session, or persistence engine is introduced.

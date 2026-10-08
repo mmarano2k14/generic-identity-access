@@ -8,3 +8,7 @@ export * from "./MembershipCandidateForm";
 export * from "./MembershipForm";
 export * from "./TenantForm";
 export * from "./UserForm";
+
+export * from "./MemberGroupAssignmentsForm";
+export * from "./MemberOrganizationAssignmentsForm";
+export * from "./MembershipCandidateLookupPanel";

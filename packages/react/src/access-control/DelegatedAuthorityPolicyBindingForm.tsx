@@ -1,16 +1,28 @@
 import type { ReactNode } from "react";
-import type { IdentityScopeAuthorityPolicyRecord } from "@generic-identity/contracts/access-control";
-import { IdentityButton } from "../components/index";
+import { IdentityButton, IdentityEntityAutocomplete } from "../components/index";
+
+type DelegatedAuthorityPolicyBindingFormAction = string | ((formData: FormData) => void | Promise<void>);
 
 export interface DelegatedAuthorityPolicyBindingFormProps {
-  readonly policies: readonly IdentityScopeAuthorityPolicyRecord[];
-  readonly formAction?: string;
+  readonly groupId: string;
+  readonly defaultPolicyId?: string;
+  readonly excludePolicyIds?: readonly string[];
+  readonly formAction?: DelegatedAuthorityPolicyBindingFormAction;
   readonly error?: ReactNode;
 }
 
-export function DelegatedAuthorityPolicyBindingForm({ policies, formAction, error }: DelegatedAuthorityPolicyBindingFormProps) {
-  return <form className="gi-form" method="post" action={formAction} data-gi-component="delegated-authority-policy-binding-form">
-    <label className="gi-field"><span className="gi-field-label">Authority policy</span><select className="gi-input" name="policyId" required><option value="">Select a policy</option>{policies.map((policy) => <option key={policy.policyId} value={policy.policyId}>{policy.displayName}</option>)}</select></label>
+export function DelegatedAuthorityPolicyBindingForm({ groupId, defaultPolicyId = "", excludePolicyIds = [], formAction, error }: DelegatedAuthorityPolicyBindingFormProps) {
+  return <form className="gi-form" method={typeof formAction === "function" ? undefined : "post"} action={formAction} data-gi-component="delegated-authority-policy-binding-form">
+    <input type="hidden" name="groupId" value={groupId} />
+    <IdentityEntityAutocomplete
+      label="Authority policy"
+      name="policyId"
+      kind="authority-policy"
+      defaultValue={defaultPolicyId}
+      excludeIds={excludePolicyIds}
+      required
+      hint="Type at least 3 characters of the authority policy display name, or enter the full ID."
+    />
     {error ? <div className="gi-form-error" role="alert">{error}</div> : null}
     <IdentityButton variant="primary" type="submit">Bind authority policy</IdentityButton>
   </form>;

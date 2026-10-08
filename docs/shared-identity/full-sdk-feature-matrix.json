@@ -218,7 +218,7 @@
         },
         {
           "key": "organization-resource-scope-link",
-          "label": "Organization \u2194 resource-scope link",
+          "label": "Organization ↔ resource-scope link",
           "backend": "OrganizationResourceScopeLinksController",
           "legacyClient": "IdentityAccessOrganizationResourceScopeLinksClient",
           "publicSdk": "GenericIdentityOrganizationsClient.resourceScopeLinks full lifecycle",
@@ -440,8 +440,8 @@
           "label": "Administrative session revocation by user/client",
           "backend": "SessionsController",
           "legacyClient": "IdentityAccessSessionsClient revokeUser/revokeClient",
-          "publicSdk": "GenericIdentitySecurityOperationsClient.sessions revokeUser/revokeClient",
-          "sharedUi": "SessionRevocationForm + SessionsPage composition",
+          "publicSdk": "GenericIdentitySecurityOperationsClient.sessions revokeUser/revokeClient + reusable Next.js containment workflow",
+          "sharedUi": "SessionSecurityPage + SessionSecurityFilterForm + SessionRevocationForm",
           "status": "COMPLETE"
         },
         {
@@ -450,7 +450,7 @@
           "backend": "No list endpoint discovered; current session validation exists separately",
           "legacyClient": "No list client",
           "publicSdk": "Missing",
-          "sharedUi": "SessionsPage accepts supplied list but source is missing",
+          "sharedUi": "No administrative inventory; SessionSecurityPage uses bounded audit evidence instead",
           "status": "BACKEND_MISSING"
         },
         {
@@ -458,8 +458,8 @@
           "label": "Security audit listing",
           "backend": "SecurityAuditEventsController.List",
           "legacyClient": "IdentityAccessSecurityAuditClient.list",
-          "publicSdk": "GenericIdentitySecurityOperationsClient.audit.list",
-          "sharedUi": "SecurityAuditPage",
+          "publicSdk": "GenericIdentitySecurityOperationsClient.audit.list + reusable bounded query workspace",
+          "sharedUi": "SecurityAuditPage + SecurityAuditFilterForm",
           "status": "COMPLETE"
         }
       ],

@@ -64,4 +64,23 @@ if ($alignedVersions.Count -ne 1) {
 }
 
 
+
+Require-Text 'packages/next/src/server/organization-workspace.ts' 'loadNextOrganizationWorkspace'
+Require-Text 'packages/next/src/server/organization-workspace.ts' 'organization-scope-link'
+Require-Text 'packages/next/src/server/organization-mutations.ts' 'createNextOrganizationFromForm'
+Require-Text 'packages/next/src/server/organization-mutations.ts' 'linkNextOrganizationResourceScopeFromForm'
+Require-Text 'packages/next/src/server/index.ts' 'loadNextOrganizationWorkspace'
+Require-Text 'packages/react/src/organizations/OrganizationForm.tsx' 'typeof formAction === "function"'
+Require-Text 'packages/react/src/organizations/OrganizationMembershipForm.tsx' 'kind="tenant-membership"'
+Require-Text 'packages/react/src/organizations/OrganizationResourceScopeLinkForm.tsx' 'kind="resource-scope"'
+Require-Text 'packages/react/src/pages/OrganizationsPage.tsx' 'hierarchyLabel'
+# ResourceScope autocomplete remains ACTIVE-only by default for Organization links.
+# Resource Scope hierarchy editing may explicitly opt into inactive references.
+Require-Text 'packages/next/src/server/entity-references.ts' 'includeInactive = false'
+Require-Text 'packages/next/src/server/entity-references.ts' '.filter((record) => includeInactive || record.status === 1)'
+
+& node (Join-Path $root 'packages/next/test/organization-workflows.behavior.test.mjs')
+if ($LASTEXITCODE -ne 0) { throw 'Organizations parity behavior tests failed.' }
+Write-Host 'Shared Identity Organizations parity behavior tests: GREEN'
+
 Write-Host 'Shared Identity Organizations SDK/UI source validation: GREEN'

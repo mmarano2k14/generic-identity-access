@@ -6,3 +6,9 @@ export * from "./AuthenticatorRevocationForm";
 export * from "./MfaPolicyForm";
 export * from "./SecurityAuditPage";
 export * from "./SessionRevocationForm";
+
+export * from "./SecurityAuditFilterForm";
+
+export * from "./SessionSecurityFilterForm";
+
+export * from "./SessionSecurityPage";

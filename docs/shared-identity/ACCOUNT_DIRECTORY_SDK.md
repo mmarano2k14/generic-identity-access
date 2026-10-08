@@ -1,79 +1,66 @@
-# Shared Identity Account and Directory — Account & Directory SDK/UI
+# Generic Identity — Account and Directory
+
+**Current package family:** `1.5.0`
 
 ## Purpose
 
-Promote the real Account & Authentication and Directory backend/client capabilities into categorized public SDK surfaces without replacing the compatibility `administration.*` facade.
+Account & Authentication and Directory expose proven Identity backend capabilities through categorized, consumer-neutral SDK surfaces.
 
 ## Public category surfaces
 
 ```text
 @generic-identity/contracts/account
 @generic-identity/contracts/directory
-
 @generic-identity/auth/account
 @generic-identity/auth/directory
 ```
 
-The root `GenericIdentityClient` now exposes:
+The root client exposes:
 
 ```text
 client.account
 client.directory
 ```
 
-Existing surfaces remain available:
+Compatibility surfaces remain available during the transition.
+
+## Account & Authentication
+
+Supported categorized operations include:
 
 ```text
-client.authentication
-client.authorization
-client.administration
-```
-
-## Account category
-
-The categorized account facade exposes only proven operations:
-
-```text
+password login / logout / session validation
 self-service password change
 recovery-code password reset
-session validation
-TOTP step-up
-recovery-code step-up
-WebAuthn step-up
+TOTP / recovery / WebAuthn session step-up
 administrative password credential lifecycle
 ```
 
-No self-service profile mutation is invented because no dedicated backend contract is currently available.
+No self-service profile mutation is invented where no dedicated backend contract exists.
 
-## Directory category
+## Directory
+
+Supported directory operations include:
 
 ```text
 users CRUD
 tenants CRUD
 tenant user projection
-tenant memberships CRUD
-membership candidate lookup/add-by-login
-tenant group assignment listing
+tenant memberships lifecycle
+membership candidate lookup / add by login
+tenant group assignment reads
 ```
 
-Invitations remain explicitly unsupported until a real backend contract exists.
+Invitations remain unsupported until a public backend contract exists.
 
-## Shared UI
+## Administration workflows
 
-Added reusable consumer-neutral views:
+The reusable Next.js integration provides complete server workflows for Users, Tenants, and Memberships, including optimistic concurrency, safe credential administration, scope-aware visibility, and assignment reconciliation.
 
-```text
-PasswordPage
-AuthenticationStepUpPage
-TenantsPage
-TenantDetailsPage
-MembershipsPage
-MembershipCandidatePanel
-```
+Relational selectors use the shared bounded entity autocomplete rather than loading unrestricted catalogs into the browser.
 
-Mutation authorization remains server-authoritative. Shared pages expose presentation and action slots; they do not implement a second permission model.
+See:
 
-## Versioning
-
-The four Generic Identity public packages advance additively to `1.1.0`.
-The release qualifier now derives the shared release version from the package manifests and verifies that all four shared packages remain version-aligned.
+- [`USERS_ADMINISTRATION.md`](USERS_ADMINISTRATION.md)
+- [`MEMBERSHIPS_ADMINISTRATION.md`](MEMBERSHIPS_ADMINISTRATION.md)
+- [`ADMINISTRATION_INTEGRATION.md`](ADMINISTRATION_INTEGRATION.md)

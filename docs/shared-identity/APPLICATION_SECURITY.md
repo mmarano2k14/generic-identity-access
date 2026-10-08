@@ -1,115 +1,60 @@
 # Generic Identity — Application Security
 
-**Release:** 1.4.0  
-**Status:** Public SDK and shared UI available  
-**Scope:** Generic Identity application security metadata and trusted administration context
+**Introduced:** `1.4.0`  
+**Current package family:** `1.5.0`
 
-## 1. Purpose
+## Purpose
 
-Application Security is the Generic Identity category responsible for the security metadata that a consuming application declares and registers with Identity. It exposes the registered security model, its RBAC context, its capability catalog and its resource-scope type definitions without moving authorization decisions into the browser or consumer application.
+Application Security defines the registered authorization vocabulary for a consumer application without turning manifest metadata into authority.
 
-The category is backed by existing server capabilities:
-
-- `ApplicationSecurityModelsController` for immutable model discovery and manifest registration;
-- `ScopeTypesController` for model-scoped resource-scope type discovery and registration;
-- `AdministrationContextController` for the server-trusted effective administration context.
-
-No synthetic endpoint or second authorization engine is introduced.
-
-## 2. Public SDK
-
-The categorized client is available as:
-
-```ts
-identity.applicationSecurity.models
-identity.applicationSecurity.manifests
-identity.applicationSecurity.scopeTypes
-identity.applicationSecurity.capabilities
-identity.applicationSecurity.context
-```
-
-Representative operations:
-
-```ts
-const models = await identity.applicationSecurity.models.list(context);
-const model = await identity.applicationSecurity.models.get(context, 3);
-
-await identity.applicationSecurity.manifests.register(context, manifest);
-
-const scopeTypes = await identity.applicationSecurity.scopeTypes.list(context, 3);
-await identity.applicationSecurity.scopeTypes.add(context, 3, request);
-
-const capabilities = await identity.applicationSecurity.capabilities.listForModel(context, 3);
-const effectiveContext = await identity.applicationSecurity.context.get(context);
-```
-
-The implementation composes the proven `IdentityAccessSecurityModelsClient` and `IdentityAccessAdministrationContextClient`. It does not duplicate HTTP transport or backend semantics.
-
-## 3. Shared presentation surface
-
-The reusable React package exports:
-
-- `ApplicationSecurityModelsPage`;
-- `ApplicationSecurityModelDetailsPage`;
-- `ApplicationCapabilitiesPage`;
-- `ApplicationScopeTypesPage`;
-- `ApplicationSecurityContextPage`;
-- `ApplicationSecurityManifestForm`;
-- `ApplicationScopeTypeForm`.
-
-The Next.js package re-exports the same presentation surface under `@generic-identity/next/application-security`.
-
-Routes, navigation, server actions, branding and product-specific labels remain consumer-owned.
-
-## 4. Structured permission references
-
-`IdentityApplicationSecurityPermissionReference` is the public representation for a capability selected from a registered model and RBAC namespace.
-
-`createApplicationSecurityPermissionReference(...)` validates that:
-
-1. the RBAC namespace is declared by the registered model;
-2. the requested capability exists in that model;
-3. the returned reference retains the application key, model version and RBAC project that established the coordinates.
-
-The reference is deliberately **not** a credential, grant, access context or authorization result. It also does not expose a public helper that manufactures TRN strings. External TRN materialization and authorization remain server-side concerns.
-
-## 5. Security invariants
-
-The Application Security surface preserves the following rules:
-
-- registration metadata never grants a permission by itself;
-- a capability declared by a manifest is catalog metadata, not authority;
-- a browser-visible page is not an authorization boundary;
-- effective administration context is obtained from the server and is not reconstructed from client input;
-- unknown or undeclared capability coordinates fail closed in the structured reference helper;
-- authorization evaluation continues through the existing Generic Identity / .NET RBAC path;
-- no consumer-specific business semantics are introduced into Generic Identity.
-
-## 6. Compatibility
-
-Existing `administration.*` and legacy TypeScript client surfaces remain available. The categorized `applicationSecurity` surface is additive and is the preferred API for new consumers.
-
-No backend database migration, route change or RBAC behavior change is required by this release.
-
-## 7. Package version
-
-The four public Generic Identity packages advance together to `1.4.0`:
+Public surfaces cover:
 
 ```text
-@generic-identity/contracts
-@generic-identity/auth
-@generic-identity/react
-@generic-identity/next
+application security model list/get
+manifest registration
+scope type list/add
+capability catalog
+trusted effective administration context
+structured permission references
 ```
 
-This keeps the public package family version-aligned while preserving the existing dependency direction:
+## Manifest registration
+
+The reusable Next.js server workflow accepts a project-owned JSON manifest and validates:
 
 ```text
-contracts
-   ↑
-auth
-   ↑
-react
-   ↑
-next
+file presence and JSON shape
+application key against trusted administration context
+model version
+RBAC namespace declarations
+capability structure
+duplicate capabilities
+size and file type constraints
 ```
+
+Only the Identity API persists the registered model. Browser input cannot redefine the trusted application context.
+
+## Scope types
+
+Scope types are registered against an application security model version and may define parent relationships according to backend rules.
+
+ResourceScope administration consumes this catalog instead of accepting arbitrary scope-type text.
+
+## Capability catalog
+
+Registered capabilities are metadata used by administration surfaces such as Managed Policies. Registration by itself grants no permission.
+
+## Permission references
+
+Structured permission references validate declared resource/feature/action coordinates. They are not credentials, grants, authorization decisions, or a public TRN string factory.
+
+## Security invariants
+
+- model metadata does not grant authority;
+- effective administration context comes from the server;
+- unknown capability coordinates fail closed;
+- consumer UI is never an authorization boundary;
+- RBAC evaluation remains server-side;
+- consumer-specific business semantics remain outside Generic Identity.
+
+No database migration or RBAC semantic change is introduced by the shared SDK workflows.

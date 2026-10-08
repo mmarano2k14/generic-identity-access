@@ -26,3 +26,8 @@ export * from "./DelegatedAuthorityPage";
 export * from "./GroupAccessPage";
 export * from "./ManagedPolicyBindingsPage";
 export * from "./ResourceScopesPage";
+export * from "./ResourceScopeDetailsPage";
+
+export * from "./TenantLinkedUsersPage";
+export * from "./UserAccessInsightPanel";
+export * from "./UserPasswordCredentialPanel";

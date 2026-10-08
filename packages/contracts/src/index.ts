@@ -22,3 +22,6 @@ export type * from "./access-control/index";
 export type * from "./application-security/index";
 
 export type * from "./security-operations/index";
+
+export type * from "./user-access-insight";
+export type * from "./entity-references";

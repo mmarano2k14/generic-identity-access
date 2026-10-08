@@ -27,6 +27,14 @@
       "destinationKey": "identity-admin-local",
       "version": 1,
       "state": "active"
+    },
+    {
+      "applicationKey": "runtime-admin",
+      "identityScopeId": "00000000-0000-0000-0000-000000000001",
+      "dataSet": "identity-directory",
+      "destinationKey": "identity-admin-local",
+      "version": 1,
+      "state": "active"
     }
   ],
   "authenticationContexts": [
@@ -39,6 +47,12 @@
     {
       "key": "consumer-primary",
       "applicationKey": "consumer-app",
+      "identityScopeId": "00000000-0000-0000-0000-000000000001",
+      "state": "active"
+    },
+    {
+      "key": "runtime-primary",
+      "applicationKey": "runtime-admin",
       "identityScopeId": "00000000-0000-0000-0000-000000000001",
       "state": "active"
     }

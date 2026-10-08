@@ -96,4 +96,32 @@ if (-not $?) {
     throw "Generic Identity Security Operations source validation failed."
 }
 
+& (Join-Path $PSScriptRoot "verify-membership-parity.ps1")
+if (-not $?) { throw "Generic Identity Membership SDK validation failed." }
+
+& (Join-Path $PSScriptRoot "verify-entity-reference-autocomplete.ps1")
+if (-not $?) { throw "Generic Identity entity-reference autocomplete validation failed." }
+
+& (Join-Path $PSScriptRoot "verify-groups-parity.ps1")
+if (-not $?) { throw "Generic Identity Groups parity validation failed." }
+
+& (Join-Path $PSScriptRoot "verify-managed-policies-parity.ps1")
+if (-not $?) { throw "Generic Identity Managed Policies parity validation failed." }
+
+& (Join-Path $PSScriptRoot "verify-resource-scopes-parity.ps1")
+if (-not $?) { throw "Generic Identity Resource Scopes parity validation failed." }
+
+& (Join-Path $PSScriptRoot "verify-delegated-authority-parity.ps1")
+if (-not $?) { throw "Generic Identity Delegated Authority parity validation failed." }
+
+& (Join-Path $PSScriptRoot "verify-mfa-parity.ps1")
+if (-not $?) { throw "Generic Identity MFA parity validation failed." }
+
+
+& (Join-Path $PSScriptRoot "verify-security-audit-parity.ps1")
+if (-not $?) { throw "Generic Identity Security Audit parity validation failed." }
+
+& (Join-Path $PSScriptRoot "verify-sessions-parity.ps1")
+if (-not $?) { throw "Generic Identity Sessions parity validation failed." }
+
 Write-Host "Shared Identity integration validation: GREEN"

@@ -7,9 +7,10 @@ export interface UserDetailsPageProps {
   readonly user: IdentityUserRecord;
   readonly memberships?: readonly IdentityTenantMembershipRecord[];
   readonly actions?: ReactNode;
+  readonly showMemberships?: boolean;
 }
 
-export function UserDetailsPage({ user, memberships = [], actions }: UserDetailsPageProps) {
+export function UserDetailsPage({ user, memberships = [], actions, showMemberships = true }: UserDetailsPageProps) {
   return (
     <IdentityPageFrame title={user.displayName} description={`User ${user.userId}`} actions={actions}>
       <IdentityPanel title="Account">
@@ -19,14 +20,14 @@ export function UserDetailsPage({ user, memberships = [], actions }: UserDetails
           <div><dt>Version</dt><dd>{user.version}</dd></div>
         </dl>
       </IdentityPanel>
-      <IdentityPanel title="Tenant memberships">
+      {showMemberships ? <IdentityPanel title="Tenant memberships">
         {memberships.length === 0 ? <IdentityEmptyState title="No memberships" /> : (
           <IdentityTable caption="Tenant memberships">
             <thead><tr><th scope="col">Tenant</th><th scope="col">Membership ID</th><th scope="col">Status</th><th scope="col">Version</th></tr></thead>
             <tbody>{memberships.map((membership) => <tr key={membership.membershipId}><td><code>{membership.tenantId}</code></td><td><code>{membership.membershipId}</code></td><td>{activeStatus(membership.status)}</td><td>{membership.version}</td></tr>)}</tbody>
           </IdentityTable>
         )}
-      </IdentityPanel>
+      </IdentityPanel> : null}
     </IdentityPageFrame>
   );
 }

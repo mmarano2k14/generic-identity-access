@@ -61,3 +61,12 @@ It must not encode a specific consuming product name into a class, interface, pa
 ## 5. Backend-grounded rule
 
 A public SDK feature may be classified as complete only when the underlying backend contract actually exists. Internal provider services do not count as a public API. For example, an internal TOTP or WebAuthn enrollment service without a controller endpoint is recorded as `BACKEND_API_MISSING`; The SDK inventory does not invent an endpoint.
+
+
+## 6. Cross-cutting administration integration
+
+The category model is consumed through reusable Next.js server workflows and React presentation. Cross-category relations use the bounded Generic Identity entity-reference autocomplete rather than introducing category-specific browser catalogs.
+
+Consumer applications remain route and branding owners. The reusable SDK remains consumer-neutral and server-authoritative.
+
+Current aligned public package family: `1.5.0`.

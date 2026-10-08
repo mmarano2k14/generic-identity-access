@@ -1,3 +1,18 @@
+# Generic Identity 1.5.0 — Administration Integration Qualification
+
+**Date:** 2026-10-07
+
+- Completed reusable Next.js administration workflows and React presentation surfaces for tenants, users, memberships, organizations, groups, managed policies, resource scopes, delegated authority, security audit, and session security.
+- Added bounded, server-backed entity reference autocomplete for users, tenants, tenant memberships, managed policies, resource scopes, authority groups, and authority policies.
+- Added application-security manifest upload and scope-type administration workflows while preserving server-side model validation and registration authority.
+- Added complete user credential administration, membership reconciliation, organization/resource-scope linking, managed-policy publication, delegated-authority membership/policy/binding administration, and optimistic-concurrency handling through reusable server workflows.
+- Clarified the separation between tenant Groups / Managed Policies and identity-scope Delegated Authority. Administrative authority is not duplicated into tenant authorization catalogs.
+- Expanded Security Audit with bounded filters, summary metrics, correlation navigation, and secret-safe event presentation.
+- Reworked Sessions administration around bounded security evidence plus server-confirmed user/client revocation. The SDK does not infer an active-session inventory because no administrative session-list endpoint exists.
+- Completed provider-neutral MFA administration composition for provider discovery, application policy, effective user MFA state, authenticator metadata, standard revocation, and recovery revocation. Dedicated live functional acceptance for MFA remains pending.
+- Added source and behavior qualification for the administration workflows and updated consumer-integration validation to reflect the current canonical routes and package boundaries.
+- Preserved the aligned public package version at `1.5.0`; no backend schema migration, RBAC bypass, authentication shortcut, or speculative backend API was introduced by this integration work.
+
 # Generic Identity 1.5.0 — Security Operations
 
 - Promoted existing session-revocation, MFA-administration, authenticator-lifecycle and security-audit capabilities into the categorized `identity.security` SDK surface.

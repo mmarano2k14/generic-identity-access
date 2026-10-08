@@ -72,6 +72,7 @@ export {
   GroupAccessPage,
   ManagedPolicyBindingsPage,
   ResourceScopesPage,
+  ResourceScopeDetailsPage,
 } from "@generic-identity/react/access-control";
 
 export type {
@@ -79,5 +80,9 @@ export type {
   GroupAccessPageProps,
   ManagedPolicyBindingsPageProps,
   ResourceScopesPageProps,
+  ResourceScopeDetailsPageProps,
 } from "@generic-identity/react/access-control";
 
+
+export { TenantLinkedUsersPage, UserAccessInsightPanel, UserPasswordCredentialPanel } from "@generic-identity/react/pages";
+export type { TenantLinkedUsersPageProps, UserAccessInsightPanelProps, UserPasswordCredentialPanelProps } from "@generic-identity/react/pages";

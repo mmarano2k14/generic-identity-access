@@ -1,24 +1,13 @@
 # Generic Identity — Security Operations
 
-**Release:** 1.5.0  
-**Status:** Public SDK and shared UI available for backend-supported operations  
-**Scope:** Administrative session revocation, MFA administration, authenticator lifecycle metadata and security audit
+**Release family:** `1.5.0`  
+**Status:** public SDK and reusable administration workflows available for backend-supported operations
 
 ## 1. Purpose
 
-Security Operations is the Generic Identity category for operational account-security administration. It promotes the existing server-backed session, MFA and security-audit capabilities into the categorized public SDK without moving security decisions into the frontend.
+Security Operations provides server-authoritative administration for MFA, authenticator lifecycle, session containment, and security-audit evidence.
 
-The category is backed by existing server capabilities:
-
-- `SessionsController` for administrative revocation of sessions by user or registered client;
-- `MfaAdministrationController` for provider discovery, MFA policy lifecycle, authenticator inspection and revocation;
-- `SecurityAuditEventsController` for filtered read-only security-audit queries.
-
-The release does not create endpoints for functionality that is only implemented as an internal provider service.
-
-## 2. Public SDK
-
-The categorized client is available as:
+Public categorized clients:
 
 ```ts
 identity.security.sessions
@@ -26,112 +15,113 @@ identity.security.mfa
 identity.security.audit
 ```
 
-Representative operations:
+The category delegates to the proven backend and transport implementation. It does not introduce a second session store, MFA engine, audit store, or authorization model.
 
-```ts
-const providers = await identity.security.mfa.listProviders(context);
-const policy = await identity.security.mfa.getPolicy(context);
+## 2. MFA administration
 
-await identity.security.mfa.createPolicy(context, request);
-await identity.security.mfa.updatePolicy(context, request);
+Supported public operations:
 
-const authenticators = await identity.security.mfa.listAuthenticators(context, userId);
-const state = await identity.security.mfa.getUserSecurityState(context, userId);
-
-await identity.security.mfa.revokeAuthenticator(
-  context,
-  userId,
-  authenticatorId,
-  expectedVersion,
-);
-
-await identity.security.mfa.revokeAuthenticatorForRecovery(
-  context,
-  userId,
-  authenticatorId,
-  expectedVersion,
-);
-
-await identity.security.sessions.revokeUser(context, userId);
-await identity.security.sessions.revokeClient(context, clientId);
-
-const events = await identity.security.audit.list(context, {
-  userId,
-  outcome: "Denied",
-  limit: 50,
-});
+```text
+provider discovery
+MFA policy get/create/update
+user effective MFA security state
+authenticator list
+authenticator revoke
+recovery-oriented authenticator revoke
 ```
 
-The facade delegates to the proven `IdentityAccessMfaClient`, `IdentityAccessSessionsClient` and `IdentityAccessSecurityAuditClient`. HTTP transport, validation, authorization and persistence semantics remain owned by the existing implementation.
+Reusable workflow/presentation:
 
-## 3. Shared presentation surface
+```text
+loadNextMfaWorkspace
+createNextMfaPolicyFromForm
+updateNextMfaPolicyFromForm
+revokeNextMfaAuthenticatorFromForm
+recoveryRevokeNextMfaAuthenticatorFromForm
+MfaPage
+MfaPolicyForm
+AuthenticatorRevocationForm
+```
 
-The reusable React package exports the Security Operations surface under `@generic-identity/react/security-operations`:
+Authenticator responses expose safe lifecycle metadata only. Provider secrets are not part of shared administration contracts.
 
-- `MfaPage`, including provider, policy, user security state and authenticator metadata;
-- `MfaPolicyForm`;
-- `AuthenticatorRevocationForm`;
-- `SessionsPage`;
-- `SessionRevocationForm`;
-- `SecurityAuditPage`;
-- `SecurityPage` composition shell.
+The MFA administration implementation is source-qualified. Dedicated live functional acceptance remains pending and must be executed with disposable factors in a safe development environment.
 
-The Next.js package re-exports the same presentation surface under `@generic-identity/next/security-operations`.
+## 3. Session security and containment
 
-Routes, server actions, navigation, branding and product-specific labels remain consumer-owned. Shared forms submit ordinary form data to consumer-owned actions; they do not call privileged endpoints directly from the browser.
+The backend exposes administrative containment operations:
 
-## 4. Deliberately unavailable public operations
+```ts
+await identity.security.sessions.revokeUser(context, userId);
+await identity.security.sessions.revokeClient(context, clientId);
+```
 
-The backend contains internal provider services for additional factor lifecycle operations, but no public controller endpoint was discovered for:
+It does **not** expose an administrative active-session list.
+
+Accordingly, the reusable Sessions administration workflow combines bounded security-audit evidence with server-confirmed containment operations:
+
+```text
+loadNextSessionSecurityWorkspace
+revokeNextUserSessionsFromForm
+revokeNextClientSessionsFromForm
+SessionSecurityPage
+SessionSecurityFilterForm
+SessionRevocationForm
+```
+
+The workspace never infers active, expired, or revoked state from the current browser session or from missing audit evidence.
+
+Session containment requires literal destructive-action confirmation and returns the backend-confirmed revoked count.
+
+## 4. Security audit
+
+Security Audit is read-only, application-scoped evidence.
+
+Reusable workflow/presentation:
+
+```text
+loadNextSecurityAuditWorkspace
+normalizeNextSecurityAuditQuery
+summarizeSecurityAudit
+SecurityAuditPage
+SecurityAuditFilterForm
+```
+
+Supported bounded filters:
+
+```text
+User
+Tenant
+Outcome
+Correlation ID
+Window: 25 / 50 / 100 / 200
+```
+
+User and Tenant selection use the shared server-backed entity autocomplete where the effective administration context permits scope-wide lookup.
+
+The presentation exposes categorical event metadata such as outcome, event type, user, tenant, client, target, reason, correlation, and timestamp. It does not expose credentials, tokens, provider secrets, or arbitrary raw payloads.
+
+## 5. Deliberately unavailable public operations
+
+No public administration endpoint is currently available for:
 
 - TOTP enrollment and confirmation;
 - WebAuthn/passkey registration;
 - recovery-code generation or replacement;
 - administrative active-session listing.
 
-These features remain explicitly classified as `BACKEND_API_MISSING` or `BACKEND_MISSING`. No SDK method, mock route or speculative contract is added for them.
+These remain classified as backend API or backend contract gaps. The SDK does not invent equivalent routes or contracts.
 
-Session-bound TOTP, recovery-code and WebAuthn **step-up authentication** already belongs to the Account & Authentication category and remains available through the existing authentication/account facade. Security Operations does not duplicate those methods.
+Session-bound TOTP, recovery-code, and WebAuthn step-up authentication belong to Account & Authentication and are not duplicated into Security Operations.
 
-## 5. Security invariants
+## 6. Authorization model
 
-The Security Operations surface preserves the following rules:
+Security Operations preserves independent capabilities for independent concerns. For example, the ability to read Security Audit evidence is not treated as equivalent to the ability to revoke sessions.
 
-- administrative mutations remain server-authorized;
-- UI visibility is never authority;
-- session revocation uses the existing server-side session authority;
-- MFA provider metadata never exposes provider secrets;
-- authenticator responses contain lifecycle metadata only;
-- recovery-oriented authenticator revocation remains a distinct server operation;
-- security audit is read-only through this public category;
-- technical failure is not converted into an authorization grant;
-- no second MFA engine, session store or audit implementation is introduced.
+UI visibility is not authority. Every protected read or mutation remains server-authorized.
 
-## 6. Compatibility
+## 7. Compatibility
 
-Existing `administration.mfa`, `administration.sessions` and `administration.securityAudit` compatibility surfaces remain available. The categorized `identity.security` surface is additive and is the preferred API for new consumers.
+Compatibility administration surfaces remain available during the transition, but new consumer integrations should prefer `identity.security` and the reusable Next.js server workflows.
 
-No backend route, database migration, MFA semantic, session semantic or RBAC behavior change is required by this release.
-
-## 7. Package version
-
-The four public Generic Identity packages advance together to `1.5.0`:
-
-```text
-@generic-identity/contracts
-@generic-identity/auth
-@generic-identity/react
-@generic-identity/next
-```
-
-The package dependency direction remains:
-
-```text
-contracts
-   ↑
-auth
-   ↑
-react
-   ↑
-next
-```
+No database migration or RBAC semantic change is required by the shared administration workflows.

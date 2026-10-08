@@ -1,19 +1,64 @@
-# Shared Identity Next.js Integration - Next.js integration package
+# Generic Identity — Next.js Integration
 
-Next.js Integration activates `@generic-identity/next` as the reusable Next.js-specific integration layer.
+`@generic-identity/next` is the reusable Next.js-specific integration boundary for Generic Identity.
 
-## Scope
+## Responsibilities
 
-- explicit Next.js client boundary over the shared React provider;
-- server-only opaque-session cookie coordination;
-- server-side session validation and authenticated-page helper;
-- server-backed capability checks with DENY kept separate from technical failure;
-- application-owned route-map helpers;
-- shared Identity page re-exports;
-- strict React/Next peer dependency boundaries.
+The package provides:
 
-## Non-goals
+```text
+server-only opaque-session coordination
+trusted administration-context construction
+server-side session validation
+server-backed capability evaluation
+protected-page helpers
+bounded entity reference search
+administration workspace loaders
+server mutation workflows
+shared React administration exports
+consumer-owned route integration helpers
+```
 
-Next.js Integration does not migrate the existing administration host. It does not remove the legacy TypeScript client, copy application routes, introduce a second RBAC, expose session credentials to browser code, or add database migrations.
+## Current administration workflow coverage
 
-The existing host remains the proven integration harness until the consumer-integration milestone.
+The server package now contains reusable workflows for:
+
+```text
+Tenants
+Users
+Memberships
+Organizations
+Groups
+Managed Policies
+Resource Scopes
+Delegated Authority
+Application Security
+MFA administration
+Security Audit
+Session security and containment
+```
+
+These workflows compose the categorized SDK and preserve backend authorization/concurrency semantics. They do not move privileged mutations into browser code.
+
+## Consumer ownership
+
+A consumer application owns:
+
+```text
+public URL structure
+navigation
+branding and shell layout
+Server Action entrypoints
+route revalidation
+consumer-specific application capabilities
+```
+
+A consumer must not duplicate Identity RBAC, TRN construction, database routing, authentication, MFA, or session semantics.
+
+## React / Next.js boundary
+
+React and React DOM remain peer dependencies. Shared client components retain explicit client boundaries, while server-only integration code stays under the Next.js server surface.
+
+## Compatibility
+
+The legacy TypeScript transport remains the runtime bridge during the package transition. New consumer source should import `@generic-identity/*` public surfaces rather than the compatibility transport directly.

@@ -5,3 +5,4 @@ export * from "./ApplicationSecurityContextPage";
 export * from "./ApplicationSecurityManifestForm";
 export * from "./ApplicationSecurityModelDetailsPage";
 export * from "./ApplicationSecurityModelsPage";
+export * from "./ApplicationSecurityManifestUploadForm";

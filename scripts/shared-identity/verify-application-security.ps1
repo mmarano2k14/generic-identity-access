@@ -36,6 +36,10 @@ $categoryFiles = @(
     'packages/react/src/application-security/ApplicationScopeTypesPage.tsx',
     'packages/react/src/application-security/ApplicationSecurityContextPage.tsx',
     'packages/react/src/application-security/ApplicationSecurityManifestForm.tsx',
+    'packages/react/src/application-security/ApplicationSecurityManifestUploadForm.tsx',
+    'packages/next/src/server/security-manifest-parser.ts',
+    'packages/next/src/server/application-security-mutations.ts',
+    'packages/next/test/security-manifest-parser.test.mjs',
     'packages/react/src/application-security/ApplicationScopeTypeForm.tsx',
     'packages/react/test/consumer-application-security.tsx',
     'packages/next/src/application-security/index.ts',
@@ -57,6 +61,10 @@ Require-Text 'packages/auth/src/application-security.ts' 'readonly capabilities:
 Require-Text 'packages/auth/src/application-security.ts' 'readonly context: GenericIdentityApplicationSecurityContextClient;'
 Require-Text 'packages/auth/src/application-security.ts' 'createApplicationSecurityPermissionReference'
 Require-Text 'packages/contracts/src/application-security/index.ts' 'IdentityApplicationSecurityPermissionReference'
+
+Require-Text 'packages/next/src/server/index.ts' 'registerNextApplicationSecurityManifestFromForm'
+Require-Text 'packages/next/src/server/application-security-mutations.ts' 'addNextApplicationScopeTypeFromForm'
+Require-Text 'packages/next/src/server/security-manifest-parser.ts' 'MAX_SECURITY_MANIFEST_BYTES'
 
 Require-Text 'packages/contracts/package.json' '"./application-security"'
 Require-Text 'packages/auth/package.json' '"./application-security"'

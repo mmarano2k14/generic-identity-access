@@ -1,13 +1,10 @@
-# Access Control — Access Control SDK/UI
+# Generic Identity — Access Control
 
-**Status:** categorized Generic Identity Access Control public surface  
-**Package version:** `1.3.0`
+**Current package family:** `1.5.0`
 
 ## Scope
 
-Access Control promotes the active Access Control surfaces into the categorized Generic Identity SDK without changing RBAC semantics or backend persistence.
-
-Public category:
+The categorized Access Control surface is:
 
 ```text
 GenericIdentityClient.accessControl
@@ -19,82 +16,57 @@ GenericIdentityClient.accessControl
 └── authorization
 ```
 
-The existing root `authorization` and read-focused `administration` surfaces remain available for compatibility.
+## Tenant authorization
 
-## Managed-policy compatibility closure
+Tenant authorization uses Groups, Managed Policies, bindings, statements, and ResourceScopes.
 
-The historical tenant-policy model is retired compatibility only.
-
-The following legacy surfaces are deliberately **not** reintroduced:
+Reusable workflows cover:
 
 ```text
-IdentityAccessAdministrationClient.policies
-GenericIdentityAccessControlClient.tenantPolicies
-legacy policy statements/bindings in the categorized public SDK
-active TenantPoliciesPage / TenantPolicyDetailsPage exports
+group lifecycle and templates
+group members
+managed-policy binding
+managed-policy lifecycle and versioning
+statement administration
+publication/default version
+resource-scope hierarchy and lifecycle
 ```
 
-The historical source files remain present where required for compatibility/history, but they are not composed into the active administration client and are not exported by the categorized Access Control SDK/UI.
+Managed Policy statements are selected from the registered application-security capability catalog. The administration UI does not replace that catalog with unrestricted free-text capability coordinates.
 
-Active authorization state uses:
+## Delegated Authority
+
+Delegated Authority is the identity-scope administration RBAC model:
 
 ```text
-managed policies
-immutable/published managed-policy versions
-managed policy statements
-managed group policy bindings
-resource scopes
+Scope Authority Group
+  -> Member
+  -> Policy Binding
+  -> Scope Authority Policy
+  -> Statement
 ```
 
-## Groups
+It is intentionally separate from tenant Groups and Managed Policies.
 
-The public category exposes group lifecycle, templates and membership operations.
+A Super Administrator belongs here. Scope authority objects are not implicitly merged into tenant authorization catalogs.
 
-## Managed policies
-
-The public category exposes the full versioned catalog lifecycle:
-
-```text
-policy CRUD
-version list/get/create
-publication
-statement list/add/remove
-tenant group bindings
-```
+Delegated-authority statements remain typed administrative coordinates and may use supported wildcard patterns. They are not converted into the Managed Policy capability selector because the authorization boundary is different.
 
 ## Resource scopes
 
-The categorized facade exposes the proven ResourceScope CRUD hierarchy. Resource scopes narrow authorization grants; they do not grant access by themselves.
+ResourceScopes narrow grants and preserve hierarchy. Scope type selection is grounded in the registered Application Security model. Parent selection uses bounded server-backed lookup and enforces same-tenant hierarchy constraints.
 
-## Delegated authority
+## Retired compatibility
 
-Identity-scope administration authority is exposed through the proven groups/policies/members/bindings lifecycle. No consumer-specific bypass or administrator shortcut is introduced.
+The historical tenant-policy administration model remains retired compatibility only. Active authorization administration uses Managed Policies.
 
 ## Missing backend capabilities
 
-Access Control deliberately does not synthesize:
+The SDK deliberately does not synthesize:
 
 ```text
 effective permission listing
 permission explanation / grant provenance
 ```
 
-They remain `BACKEND_MISSING` until a real backend contract exists.
-
-## Shared UI
-
-Access Control provides generic forms/pages for:
-
-```text
-group lifecycle and membership
-managed policies and versions
-managed policy bindings
-resource scopes
-delegated authority
-```
-
-Routes and server actions remain consumer-owned.
-
-## Compatibility
-
-No active public surface is removed. Historical tenant-policy files remain as inert compatibility tombstones rather than being deleted.
+Authorization evaluation itself remains fully supported.

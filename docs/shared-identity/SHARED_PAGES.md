@@ -1,23 +1,36 @@
-# Shared Identity Shared React Pages — Shared React Pages
+# Generic Identity — Shared React Administration
 
-Shared React Pages adds framework-neutral, presentation-only shared Identity page views to `@generic-identity/react`.
+`@generic-identity/react` provides reusable, consumer-neutral presentation for Generic Identity administration.
 
 ## Scope
 
-The package now exposes reusable pages for sign-in, recovery, account/profile, users, groups, managed policies, sessions, MFA and security composition. Pages accept passive contracts and consumer-supplied action slots/URLs; they do not fetch data, persist sessions, own routes or perform protected backend mutations.
-
-## Boundary
+The package includes shared views and forms for:
 
 ```text
-contracts -> auth -> react pages -> future Next.js integration
+sign-in and recovery
+account / profile presentation
+users and password credentials
+tenants and memberships
+organizations
+groups and managed policies
+resource scopes
+delegated authority
+application security
+MFA administration
+security audit
+session security and containment
 ```
 
-The existing Next.js administration host is deliberately not switched in this delivery. This prevents a page extraction from becoming a runtime migration before the Next.js adapter exists.
+Shared React components do not fetch privileged data or own backend authority. Data and mutations are supplied by server integration code.
 
-## Stable semantic DOM
+## Stable presentation boundary
 
-Shared React Pages introduces `gi-*` class names and `data-gi-*` attributes as the semantic styling surface. Visual tokens, CSS variables and component overrides are owned by Theme and Component Overrides.
+Reusable presentation uses stable `gi-*` class names and `data-gi-*` hooks. `IdentityThemeRoot` and component overrides allow consumers to adapt visual presentation without modifying security behavior.
 
-## Cleanup policy
+## Server-action compatibility
 
-There are no file moves or deletions in Shared React Pages. Existing host pages/components are future cleanup candidates only after route integration has switched to the shared packages and complete build/test/browser qualification is GREEN.
+Forms support Next.js/React function actions without forcing conflicting HTML methods. Consumer applications retain ownership of Server Actions, routes, redirects, revalidation, and navigation.
+
+## Security boundary
+
+Shared pages never treat hidden controls as authorization. Privileged operations remain server-authorized, and secret-bearing values are excluded from browser-visible contracts.

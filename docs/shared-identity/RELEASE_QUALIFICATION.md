@@ -1,9 +1,44 @@
-# Shared Identity Release Qualification — Release Qualification
+# Generic Identity — Release Qualification
 
-Release Qualification freezes the first stable package boundary after the shared contracts, auth SDK, React UI, Next.js integration, consumer integration, server-side authorization and Webpack/Turbopack qualification are GREEN.
+Release Qualification validates the distributable Generic Identity package boundary independently from registry publication.
 
-The four consumer-facing packages are versioned at `1.0.0`. The existing `@identity-access/client` remains a transitional transport implementation dependency at `0.26.0`; consumers should continue importing the `@generic-identity/*` surfaces rather than the compatibility transport package directly.
+## Current package family
 
-Release qualification is deliberately separate from registry publication. `scripts/shared-identity/qualify-release-packages.mjs` builds deterministic local tarballs under `artifacts/shared-identity-release`, verifies checksums and packed manifests, rejects local-link dependencies and forbidden files, and writes `release-manifest.json` with status `qualified-not-published`.
+```text
+@generic-identity/contracts  1.5.0
+@generic-identity/auth       1.5.0
+@generic-identity/react      1.5.0
+@generic-identity/next       1.5.0
+```
 
-No Release Qualification step publishes packages, changes authentication/RBAC semantics, migrates a database, moves source files or deletes source files.
+The transitional transport dependency remains:
+
+```text
+@identity-access/client      0.26.0
+```
+
+Consumers should use `@generic-identity/*` public surfaces rather than importing the transport bridge directly.
+
+## Qualification scope
+
+Release qualification validates:
+
+```text
+package version alignment
+packed manifest correctness
+package dependency boundaries
+forbidden-content rules
+checksums
+public subpath exports
+self-contained consumer installation
+React / Next.js peer dependency constraints
+consumer integration compilation
+```
+
+Local release artifact generation is a qualification mechanism only; it does not publish packages to a registry.
+
+## Administration workflow qualification
+
+The current `1.5.0` source line also carries reusable administration workflows for Directory, Organizations, Access Control, Application Security, Security Audit, Sessions, and MFA administration. These workflows are validated by their dedicated source/behavior gates in addition to the package release checks.
+
+MFA administration remains pending dedicated live functional acceptance; that operational qualification state does not alter the package version or create a speculative backend API.

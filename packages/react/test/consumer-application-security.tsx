@@ -5,6 +5,8 @@ import {
   ApplicationSecurityContextPage,
   ApplicationSecurityModelDetailsPage,
   ApplicationSecurityModelsPage,
+  ApplicationSecurityManifestUploadForm,
+  ApplicationScopeTypeForm,
 } from "@generic-identity/react/application-security";
 import type {
   IdentityApplicationSecurityModelRecord,
@@ -19,7 +21,9 @@ export function renderApplicationSecurity(
 ): readonly ReactElement[] {
   return [
     <ApplicationSecurityModelsPage models={[model]} />,
-    <ApplicationSecurityModelDetailsPage model={model} />,
+    <ApplicationSecurityModelDetailsPage model={model} scopeTypes={scopeTypes} />,
+    <ApplicationSecurityManifestUploadForm applicationKey={model.applicationKey} />,
+    <ApplicationScopeTypeForm parentTypes={scopeTypes} />,
     <ApplicationCapabilitiesPage capabilities={model.capabilities} applicationKey={model.applicationKey} modelVersion={model.modelVersion} />,
     <ApplicationScopeTypesPage scopeTypes={scopeTypes} />,
     <ApplicationSecurityContextPage context={context} />,

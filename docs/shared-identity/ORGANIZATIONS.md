@@ -1,53 +1,52 @@
-# Shared Identity Organizations - Organizations SDK/UI
+# Generic Identity — Organizations
 
-## Objective
+**Current package family:** `1.5.0`  
+**Boundary:** generic organization identity and belonging only
 
-Promote the already-proven Generic Organization Directory backend and legacy TypeScript client into the categorized public Generic Identity SDK and shared UI without moving ownership into application-specific semantics.
+## Scope
 
-## Boundary
-
-This delivery covers only generic organization identity and belonging:
+The categorized Organizations SDK covers:
 
 ```text
-Organization
+Organization lifecycle
 Organization hierarchy
-OrganizationMembership
-Organization <-> ResourceScope link
+OrganizationMembership lifecycle
+Organization <-> ResourceScope linkage
 ```
 
-It does not include OrganisationProfile, business domains, providers, business rules, or consumer-specific semantics.
+It does not absorb OrganisationProfile, business domains, providers, or consumer-specific semantics.
 
 ## Public SDK
 
 ```text
 GenericIdentityClient.organizations
   organizations
-    list
-    get
-    tree
-    children
-    create
-    update
-    enable
-    disable
+    list / get / tree / children
+    create / update / enable / disable
 
   memberships
     listForOrganization
     listForTenantMembership
-    get
-    add
-    activate
-    suspend
-    remove
+    get / add / activate / suspend / remove
 
   resourceScopeLinks
-    get
-    create
-    update
-    remove
+    get / create / update / remove
 ```
 
-## Shared UI
+## Reusable administration workflow
+
+The Next.js integration composes tenant visibility, hierarchy, lifecycle, memberships, and ResourceScope linking through a reusable server workspace and mutation helpers.
+
+Relation fields use server-backed autocomplete:
+
+```text
+tenant membership -> tenant-membership reference
+resource scope     -> resource-scope reference
+```
+
+ResourceScope links preserve tenant isolation and backend optimistic concurrency. Organization membership remains organizational belonging and never becomes an authorization grant.
+
+## Shared presentation
 
 ```text
 OrganizationsPage
@@ -59,27 +58,4 @@ OrganizationMembershipForm
 OrganizationResourceScopeLinkForm
 ```
 
-## Public subpaths
-
-```text
-@generic-identity/contracts/organizations
-@generic-identity/auth/organizations
-@generic-identity/react/organizations
-@generic-identity/next/organizations
-```
-
-## Compatibility
-
-The existing `authentication`, `authorization`, `administration`, `account`, and `directory` surfaces remain unchanged. The Organization category is additive.
-
-## Version
-
-The four Generic Identity public packages advance together to `1.2.0`.
-
-## Non-goals
-
-- no backend endpoint redesign;
-- no database migration;
-- no Organization authorization semantics rewrite;
-- no OrganisationProfile promotion into Generic Identity;
-- no consumer-specific route or naming policy.
+Routes, Server Actions, navigation, and consumer semantics remain application-owned.

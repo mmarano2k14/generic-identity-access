@@ -14,10 +14,11 @@ export interface OrganizationDetailsPageProps {
   readonly resourceScopeLink?: IdentityOrganizationResourceScopeLinkRecord | null;
   readonly actions?: ReactNode;
   readonly membershipActions?: ReactNode;
+  readonly renderMembershipActions?: (membership: IdentityOrganizationMembershipRecord) => ReactNode;
   readonly resourceScopeActions?: ReactNode;
 }
 
-export function OrganizationDetailsPage({ organization, children = [], memberships = [], resourceScopeLink = null, actions, membershipActions, resourceScopeActions }: OrganizationDetailsPageProps) {
+export function OrganizationDetailsPage({ organization, children = [], memberships = [], resourceScopeLink = null, actions, membershipActions, renderMembershipActions, resourceScopeActions }: OrganizationDetailsPageProps) {
   return (
     <IdentityPageFrame title={organization.displayName} description={`Organization ${organization.organizationKey}`} actions={actions}>
       <IdentityPanel title="Organization identity">
@@ -35,7 +36,7 @@ export function OrganizationDetailsPage({ organization, children = [], membershi
       </IdentityPanel>
       <IdentityPanel title="Memberships">
         {membershipActions ? <div className="gi-panel-actions">{membershipActions}</div> : null}
-        {memberships.length === 0 ? <IdentityEmptyState title="No organization memberships" /> : <IdentityTable caption="Organization memberships"><thead><tr><th scope="col">Tenant membership ID</th><th scope="col">Status</th><th scope="col">Version</th></tr></thead><tbody>{memberships.map((membership) => <tr key={membership.tenantMembershipId}><td><code>{membership.tenantMembershipId}</code></td><td>{activeStatus(membership.status)}</td><td>{membership.rowVersion}</td></tr>)}</tbody></IdentityTable>}
+        {memberships.length === 0 ? <IdentityEmptyState title="No organization memberships" /> : <IdentityTable caption="Organization memberships"><thead><tr><th scope="col">Tenant membership ID</th><th scope="col">Status</th><th scope="col">Version</th>{renderMembershipActions ? <th scope="col">Actions</th> : null}</tr></thead><tbody>{memberships.map((membership) => <tr key={membership.tenantMembershipId}><td><code>{membership.tenantMembershipId}</code></td><td>{activeStatus(membership.status)}</td><td>{membership.rowVersion}</td>{renderMembershipActions ? <td>{renderMembershipActions(membership)}</td> : null}</tr>)}</tbody></IdentityTable>}
       </IdentityPanel>
       <IdentityPanel title="Resource scope">
         {resourceScopeActions ? <div className="gi-panel-actions">{resourceScopeActions}</div> : null}

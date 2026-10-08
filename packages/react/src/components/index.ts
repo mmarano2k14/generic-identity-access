@@ -5,3 +5,5 @@ export * from "./IdentityPageFrame";
 export * from "./IdentityPanel";
 export * from "./IdentityStatus";
 export * from "./IdentityTable";
+
+export * from "./IdentityEntityAutocomplete";
